@@ -29,25 +29,29 @@ CREATE TABLE IF NOT EXISTS slot_groups (
 CREATE TABLE IF NOT EXISTS booking_slots (
     id INT AUTO_INCREMENT PRIMARY KEY,
     owner_id INT NOT NULL,
+    group_id INT NULL, 
+    parent_slot_id INT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     slot_date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     location VARCHAR(255),
-    slot_type ENUM('office_hours', 'group_meeting') NOT NULL DEFAULT 'office_hours',
+    slot_type ENUM('office_hours', 'group_meeting', 'requested') NOT NULL DEFAULT 'office_hours',
     status ENUM('private', 'active') NOT NULL DEFAULT 'private',
     max_bookings INT NOT NULL DEFAULT 1, 
+    is_recurring BOOLEAN DEFAULT FALSE,
+    recurrence_weeks INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    group_id INT NULL, 
 
     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (group_id) REFERENCES slot_groups(id) ON DELETE SET NULL,
+    FOREIGN KEY (parent_slot_id) REFERENCES booking_slots(id) ON DELETE SET NULL,
     INDEX idx_owner_id (owner_id),
     INDEX idx_group_id (group_id),
     INDEX idx_status (status),
-    INDEX idx_slot_date (slot_date)
+    INDEX idx_slot_date (slot_date),
 
     CHECK (start_time < end_time),
     CHECK (max_bookings > 0)
@@ -68,6 +72,28 @@ CREATE TABLE IF NOT EXISTS bookings (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE KEY unique_user_slot (slot_id, user_id),
     INDEX idx_user_id (user_id)
+);
+
+-- Meeting requests table --
+-- For Type 1 (request a meeting) -- 
+CREATE TABLE IF NOT EXISTS meeting_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    owner_id INT NOT NULL,
+    user_id INT NOT NULL,
+    subject VARCHAR(255),
+    message TEXT NOT NULL,
+    status ENUM('pending', 'accepted', 'declined') NOT NULL DEFAULT 'pending',
+    created_slot_id INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_slot_id) REFERENCES booking_slots(id) ON DELETE SET NULL,
+
+    INDEX idx_owner_id (owner_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_status(status)
 );
 
 -- Owner invitations table -- 
