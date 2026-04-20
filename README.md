@@ -1,4 +1,4 @@
-# Undefined Behaviour - COMP307
+# Undefined Behaviour — COMP 307
 
 # Team
 Rupneet
