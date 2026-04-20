@@ -1,5 +1,5 @@
 -- Comp 307 Project: Database Schema --
--- 
+-- Sophia Casalme, 261149930 -- 
 
 -- Users table --
 CREATE TABLE IF NOT EXISTS users (
