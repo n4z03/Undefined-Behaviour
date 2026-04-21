@@ -25,7 +25,7 @@ export const slots = [
     timeRange: '10:00 AM - 10:30 AM',
     visibility: 'Public',
     booking: 'Booked',
-    bookedBy: 'Amina Khan',
+    bookedBy: 'Rupneet Shahriar',
     recurringLabel: 'Repeats weekly',
   },
   {
@@ -53,17 +53,26 @@ export const slots = [
 export const meetingRequests = [
   {
     id: 1,
-    name: 'Sara Ahmed',
-    email: 'sara.ahmed@mail.mcgill.ca',
+    name: 'Nazifa Ahmed',
+    email: 'Nazifa.Ahmed@mail.mcgill.ca',
     topic: 'Need help with assignment 3.',
     requestedAt: 'Apr 22, 9:14 AM',
     status: 'Pending',
   },
   {
     id: 2,
-    name: 'Leo Martin',
-    email: 'leo.martin@mail.mcgill.ca',
+    name: 'Sophia Casalme',
+    email: 'sophia.casalme@mail.mcgill.ca',
     topic: 'Can we review my project proposal?',
+    requestedAt: 'Apr 22, 1:27 PM',
+    status: 'Pending',
+  },
+
+  {
+    id: 3,
+    name: 'Bonita Baladi',
+    email: 'bonita.baladi@mail.mcgill.ca',
+    topic: 'Assignment 2 Review',
     requestedAt: 'Apr 22, 1:27 PM',
     status: 'Pending',
   },
