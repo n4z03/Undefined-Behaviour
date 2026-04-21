@@ -5,7 +5,7 @@ import { detectRoleFromEmail } from '../utils/authHelpers'
 import '../styles/LoginForm.css'
 import '../styles/SignupForm.css'
 
-export default function SignupForm({ ownerHint, onSwitchToLogin }) {
+export default function SignupForm({ onSwitchToLogin }) {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -13,6 +13,8 @@ export default function SignupForm({ ownerHint, onSwitchToLogin }) {
   const [errors, setErrors] = useState({})
 
   const detectedRole = useMemo(() => detectRoleFromEmail(email), [email])
+  const showDomainError = !detectedRole && email.trim() !== ''
+  const emailErrorMessage = errors.email || (showDomainError ? 'Only @mcgill.ca and @mail.mcgill.ca emails are allowed.' : null)
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -32,8 +34,6 @@ export default function SignupForm({ ownerHint, onSwitchToLogin }) {
       <h2 className="auth-form__title">Create an Account</h2>
       <p className="auth-form__helper">Only McGill email addresses can register.</p>
 
-      {ownerHint ? <p className="auth-form__hint">Ready for owner registration. Final role is based on email domain.</p> : null}
-
       <label className="auth-form__label" htmlFor="signup-name">Full Name</label>
       <input id="signup-name" className="auth-form__input" value={fullName} onChange={(e) => setFullName(e.target.value)} />
       {errors.fullName ? <p className="auth-form__error">{errors.fullName}</p> : null}
@@ -46,8 +46,7 @@ export default function SignupForm({ ownerHint, onSwitchToLogin }) {
       {detectedRole === 'student' ? (
         <p className="auth-form__role auth-form__role--student">This email will create a Student account.</p>
       ) : null}
-      {!detectedRole && email.trim() ? <p className="auth-form__error">Only @mcgill.ca and @mail.mcgill.ca emails are allowed.</p> : null}
-      {errors.email ? <p className="auth-form__error">{errors.email}</p> : null}
+      {emailErrorMessage ? <p className="auth-form__error">{emailErrorMessage}</p> : null}
 
       <label className="auth-form__label" htmlFor="signup-password">Password</label>
       <input id="signup-password" className="auth-form__input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />

@@ -46,7 +46,7 @@ export default function AuthPage() {
               {activeMode === 'login' ? (
                 <LoginForm onSwitchToSignup={() => changeMode('signup')} />
               ) : (
-                <SignupForm ownerHint={role === 'owner'} onSwitchToLogin={() => changeMode('login')} />
+                <SignupForm onSwitchToLogin={() => changeMode('login')} />
               )}
             </div>
           </div>
