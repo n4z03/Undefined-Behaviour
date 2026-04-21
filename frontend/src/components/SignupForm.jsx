@@ -1,4 +1,5 @@
 // code written by Rupneet (ID: 261096653)
+// code added by Nazifa Ahmed (261112966)
 
 import { useMemo, useState } from 'react'
 import { detectRoleFromEmail } from '../utils/authHelpers'
@@ -11,11 +12,13 @@ export default function SignupForm({ ownerHint, onSwitchToLogin }) {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState({})
+  const [submitMessage, setSubmitMessage] = useState('')
 
   const detectedRole = useMemo(() => detectRoleFromEmail(email), [email])
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
+    setSubmitMessage('')
     const nextErrors = {}
     if (!fullName.trim()) nextErrors.fullName = 'Full name is required.'
     if (!email.trim()) nextErrors.email = 'Email is required.'
@@ -24,7 +27,31 @@ export default function SignupForm({ ownerHint, onSwitchToLogin }) {
     if (confirmPassword !== password) nextErrors.confirmPassword = 'Passwords must match.'
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
-    console.log('Signup submit', { fullName, email, password, role: detectedRole })
+
+    try {
+      const response = await fetch('http://localhost:3000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: fullName.trim(),
+          email: email.trim(),
+          password,
+        }),
+      })
+
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        setSubmitMessage(data.error || 'Signup failed.')
+        return
+      }
+
+      setSubmitMessage('Signup successful.')
+      setErrors({})
+    } catch (error) {
+      setSubmitMessage('Unable to reach the server. Please try again.')
+    }
   }
 
   return (
@@ -58,6 +85,7 @@ export default function SignupForm({ ownerHint, onSwitchToLogin }) {
       {errors.confirmPassword ? <p className="auth-form__error">{errors.confirmPassword}</p> : null}
 
       <button type="submit" className="auth-form__submit">Create Account</button>
+      {submitMessage ? <p className="auth-form__submit-message">{submitMessage}</p> : null}
       <p className="auth-form__switch">Already have an account? <button type="button" onClick={onSwitchToLogin}>Log In</button></p>
     </form>
   )

@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 
 router.post('/register', (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password } = req.body || {};
 
     if (
         typeof name !== 'string' || !name.trim() ||
@@ -37,6 +37,49 @@ router.post('/register', (req, res) => {
           role
         }
       });
+});
+
+router.post('/login', (req, res) => {
+    const { name, email, password } = req.body || {};
+
+    if (
+        typeof email !== 'string' || !email.trim() ||
+        typeof password !== 'string' || !password.trim()
+      ) {
+        return res.status(400).json({ error: 'All fields are required' });
+      }
+
+    if (!email.endsWith('@mcgill.ca') && !email.endsWith('@mail.mcgill.ca')) {
+        return res.status(400).json({ error: 'Email must be from McGill University domain' });
+      }
+
+      let role;
+      if (email.endsWith('@mcgill.ca')) {
+        role = 'owner';
+      } else {
+        role = 'user';
+      }
+
+      res.json({
+        message: 'Logged in',
+        user: {
+          email: email.trim(),
+          role
+        }
+      });
+});
+
+router.post('/logout', (req, res) => {
+    res.json({
+      message: 'Logged out'
+    });
+});
+
+router.get('/me', (req, res) => {
+    res.json({
+      message: 'No authentication state yet',
+      user: null
+    });
 });
 
 module.exports = router;

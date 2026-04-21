@@ -1,4 +1,5 @@
 /* code written by Rupneet (ID: 261096653) */
+/* code added by Nazifa Ahmed (261112966) */
 
 .auth-form {
   display: flex;
@@ -69,6 +70,13 @@
 
 .auth-form__submit:hover {
   background: #990000;
+}
+
+.auth-form__submit-message {
+  margin-top: 0.65rem;
+  margin-bottom: 0.2rem;
+  color: #444;
+  text-align: center;
 }
 
 .auth-form__switch {
