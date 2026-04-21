@@ -1,6 +1,5 @@
 // code written by Rupneet (ID: 261096653)
 
-// Copy for each feature tile / accordion panel
 export const featureContent = {
   'how-it-works': {
     title: 'How it Works',
