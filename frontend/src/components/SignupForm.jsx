@@ -5,7 +5,7 @@ import { detectRoleFromEmail } from '../utils/authHelpers'
 import '../styles/LoginForm.css'
 import '../styles/SignupForm.css'
 
-export default function SignupForm({ ownerHint, onSwitchToLogin }) {
+export default function SignupForm({ onSwitchToLogin }) {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -31,8 +31,6 @@ export default function SignupForm({ ownerHint, onSwitchToLogin }) {
     <form className="auth-form" onSubmit={handleSubmit}>
       <h2 className="auth-form__title">Create an Account</h2>
       <p className="auth-form__helper">Only McGill email addresses can register.</p>
-
-      {ownerHint ? <p className="auth-form__hint">Ready for owner registration. Final role is based on email domain.</p> : null}
 
       <label className="auth-form__label" htmlFor="signup-name">Full Name</label>
       <input id="signup-name" className="auth-form__input" value={fullName} onChange={(e) => setFullName(e.target.value)} />

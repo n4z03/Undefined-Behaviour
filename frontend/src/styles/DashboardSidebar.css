@@ -1,0 +1,35 @@
+/* code written by Rupneet (ID: 261096653) */
+
+.dashboard-sidebar {
+  background: #e4e4e4;
+  border-radius: 14px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  padding: 0.7rem;
+}
+
+.dashboard-sidebar nav {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.dashboard-sidebar__item {
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-weight: 700;
+  color: #111;
+  cursor: pointer;
+  padding: 0.55rem 0.65rem;
+  transition: background-color 0.2s ease;
+}
+
+.dashboard-sidebar__item:hover {
+  background: #d6d6d6;
+}
+
+.dashboard-sidebar__item--active {
+  background: #c40000;
+  color: #fff;
+}

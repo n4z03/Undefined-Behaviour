@@ -1,6 +1,6 @@
 // code written by Rupneet (ID: 261096653)
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -19,7 +19,6 @@ export default function AuthPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const [activeMode, setActiveMode] = useState(getModeFromSearch(location.search))
-  const role = useMemo(() => new URLSearchParams(location.search).get('role'), [location.search])
 
   useEffect(() => {
     setActiveMode(getModeFromSearch(location.search))
@@ -28,7 +27,6 @@ export default function AuthPage() {
   function changeMode(mode) {
     const params = new URLSearchParams()
     params.set('mode', mode)
-    if (mode === 'signup' && role === 'owner') params.set('role', 'owner')
     navigate(`/auth?${params.toString()}`)
   }
 
@@ -46,7 +44,7 @@ export default function AuthPage() {
               {activeMode === 'login' ? (
                 <LoginForm onSwitchToSignup={() => changeMode('signup')} />
               ) : (
-                <SignupForm ownerHint={role === 'owner'} onSwitchToLogin={() => changeMode('login')} />
+                <SignupForm onSwitchToLogin={() => changeMode('login')} />
               )}
             </div>
           </div>

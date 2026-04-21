@@ -1,0 +1,45 @@
+/* code written by Rupneet (ID: 261096653) */
+
+.export-panel {
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 14px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  padding: 0.9rem;
+}
+
+.export-panel h3 {
+  margin: 0;
+}
+
+.export-panel p {
+  margin: 0.45rem 0 0;
+  color: #555;
+}
+
+.export-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+
+.export-panel__actions button {
+  border: none;
+  border-radius: 10px;
+  background: #c40000;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.5rem 0.8rem;
+}
+
+.export-panel__actions button:hover {
+  background: #990000;
+}
+
+.export-panel__note {
+  font-size: 0.82rem;
+}

@@ -1,0 +1,41 @@
+/* code written by Rupneet (ID: 261096653) */
+
+.quick-actions {
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 14px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  padding: 0.9rem;
+}
+
+.quick-actions h3 {
+  margin: 0 0 0.7rem;
+}
+
+.quick-actions__buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.quick-actions__buttons button {
+  border: none;
+  border-radius: 10px;
+  background: #c40000;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.5rem 0.65rem;
+}
+
+.quick-actions__buttons button:hover {
+  background: #990000;
+}
+
+@media (max-width: 560px) {
+  .quick-actions__buttons {
+    grid-template-columns: 1fr;
+  }
+}
