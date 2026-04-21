@@ -1,15 +1,11 @@
 // code written by Rupneet (ID: 261096653)
 
+import { useNavigate } from 'react-router-dom'
 import '../styles/HeroSection.css'
 
-function scrollToBrowse() {
-  const el = document.getElementById('browse-slots')
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-}
-
 export default function HeroSection() {
+  const navigate = useNavigate()
+
   return (
     <div className="hero" id="hero">
       <div className="hero__card">
@@ -27,7 +23,7 @@ export default function HeroSection() {
             <span className="hero__accent">Schedule.</span>
           </span>
         </h1>
-        <button type="button" className="hero__cta" onClick={scrollToBrowse}>
+        <button type="button" className="hero__cta" onClick={() => navigate('/auth')}>
           Browse Available Slots
         </button>
       </div>

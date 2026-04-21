@@ -1,5 +1,6 @@
 // code written by Rupneet (ID: 261096653)
 
+import { useLocation, useNavigate } from 'react-router-dom'
 import '../styles/Navbar.css'
 
 function scrollToId(id) {
@@ -10,46 +11,62 @@ function scrollToId(id) {
 }
 
 export default function Navbar() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const isHome = location.pathname === '/'
+  const isAuthPage = location.pathname === '/auth'
+
+  function goToSection(section) {
+    if (isHome) {
+      const id = section === 'how' ? 'feature-accordion' : 'browse-slots'
+      scrollToId(id)
+      return
+    }
+    navigate(`/?section=${section}`)
+  }
+
   return (
-    <header className="navbar">
+    <header className={`navbar${isAuthPage ? ' navbar--auth' : ''}`}>
       <div className="navbar__inner">
         <a
-          href="#browse-slots"
+          href="/"
           className="navbar__brand"
           onClick={(e) => {
             e.preventDefault()
-            scrollToId('browse-slots')
+            navigate('/')
           }}
         >
           Mc<span className="navbar__brand-book">Book.</span>
         </a>
 
-        <div className="navbar__right">
-          <nav className="navbar__nav" aria-label="Main">
-            <button
-              type="button"
-              className="navbar__link navbar__link--pill"
-              onClick={() => scrollToId('browse-slots')}
-            >
-              Book a Slot
-            </button>
-            <button
-              type="button"
-              className="navbar__link navbar__link--pill"
-              onClick={() => scrollToId('feature-accordion')}
-            >
-              Details
-            </button>
-          </nav>
-          <div className="navbar__actions">
-            <button type="button" className="navbar__btn navbar__btn--login">
-              Log In
-            </button>
-            <button type="button" className="navbar__btn navbar__btn--signup">
-              Sign Up
-            </button>
+        {!isAuthPage ? (
+          <div className="navbar__right">
+            <nav className="navbar__nav" aria-label="Main">
+              <button
+                type="button"
+                className="navbar__link navbar__link--pill"
+                onClick={() => navigate('/auth')}
+              >
+                Browse Slots
+              </button>
+              <button
+                type="button"
+                className="navbar__link navbar__link--pill"
+                onClick={() => goToSection('how')}
+              >
+                How it Works
+              </button>
+            </nav>
+            <div className="navbar__actions">
+              <button type="button" className="navbar__btn navbar__btn--login" onClick={() => navigate('/auth?mode=login')}>
+                Log In
+              </button>
+              <button type="button" className="navbar__btn navbar__btn--signup" onClick={() => navigate('/auth?mode=signup&role=owner')}>
+                Sign Up
+              </button>
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
     </header>
   )

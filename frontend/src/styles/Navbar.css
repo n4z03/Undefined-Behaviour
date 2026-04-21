@@ -18,6 +18,11 @@
   gap: 1rem;
 }
 
+/* Auth page: logo only */
+.navbar--auth .navbar__inner {
+  justify-content: flex-start;
+}
+
 .navbar__brand {
   font-weight: 900;
   font-size: 1.35rem;

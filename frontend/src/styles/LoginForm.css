@@ -1,0 +1,86 @@
+/* code written by Rupneet (ID: 261096653) */
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-form__title {
+  margin: 0 0 0.25rem;
+  color: #990000;
+}
+
+.auth-form__helper {
+  margin: 0 0 0.9rem;
+  color: #444;
+}
+
+.auth-form__label {
+  font-weight: 700;
+  margin: 0.45rem 0 0.3rem;
+}
+
+.auth-form__input {
+  border: 1px solid #c6c6c6;
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  background: #fff;
+  color: #111;
+}
+
+.auth-form__input:focus {
+  outline: 2px solid rgba(196, 0, 0, 0.35);
+  border-color: #990000;
+}
+
+.auth-form__password-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+}
+
+.auth-form__toggle {
+  border: none;
+  border-radius: 10px;
+  background: #8a8a8a;
+  color: #fff;
+  cursor: pointer;
+  padding: 0 0.8rem;
+}
+
+.auth-form__error {
+  color: #990000;
+  margin: 0.3rem 0 0;
+  font-size: 0.88rem;
+}
+
+.auth-form__submit {
+  margin-top: 0.95rem;
+  border: none;
+  border-radius: 10px;
+  background: #c40000;
+  color: #fff;
+  padding: 0.7rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.auth-form__submit:hover {
+  background: #990000;
+}
+
+.auth-form__switch {
+  margin-top: 0.9rem;
+  color: #444;
+}
+
+.auth-form__switch button {
+  border: none;
+  background: transparent;
+  color: #c40000;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
