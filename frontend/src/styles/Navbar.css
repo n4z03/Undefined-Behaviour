@@ -1,0 +1,106 @@
+.navbar {
+  background: #c40000;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+  font-weight: 700;
+}
+
+.navbar__inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0.85rem clamp(1rem, 4vw, 2.5rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.navbar__brand {
+  font-weight: 900;
+  font-size: 1.35rem;
+  color: #ffffff;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.navbar__brand-book {
+  color: #111111;
+}
+
+.navbar__right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.navbar__nav {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+/* Book a Slot + Details: plain bold text; hover matches Sign Up grey pill */
+.navbar__link--pill {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.45rem 1.1rem;
+  border-radius: 999px;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.navbar__link--pill:hover {
+  background: #8a8a8a;
+  transform: translateY(-1px);
+}
+
+.navbar__actions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.navbar__btn {
+  border: none;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.45rem 1.1rem;
+  border-radius: 999px;
+  color: #ffffff;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.navbar__btn:hover {
+  transform: translateY(-1px);
+}
+
+.navbar__btn--login {
+  background: #990000;
+}
+
+.navbar__btn--login:hover {
+  background: #7a0000;
+}
+
+.navbar__btn--signup {
+  background: #8a8a8a;
+}
+
+.navbar__btn--signup:hover {
+  background: #6f6f6f;
+}
+
+@media (max-width: 640px) {
+  .navbar__right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

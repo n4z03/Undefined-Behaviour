@@ -1,0 +1,52 @@
+.hero {
+  min-width: 0;
+}
+
+.hero__card {
+  background: #f1f1f1;
+  border-radius: 14px;
+  padding: 1.75rem 1.5rem 1.5rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hero__title {
+  margin: 0 0 1.25rem;
+  font-size: clamp(1.65rem, 4.25vw, 2.55rem);
+  font-weight: 800;
+  line-height: 1.18;
+}
+
+.hero__title-line {
+  display: block;
+}
+
+.hero__accent {
+  color: #c40000;
+}
+
+.hero__cta {
+  align-self: flex-start;
+  background: #8a8a8a;
+  color: #ffffff;
+  border: none;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.65rem 1.25rem;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.hero__cta:hover {
+  background: #c40000;
+}
+
+.hero__cta:active {
+  transform: translateY(1px);
+  background: #990000;
+}
