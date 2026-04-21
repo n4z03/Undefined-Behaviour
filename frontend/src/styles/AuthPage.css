@@ -1,0 +1,105 @@
+/* code written by Rupneet (ID: 261096653) */
+
+.auth-page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* Three columns: left panel | centered card | spacer — keeps the gray box in the visual middle */
+.auth-page__layout {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 520px) 1fr;
+  gap: 1.25rem;
+  align-items: start;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 clamp(0.75rem, 2vw, 1rem);
+}
+
+.auth-page__side--left {
+  justify-self: end;
+  min-width: 0;
+  max-width: 280px;
+}
+
+.auth-page__side--right {
+  min-width: 0;
+}
+
+.auth-page__center {
+  justify-self: center;
+  width: 100%;
+  max-width: 520px;
+}
+
+.auth-card {
+  background: #d8d8d8;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  padding: 1.25rem;
+}
+
+/* Info panel sits outside the gray card, to the left of center */
+.signup-rules-panel {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.signup-rules-panel__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111111;
+}
+
+.signup-rules-panel__text {
+  margin: 0 0 0.45rem;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  color: #444444;
+}
+
+.signup-rules-panel__text:last-child {
+  margin-bottom: 0;
+}
+
+/* Centre tabs + headings on auth page */
+.auth-page .auth-form__title,
+.auth-page .auth-form__helper {
+  text-align: center;
+}
+
+.auth-page .auth-form__switch {
+  text-align: center;
+}
+
+.auth-page .auth-form__submit {
+  align-self: center;
+  min-width: 11rem;
+}
+
+@media (max-width: 900px) {
+  .auth-page__layout {
+    grid-template-columns: 1fr;
+    max-width: 520px;
+  }
+
+  .auth-page__side--left {
+    justify-self: stretch;
+    max-width: none;
+    order: -1;
+  }
+
+  .auth-page__side--right {
+    display: none;
+  }
+
+  .auth-page__center {
+    max-width: none;
+  }
+}

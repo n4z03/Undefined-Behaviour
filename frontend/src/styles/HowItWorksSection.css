@@ -1,0 +1,86 @@
+/* code written by Rupneet (ID: 261096653) */
+
+.feature-accordion {
+  background: #f1f1f1;
+  border-radius: 14px;
+  padding: 2rem 1.5rem 2.25rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.feature-accordion__inner {
+  max-width: 100%;
+}
+
+.feature-accordion__title {
+  margin: 0 0 1.25rem;
+  text-align: center;
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #990000;
+}
+
+.feature-accordion__columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.feature-accordion__text {
+  min-width: 0;
+}
+
+.feature-accordion__list {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.feature-accordion__list li {
+  margin-bottom: 0.45rem;
+}
+
+.feature-accordion__visual {
+  position: relative;
+  min-height: 220px;
+}
+
+.feature-accordion__red-block {
+  position: absolute;
+  right: 8%;
+  top: 8%;
+  width: 88%;
+  height: 82%;
+  background: #990000;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.feature-accordion__image-card {
+  position: relative;
+  margin: 0 auto;
+  max-width: 92%;
+  background: #ffffff;
+  border-radius: 12px;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8a8a8a;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+@media (max-width: 768px) {
+  .feature-accordion__columns {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-accordion__visual {
+    order: -1;
+    min-height: 200px;
+  }
+}

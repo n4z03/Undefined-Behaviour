@@ -1,0 +1,57 @@
+/* code written by Rupneet (ID: 261096653) */
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.feature-tile {
+  border: none;
+  font: inherit;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+  border-radius: 14px;
+  padding: 1.25rem 0.75rem;
+  min-height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.25;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.feature-tile--gray {
+  background: #8a8a8a;
+}
+
+.feature-tile--red {
+  background: #990000;
+}
+
+.feature-tile:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+}
+
+/* Selected tile: black until another tile is chosen */
+.feature-tile--active {
+  background: #111111;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.feature-tile--active:hover {
+  background: #111111;
+}
+
+.feature-tile:active {
+  transform: scale(1.01);
+}
