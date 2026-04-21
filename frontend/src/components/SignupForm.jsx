@@ -1,7 +1,7 @@
 // code written by Rupneet (ID: 261096653)
 
 import { useMemo, useState } from 'react'
-import { detectRoleFromEmail } from '../utils/authHelpers'
+import { detectRoleFromEmail, ROLE_OWNER, ROLE_USER } from '../utils/authHelpers'
 import '../styles/LoginForm.css'
 import '../styles/SignupForm.css'
 
@@ -38,10 +38,10 @@ export default function SignupForm({ onSwitchToLogin }) {
 
       <label className="auth-form__label" htmlFor="signup-email">McGill Email</label>
       <input id="signup-email" className="auth-form__input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-      {detectedRole === 'owner' ? (
-        <p className="auth-form__role auth-form__role--owner">This creates an Admin account.</p>
+      {detectedRole === ROLE_OWNER ? (
+        <p className="auth-form__role auth-form__role--admin">This creates an Admin account.</p>
       ) : null}
-      {detectedRole === 'student' ? (
+      {detectedRole === ROLE_USER ? (
         <p className="auth-form__role auth-form__role--student">This email will create a Student account.</p>
       ) : null}
       {!detectedRole && email.trim() ? <p className="auth-form__error">Only @mcgill.ca and @mail.mcgill.ca emails are allowed.</p> : null}

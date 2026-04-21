@@ -1,7 +1,7 @@
 // code written by Rupneet (ID: 261096653)
 
 import { useState } from 'react'
-import { isAllowedMcGillEmail } from '../utils/authHelpers'
+import { detectRoleFromEmail, isAllowedMcGillEmail } from '../utils/authHelpers'
 import '../styles/LoginForm.css'
 
 export default function LoginForm({ onSwitchToSignup }) {
@@ -18,7 +18,7 @@ export default function LoginForm({ onSwitchToSignup }) {
     if (!password.trim()) nextErrors.password = 'Password is required.'
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
-    console.log('Login submit', { email, password })
+    console.log('Login submit', { email, password, role: detectRoleFromEmail(email) })
   }
 
   return (

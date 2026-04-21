@@ -16,7 +16,7 @@ export const featureContent = {
     title: 'Request a Meeting',
     bullets: [
       'Students can send a meeting request to a professor or TA',
-      'The owner can review the request from their dashboard',
+      'The admin can review the request from their dashboard',
       'If accepted, a booking slot is created automatically',
       'The appointment then appears in both dashboards',
     ],
@@ -24,17 +24,17 @@ export const featureContent = {
   'export-calendar': {
     title: 'Export to Calendar',
     bullets: [
-      'Users can export appointments to Google Calendar or Outlook',
+      'Students can export appointments to Google Calendar or Outlook',
       'This helps keep office hours and meetings organized',
       'The feature should be presented as one of the project’s highlighted functions',
-      'Both students and owners can export their appointments',
+      'Both students and admins can export their appointments',
     ],
   },
   'group-scheduling': {
     title: 'Group Scheduling',
     bullets: [
-      'Owners can define possible meeting times',
-      'Invited users can indicate which times work for them',
+      'Admins can define possible meeting times',
+      'Invited students can indicate which times work for them',
       'The system helps identify the best slot',
       'Shared meetings can then be scheduled more efficiently',
     ],

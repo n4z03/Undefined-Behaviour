@@ -5,7 +5,7 @@ import '../styles/DashboardSidebar.css'
 export default function DashboardSidebar({ sections, activeSection, onSelect }) {
   return (
     <aside className="dashboard-sidebar">
-      <nav aria-label="Owner dashboard sections">
+      <nav aria-label="Admin dashboard sections">
         {sections.map((section) => (
           <button
             key={section.id}

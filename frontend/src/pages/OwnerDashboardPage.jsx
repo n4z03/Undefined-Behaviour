@@ -34,7 +34,7 @@ export default function OwnerDashboardPage() {
 
           <section className="owner-dashboard__main">
             <header className="owner-dashboard__header">
-              <h1>Owner Dashboard</h1>
+              <h1>Admin Dashboard</h1>
               <p>Manage booking slots, requests, and office hours.</p>
               <p className="owner-dashboard__helper">All newly created slots remain private until activated.</p>
             </header>

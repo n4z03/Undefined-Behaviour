@@ -44,7 +44,7 @@ export default function Navbar({ variant = 'default' }) {
           <div className="navbar__right">
             {isOwnerNav ? (
               <>
-                <nav className="navbar__nav" aria-label="Owner actions">
+                <nav className="navbar__nav" aria-label="Admin actions">
                   <button type="button" className="navbar__link navbar__link--pill" onClick={() => navigate('/owner-dashboard')}>
                     Dashboard
                   </button>
@@ -55,7 +55,7 @@ export default function Navbar({ variant = 'default' }) {
                     Log Out
                   </button>
                 </nav>
-                <span className="navbar__account-label">Owner Account</span>
+                <span className="navbar__account-label">Admin Account</span>
               </>
             ) : (
               <>
