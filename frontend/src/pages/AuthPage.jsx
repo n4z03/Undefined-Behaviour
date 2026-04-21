@@ -15,7 +15,7 @@ function getModeFromSearch(search) {
   return mode === 'signup' ? 'signup' : 'login'
 }
 
-export default function AuthPage() {
+export default function AuthPage({ onLogin }) {
   const location = useLocation()
   const navigate = useNavigate()
   const [activeMode, setActiveMode] = useState(getModeFromSearch(location.search))
@@ -44,7 +44,7 @@ export default function AuthPage() {
             <div className="auth-card">
               <AuthTabs activeMode={activeMode} onModeChange={changeMode} />
               {activeMode === 'login' ? (
-                <LoginForm onSwitchToSignup={() => changeMode('signup')} />
+                <LoginForm onSwitchToSignup={() => changeMode('signup')} onLogin={onLogin} />
               ) : (
                 <SignupForm onSwitchToLogin={() => changeMode('login')} />
               )}
