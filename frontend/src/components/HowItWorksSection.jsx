@@ -1,3 +1,5 @@
+// code written by Rupneet (ID: 261096653)
+
 import { featureContent } from '../data/featureContent'
 import '../styles/HowItWorksSection.css'
 

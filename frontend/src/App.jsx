@@ -1,3 +1,5 @@
+// code written by Rupneet (ID: 261096653)
+
 import { useState, useEffect } from 'react'
 import Navbar from './components/Navbar'
 import HeroSection from './components/HeroSection'

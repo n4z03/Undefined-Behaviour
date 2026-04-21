@@ -1,3 +1,5 @@
+// code written by Rupneet (ID: 261096653)
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'

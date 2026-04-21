@@ -1,3 +1,5 @@
+// code written by Rupneet (ID: 261096653)
+
 import '../styles/Footer.css'
 
 export default function Footer() {

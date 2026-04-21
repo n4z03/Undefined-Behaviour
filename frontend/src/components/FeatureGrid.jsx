@@ -1,3 +1,5 @@
+// code written by Rupneet (ID: 261096653)
+
 import { featureTiles } from '../data/featureContent'
 import '../styles/FeatureGrid.css'
 
