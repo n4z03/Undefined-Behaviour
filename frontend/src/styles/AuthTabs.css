@@ -1,0 +1,28 @@
+/* code written by Rupneet (ID: 261096653) */
+
+.auth-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.auth-tabs__btn {
+  border: none;
+  background: #8a8a8a;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.45rem 0.95rem;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  transition: background-color 0.2s ease;
+}
+
+.auth-tabs__btn:hover {
+  background: #6f6f6f;
+}
+
+.auth-tabs__btn--active {
+  background: #c40000;
+}

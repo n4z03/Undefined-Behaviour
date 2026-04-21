@@ -1,0 +1,68 @@
+/* code written by Rupneet (ID: 261096653) */
+
+/* Global shell — McBook landing */
+:root {
+  --color-primary: #c40000;
+  --color-primary-dark: #990000;
+  --color-page: #efefef;
+  --color-tile-gray: #8a8a8a;
+  --color-text: #111111;
+  --color-white: #ffffff;
+  --shadow-soft: 0 4px 14px rgba(0, 0, 0, 0.15);
+  --radius: 14px;
+  --font-stack: Arial, Helvetica, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-stack);
+  color: var(--color-text);
+  background: var(--color-page);
+  line-height: 1.45;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main {
+  flex: 1;
+  padding: 1.25rem clamp(1rem, 4vw, 2.5rem) 2.5rem;
+  max-width: 1120px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.landing-top {
+  margin-bottom: 2rem;
+}
+
+/* No accordion: hero flows straight into footer */
+.app-main--no-accordion .landing-top {
+  margin-bottom: 0;
+}
+
+.app-main--no-accordion {
+  padding-bottom: 1.25rem;
+}
+
+.landing-top__inner {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .landing-top__inner {
+    grid-template-columns: 1fr;
+  }
+}
