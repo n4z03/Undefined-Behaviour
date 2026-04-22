@@ -1,58 +1,98 @@
 /* code written by Rupneet (ID: 261096653) */
 
 .request-card {
-  background: #fff;
-  border: 1px solid #d8d8d8;
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
   border-radius: 12px;
-  padding: 0.8rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 1rem 1rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .request-card__top {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.6rem;
 }
 
 .request-card h3 {
   margin: 0;
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111111;
 }
 
 .request-card__status {
-  background: #8a8a8a;
-  color: #fff;
-  padding: 0.2rem 0.55rem;
+  flex-shrink: 0;
+  background: #888888;
+  color: #ffffff;
+  padding: 0.18rem 0.48rem;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .request-card__email,
 .request-card__topic,
 .request-card__time {
-  margin: 0.35rem 0 0;
-  color: #555;
+  margin: 0.32rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: #555555;
+  font-weight: 400;
+}
+
+.request-card__topic {
+  color: #444444;
 }
 
 .request-card__actions {
   display: flex;
-  gap: 0.45rem;
+  gap: 0.4rem;
   flex-wrap: wrap;
-  margin-top: 0.7rem;
+  margin-top: 0.75rem;
 }
 
-.request-card__actions button {
+/* Primary: Accept only */
+.request-card__actions > button:first-of-type {
   border: none;
   border-radius: 10px;
   background: #c40000;
-  color: #fff;
+  color: #ffffff;
   cursor: pointer;
   font: inherit;
-  font-size: 0.83rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  padding: 0.4rem 0.65rem;
+  padding: 0.42rem 0.65rem;
+  transition: background-color 0.18s ease;
 }
 
-.request-card__actions button:hover {
+.request-card__actions > button:first-of-type:hover {
   background: #990000;
+}
+
+/* Secondary: Decline + mailto */
+.request-card__actions > button:nth-of-type(2),
+.request-card__actions > a {
+  border: 1px solid #c4c4c4;
+  border-radius: 10px;
+  background: #efefef;
+  color: #333333;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.6rem;
+  text-decoration: none;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.request-card__actions > button:nth-of-type(2):hover,
+.request-card__actions > a:hover {
+  background: #e4e4e4;
+  border-color: #b0b0b0;
 }

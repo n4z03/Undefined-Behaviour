@@ -1,0 +1,225 @@
+/* code written by Rupneet (ID: 261096653) */
+
+.owner-action-panel {
+  background: #e8e8e8;
+  border: 1px solid #d8d8d8;
+  border-radius: 14px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.08);
+  padding: 1rem 1rem;
+}
+
+.owner-action-panel h2 {
+  margin: 0;
+  font-size: 1.06rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111111;
+}
+
+.owner-action-panel__muted {
+  margin: 0.38rem 0 0.85rem;
+  color: #666666;
+  font-size: 0.85rem;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.owner-action-panel__details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.38rem;
+  margin-bottom: 1.05rem;
+  padding: 0.65rem 0.7rem;
+  background: #ffffff;
+  border: 1px solid #dcdcdc;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.owner-action-panel__detail-row {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 0.35rem 0.65rem;
+  align-items: baseline;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.owner-action-panel__detail-label {
+  color: #666666;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.owner-action-panel__detail-label::after {
+  content: ':';
+}
+
+.owner-action-panel__detail-value {
+  color: #111111;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.owner-action-panel__detail-value--break {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: #444444;
+  line-height: 1.35;
+}
+
+.owner-action-panel__detail-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  padding-top: 0.15rem;
+  margin-top: 0.15rem;
+  border-top: 1px solid #ededed;
+}
+
+.owner-action-panel__detail-block .owner-action-panel__detail-label {
+  display: block;
+}
+
+@media (max-width: 420px) {
+  .owner-action-panel__detail-row {
+    grid-template-columns: 1fr;
+  }
+
+  .owner-action-panel__detail-label::after {
+    content: '';
+  }
+
+  .owner-action-panel__detail-label {
+    margin-bottom: 0.1rem;
+  }
+}
+
+.owner-action-panel__slot-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.owner-action-panel__stack {
+  display: grid;
+  gap: 0.48rem;
+}
+
+.owner-action-panel__btn {
+  border: none;
+  border-radius: 10px;
+  background: #c40000;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  padding: 0.52rem 0.68rem;
+  text-align: left;
+  transition:
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.owner-action-panel__btn:hover {
+  background: #990000;
+}
+
+.owner-action-panel__btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px rgba(196, 0, 0, 0.45);
+}
+
+.owner-action-panel__btn--ghost {
+  background: #f4f4f4;
+  color: #333333;
+  border: 1px solid #c9c9c9;
+  font-weight: 600;
+}
+
+.owner-action-panel__btn--ghost:hover {
+  background: #ececec;
+}
+
+.owner-action-panel__btn--secondary {
+  background: #ebebeb;
+  color: #2a2a2a;
+  border: 1px solid #c8c8c8;
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-align: center;
+  padding: 0.45rem 0.6rem;
+}
+
+.owner-action-panel__btn--secondary:hover {
+  background: #e0e0e0;
+  border-color: #bcbcbc;
+}
+
+.owner-action-panel__secondary-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.owner-action-panel__text-link {
+  align-self: flex-start;
+  margin-top: 0.05rem;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666666;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.18s ease;
+}
+
+.owner-action-panel__text-link:hover {
+  color: #990000;
+}
+
+.owner-action-panel__form {
+  display: grid;
+  gap: 0.48rem;
+}
+
+.owner-action-panel__form label {
+  display: grid;
+  gap: 0.22rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #333333;
+}
+
+.owner-action-panel__form input,
+.owner-action-panel__form textarea,
+.owner-action-panel__form select {
+  border: 1px solid #cfcfcf;
+  border-radius: 9px;
+  font: inherit;
+  font-weight: 400;
+  padding: 0.48rem 0.52rem;
+  background: #ffffff;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.owner-action-panel__form input:focus,
+.owner-action-panel__form textarea:focus,
+.owner-action-panel__form select:focus {
+  outline: none;
+  border-color: #c40000;
+  box-shadow: 0 0 0 2px rgba(196, 0, 0, 0.12);
+}
+
+.owner-action-panel__row {
+  margin-top: 0.65rem;
+  display: grid;
+  gap: 0.48rem;
+}

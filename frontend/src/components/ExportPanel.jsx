@@ -2,11 +2,10 @@
 
 import '../styles/ExportPanel.css'
 
-export default function ExportPanel() {
+export default function ExportPanel({ compact = false, showHeading = true }) {
   return (
-    <section className="export-panel">
-      <h3>Export to Calendar</h3>
-      <p>Export your appointments to Google Calendar or Outlook.</p>
+    <section className={`export-panel${compact ? ' export-panel--compact' : ''}`}>
+      {showHeading ? <h3>Export to Calendar</h3> : null}
       <div className="export-panel__actions">
         <button type="button">Export to Google Calendar</button>
         <button type="button">Export to Outlook</button>

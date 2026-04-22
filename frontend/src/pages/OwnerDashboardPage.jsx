@@ -1,98 +1,128 @@
 // code written by Rupneet (ID: 261096653)
 
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import DashboardSidebar from '../components/DashboardSidebar'
-import SummaryCards from '../components/SummaryCards'
-import SlotCard from '../components/SlotCard'
+import WeeklyCalendar from '../components/WeeklyCalendar'
+import OwnerActionPanel from '../components/OwnerActionPanel'
 import RequestCard from '../components/RequestCard'
-import RecurringCard from '../components/RecurringCard'
-import GroupMeetingCard from '../components/GroupMeetingCard'
 import ExportPanel from '../components/ExportPanel'
-import QuickActions from '../components/QuickActions'
-import CreateSlotForm from '../components/CreateSlotForm'
+import RecentRequestsPreview from '../components/RecentRequestsPreview'
 import {
   sidebarSections,
-  summaryCards,
-  slots,
+  ownerFullName,
+  weekDays,
+  timeRows,
+  calendarSlots,
   meetingRequests,
-  groupMeetings,
-  recurringHours,
 } from '../data/ownerDashboardData'
+
+function ownerFirstName(fullName) {
+  const part = fullName.trim().split(/\s+/)[0]
+  return part || 'there'
+}
 import '../styles/OwnerDashboardPage.css'
 
 export default function OwnerDashboardPage() {
+  const navigate = useNavigate()
   const [activeSection, setActiveSection] = useState('overview')
+  const [selectedSlot, setSelectedSlot] = useState(null)
+  const [selectedCell, setSelectedCell] = useState(null)
+  const [panelMode, setPanelMode] = useState('default')
+
+  function handleSidebarSelect(sectionId) {
+    if (sectionId === 'logout') {
+      navigate('/auth?mode=login')
+      return
+    }
+    setActiveSection(sectionId)
+    setSelectedSlot(null)
+    setSelectedCell(null)
+    setPanelMode('default')
+  }
+
+  function handleSlotSelect(slot) {
+    setSelectedSlot(slot)
+    setSelectedCell(null)
+    setPanelMode('slotDetails')
+  }
+
+  function handleEmptyCellSelect(cell) {
+    setSelectedCell(cell)
+    setSelectedSlot(null)
+    setPanelMode('create')
+  }
+
+  function handlePanelModeChange(mode) {
+    if (mode === 'default') {
+      setSelectedSlot(null)
+      if (!selectedCell) setPanelMode('default')
+      else {
+        setSelectedCell(null)
+        setPanelMode('default')
+      }
+      return
+    }
+    setPanelMode(mode)
+  }
 
   return (
     <div className="app">
       <Navbar variant="owner" />
       <main className="app-main owner-dashboard">
         <div className="owner-dashboard__layout">
-          <DashboardSidebar sections={sidebarSections} activeSection={activeSection} onSelect={setActiveSection} />
+          <DashboardSidebar sections={sidebarSections} activeSection={activeSection} onSelect={handleSidebarSelect} />
 
           <section className="owner-dashboard__main">
             <header className="owner-dashboard__header">
-              <h1>Admin Dashboard</h1>
-              <p>Manage booking slots, requests, and office hours.</p>
-              <p className="owner-dashboard__helper">All newly created slots remain private until activated.</p>
+              <h1>Hi, {ownerFirstName(ownerFullName)}</h1>
+              <p>Manage office hours, booking slots, and meeting requests.</p>
+              <p className="owner-dashboard__helper">New slots remain private until activated.</p>
             </header>
 
-            <SummaryCards cards={summaryCards} />
-
-            {activeSection === 'overview' ? (
-              <div className="owner-section owner-section--grid">
-                <div className="owner-panel">
-                  <h2>My Slots</h2>
-                  <div className="owner-card-list">{slots.slice(0, 2).map((slot) => <SlotCard key={slot.id} slot={slot} />)}</div>
+            {(activeSection === 'overview' || activeSection === 'calendar') ? (
+              <>
+                <div className="owner-dashboard__workspace">
+                  <WeeklyCalendar
+                    days={weekDays}
+                    timeRows={timeRows}
+                    slots={calendarSlots}
+                    selectedSlotId={selectedSlot ? selectedSlot.id : null}
+                    onSelectSlot={handleSlotSelect}
+                    onSelectEmptyCell={handleEmptyCellSelect}
+                  />
+                  <div className="owner-dashboard__right-stack">
+                    <OwnerActionPanel
+                      panelMode={panelMode}
+                      selectedSlot={selectedSlot}
+                      selectedCell={selectedCell}
+                      onModeChange={handlePanelModeChange}
+                    />
+                    {activeSection === 'overview' ? (
+                      <RecentRequestsPreview requests={meetingRequests.slice(0, 2)} onViewAll={() => handleSidebarSelect('requests')} />
+                    ) : null}
+                  </div>
                 </div>
-                <div className="owner-panel">
-                  <h2>Meeting Requests</h2>
-                  <div className="owner-card-list">{meetingRequests.map((request) => <RequestCard key={request.id} request={request} />)}</div>
-                </div>
-                <QuickActions onJump={setActiveSection} />
-                <ExportPanel />
-              </div>
+              </>
             ) : null}
 
-            {activeSection === 'my-slots' ? (
-              <section className="owner-section">
-                <h2>My Slots</h2>
-                <div className="owner-card-list">{slots.map((slot) => <SlotCard key={slot.id} slot={slot} />)}</div>
-              </section>
-            ) : null}
-
-            {activeSection === 'create-slot' ? (
-              <section className="owner-section">
-                <CreateSlotForm />
-              </section>
-            ) : null}
-
-            {activeSection === 'meeting-requests' ? (
+            {activeSection === 'requests' ? (
               <section className="owner-section">
                 <h2>Meeting Requests</h2>
-                <div className="owner-card-list">{meetingRequests.map((request) => <RequestCard key={request.id} request={request} />)}</div>
+                <div className="owner-request-list">
+                  {meetingRequests.map((request) => (
+                    <RequestCard key={request.id} request={request} />
+                  ))}
+                </div>
               </section>
             ) : null}
 
-            {activeSection === 'group-scheduling' ? (
+            {activeSection === 'export' ? (
               <section className="owner-section">
-                <h2>Group Scheduling</h2>
-                <div className="owner-card-list">{groupMeetings.map((meeting) => <GroupMeetingCard key={meeting.id} meeting={meeting} />)}</div>
-              </section>
-            ) : null}
-
-            {activeSection === 'recurring-hours' ? (
-              <section className="owner-section">
-                <h2>Recurring Office Hours</h2>
-                <div className="owner-card-list">{recurringHours.map((item) => <RecurringCard key={item.id} item={item} />)}</div>
-              </section>
-            ) : null}
-
-            {activeSection === 'export-calendar' ? (
-              <section className="owner-section">
-                <ExportPanel />
+                <h2>Export to Calendar</h2>
+                <ExportPanel showHeading={false} />
               </section>
             ) : null}
           </section>

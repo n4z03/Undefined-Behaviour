@@ -10,12 +10,12 @@ export default function RequestCard({ request }) {
         <span className="request-card__status">{request.status}</span>
       </div>
       <p className="request-card__email">{request.email}</p>
-      <p className="request-card__topic">Request: "{request.topic}"</p>
+      <p className="request-card__topic">Message: "{request.topic}"</p>
       <p className="request-card__time">{request.requestedAt}</p>
       <div className="request-card__actions">
         <button type="button">Accept</button>
         <button type="button">Decline</button>
-        <button type="button">Message Student</button>
+        <a href={`mailto:${request.email}`}>Message Student</a>
       </div>
     </article>
   )

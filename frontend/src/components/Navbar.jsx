@@ -45,12 +45,6 @@ export default function Navbar({ variant = 'default' }) {
             {isOwnerNav ? (
               <>
                 <nav className="navbar__nav" aria-label="Admin actions">
-                  <button type="button" className="navbar__link navbar__link--pill" onClick={() => navigate('/owner-dashboard')}>
-                    Dashboard
-                  </button>
-                  <button type="button" className="navbar__link navbar__link--pill" onClick={() => navigate('/')}>
-                    Browse Slots
-                  </button>
                   <button type="button" className="navbar__link navbar__link--pill" onClick={() => navigate('/auth?mode=login')}>
                     Log Out
                   </button>

@@ -1,0 +1,119 @@
+/* code written by Rupneet (ID: 261096653) */
+
+/* Fit calendar to available space with uniform tracks */
+.weekly-calendar {
+  background: #f7f7f7;
+  border: 1px solid #e4e4e4;
+  border-radius: 14px;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.07);
+  overflow: hidden;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Equal day columns and fixed time gutter */
+.weekly-calendar__grid {
+  display: grid;
+  grid-template-columns: 72px repeat(5, minmax(0, 1fr));
+  width: 100%;
+  /* Uniform 30-minute slot height; rowSpan spans two tracks */
+  grid-auto-rows: 64px;
+}
+
+.weekly-calendar__time-head,
+.weekly-calendar__day-head {
+  background: #ececec;
+  border-bottom: 1px solid #e2e2e2;
+  border-right: 1px solid #e2e2e2;
+  padding: 0.58rem 0.4rem;
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+  text-align: center;
+  color: #222222;
+}
+
+.weekly-calendar__time-head {
+  color: #666666;
+  font-weight: 600;
+}
+
+.weekly-calendar__day-head {
+  border-right: 1px solid #e2e2e2;
+}
+
+.weekly-calendar__day-head--last {
+  border-right: none;
+}
+
+.weekly-calendar__time-label {
+  border-right: 1px solid #e2e2e2;
+  border-bottom: 1px solid #e2e2e2;
+  color: #666666;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: center;
+  padding: 0.4rem 0.22rem 0.35rem;
+  background: #f3f3f3;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 0;
+}
+
+.weekly-calendar__cell {
+  display: flex;
+  align-items: flex-start;
+  border-right: 1px solid #e2e2e2;
+  border-bottom: 1px solid #e2e2e2;
+  padding: 0.3rem 0.28rem;
+  background: #fdfdfd;
+  min-height: 0;
+  overflow: hidden;
+  transition: background-color 0.18s ease;
+}
+
+.weekly-calendar__cell--span .calendar-block {
+  flex: 1;
+  align-self: stretch;
+  min-height: 100%;
+}
+
+.weekly-calendar__cell--last-col {
+  border-right: none;
+}
+
+.weekly-calendar__cell--selected {
+  background: #f9f4f4;
+}
+
+.weekly-calendar__cell:has(.weekly-calendar__empty-button):hover {
+  background: #f5f5f5;
+}
+
+.weekly-calendar__empty-button {
+  flex: 1;
+  width: 100%;
+  align-self: stretch;
+  min-height: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #cccccc;
+  opacity: 0.65;
+  font-size: 0.95rem;
+  font-weight: 300;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.weekly-calendar__empty-button:hover {
+  opacity: 1;
+  color: #a80000;
+  background: rgba(196, 0, 0, 0.055);
+}

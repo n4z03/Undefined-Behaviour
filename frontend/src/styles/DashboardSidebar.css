@@ -1,10 +1,11 @@
 /* code written by Rupneet (ID: 261096653) */
 
 .dashboard-sidebar {
-  background: #e4e4e4;
+  background: #e8e8e8;
+  border: 1px solid #dcdcdc;
   border-radius: 14px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-  padding: 0.7rem;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+  padding: 0.78rem;
 }
 
 .dashboard-sidebar nav {
@@ -18,18 +19,22 @@
   background: transparent;
   text-align: left;
   font: inherit;
-  font-weight: 700;
-  color: #111;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #222222;
   cursor: pointer;
-  padding: 0.55rem 0.65rem;
-  transition: background-color 0.2s ease;
+  padding: 0.55rem 0.68rem;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
 }
 
 .dashboard-sidebar__item:hover {
-  background: #d6d6d6;
+  background: rgba(0, 0, 0, 0.06);
 }
 
 .dashboard-sidebar__item--active {
   background: #c40000;
-  color: #fff;
+  color: #ffffff;
+  font-weight: 700;
 }
