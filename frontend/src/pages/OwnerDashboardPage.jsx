@@ -182,11 +182,13 @@ export default function OwnerDashboardPage() {
                         <p className="owner-slot-list__empty">No slots yet. Create one from the actions panel.</p>
                       ) : (
                         slots.map((slot) => (
-                          <article
+                          <button
                             key={slot.id}
+                            type="button"
                             className={`owner-slot-list__item ${
                               slot.visibility === 'Private' ? 'owner-slot-list__item--private' : 'owner-slot-list__item--public'
                             }`}
+                            onClick={() => handleSlotSelect(slot)}
                           >
                             <div className="owner-slot-list__top">
                               <h3>{slot.title}</h3>
@@ -196,7 +198,7 @@ export default function OwnerDashboardPage() {
                             <p className="owner-slot-list__meta">
                               {slot.time} - {slot.endTime}
                             </p>
-                          </article>
+                          </button>
                         ))
                       )}
                     </div>
