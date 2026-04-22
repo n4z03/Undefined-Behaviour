@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { detectRoleFromEmail, isAllowedMcGillEmail } from '../utils/authHelpers'
-import { detectRoleFromEmail, isAllowedMcGillEmail } from '../utils/authHelpers'
 import '../styles/LoginForm.css'
 
 export default function LoginForm({ onSwitchToSignup }) {
