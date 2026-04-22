@@ -32,7 +32,37 @@ function slotStatusLabel(slot) {
   return 'Available'
 }
 
-function SlotDetailsPanel({ slot, onModeChange }) {
+function SlotDetailsPanel({ slot, onModeChange, onSlotCreated }) {
+  async function handleToggleVisibility() {
+    const newStatus = slot.visibility === 'Private' ? 'active' : 'private'
+    try {
+      const response = await fetch(`http://localhost:3000/api/ownerSlots/${slot.backendId}/visibility`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: newStatus })
+      })
+      if (!response.ok) throw new Error('Failed to update visibility')
+      if (onSlotCreated) await onSlotCreated()
+      onModeChange('default')
+    } catch (err) {
+      console.error('Error toggling visibility', err)
+    }
+  }
+
+  async function handleDelete() {
+    try {
+      const response = await fetch(`http://localhost:3000/api/ownerSlots/${slot.backendId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      if (!response.ok) throw new Error('Failed to delete slot')
+      if (onSlotCreated) await onSlotCreated()
+      onModeChange('default')
+    } catch (err) {
+      console.error('Error deleting slot', err)
+    }
+  }
   return (
     <>
       <h2>{slot.title}</h2>
@@ -72,9 +102,9 @@ function SlotDetailsPanel({ slot, onModeChange }) {
       </div>
 
       <div className="owner-action-panel__slot-actions">
-        <ActionButton>{slot.visibility === 'Private' ? 'Activate Slot' : 'Deactivate Slot'}</ActionButton>
+        <ActionButton onClick={handleToggleVisibility}>{slot.visibility === 'Private' ? 'Activate Slot' : 'Deactivate Slot'}</ActionButton>
         <div className="owner-action-panel__secondary-row">
-          <ActionButton kind="secondary">Delete</ActionButton>
+          <ActionButton kind="secondary" onClick={handleDelete}>Delete</ActionButton>
           <ActionButton kind="secondary">Copy Invite Link</ActionButton>
           {slot.bookedEmail ? (
             <ActionButton kind="secondary" onClick={() => window.open(`mailto:${slot.bookedEmail}`, '_blank')}>
@@ -243,7 +273,7 @@ function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
 export default function OwnerActionPanel({ panelMode, selectedSlot, selectedCell, onModeChange, onSlotCreated }) {
   return (
     <aside className="owner-action-panel">
-      {panelMode === 'slotDetails' && selectedSlot ? <SlotDetailsPanel slot={selectedSlot} onModeChange={onModeChange} /> : null}
+      {panelMode === 'slotDetails' && selectedSlot ? <SlotDetailsPanel slot={selectedSlot} onModeChange={onModeChange} onSlotCreated={onSlotCreated} /> : null}
       {panelMode === 'create' ? <CreateSlotForm selectedCell={selectedCell} onModeChange={onModeChange} onSlotCreated={onSlotCreated} /> : null}
       {panelMode === 'recurring' ? <RecurringForm onModeChange={onModeChange} /> : null}
       {panelMode === 'group' ? <GroupForm onModeChange={onModeChange} /> : null}
