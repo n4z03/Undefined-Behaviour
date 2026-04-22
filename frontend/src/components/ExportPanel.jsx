@@ -14,8 +14,8 @@ export default function ExportPanel({ compact = false, showHeading = true, isOwn
     setExporting(true)
  
     const endpoint = isOwner
-      ? 'http://localhost:3000/api/calendar/export/owner'
-      : 'http://localhost:3000/api/calendar/export'
+      ? '/api/calendar/export/owner'
+      : '/api/calendar/export'
  
     try {
       const response = await fetch(endpoint, {

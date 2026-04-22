@@ -19,6 +19,7 @@ export default function AuthPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const [activeMode, setActiveMode] = useState(getModeFromSearch(location.search))
+  const redirectPath = new URLSearchParams(location.search).get('redirect') // added by sophia
 
   useEffect(() => {
     setActiveMode(getModeFromSearch(location.search))
@@ -42,7 +43,17 @@ export default function AuthPage() {
             <div className="auth-card">
               <AuthTabs activeMode={activeMode} onModeChange={changeMode} />
               {activeMode === 'login' ? (
-                <LoginForm onSwitchToSignup={() => changeMode('signup')} />
+                <LoginForm // added by sophia
+                  onSwitchToSignup={() => changeMode('signup')} 
+                  onLogin={(user) => {
+                    if (redirectPath) {
+                      navigate(redirectPath)
+                    } else if (user.role === 'owner') {
+                      navigate('/owner-dashboard')
+                    } else {
+                      navigate('/user-dashboard')
+                    }
+                  }}/>
               ) : (
                 <SignupForm onSwitchToLogin={() => changeMode('login')} />
               )}

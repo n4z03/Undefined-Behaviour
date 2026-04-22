@@ -40,7 +40,7 @@ export default function OwnerDashboardPage() {
     setLoadingSlots(true)
     setLoadError('')
     try {
-      const response = await fetch('http://localhost:3000/api/ownerSlots', {
+      const response = await fetch('/api/ownerSlots', {
         credentials: 'include',
       })
 
@@ -67,7 +67,7 @@ export default function OwnerDashboardPage() {
   useEffect(() => {
     async function fetchOwnerName() {
       try {
-        const response = await fetch('http://localhost:3000/api/auth/me', {
+        const response = await fetch('/api/auth/me', {
           credentials: 'include',
         })
 
@@ -83,8 +83,12 @@ export default function OwnerDashboardPage() {
     fetchOwnerName()
   }, [])
 
-  function handleSidebarSelect(sectionId) {
+  async function handleSidebarSelect(sectionId) {
     if (sectionId === 'logout') {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      })
       navigate('/auth?mode=login')
       return
     }
@@ -126,6 +130,14 @@ export default function OwnerDashboardPage() {
     await fetchOwnerSlots()
     setActionMessage('Slot created successfully and synced with calendar.')
     setTimeout(() => setActionMessage(''), 3500)
+  }
+
+  async function handleLogout() {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include'
+    })
+    navigate('/auth?mode=login')
   }
 
   return (

@@ -1,4 +1,5 @@
 // code written by Rupneet (ID: 261096653)
+// logout functionality added by Sophia
 
 import { useLocation, useNavigate } from 'react-router-dom'
 import '../styles/Navbar.css'
@@ -46,7 +47,9 @@ export default function Navbar({ variant = 'default' }) {
             {isOwnerNav ? (
               <>
                 <nav className="navbar__nav" aria-label="Admin actions">
-                  <button type="button" className="navbar__link navbar__link--pill" onClick={() => navigate('/auth?mode=login')}>
+                  <button type="button" className="navbar__link navbar__link--pill" onClick={async () => {
+                  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+                  navigate('/auth?mode=login')}}>
                     Log Out
                   </button>
                 </nav>
@@ -55,7 +58,9 @@ export default function Navbar({ variant = 'default' }) {
             ) : isUserNav ? (
               <>
                 <nav className="navbar__nav" aria-label="Student actions">
-                  <button type="button" className="navbar__link navbar__link--pill" onClick={() => navigate('/auth?mode=login')}>
+                  <button type="button" className="navbar__link navbar__link--pill" onClick={async () => {
+                    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+                    navigate('/auth?mode=login')}}>
                     Log Out
                   </button>
                 </nav>

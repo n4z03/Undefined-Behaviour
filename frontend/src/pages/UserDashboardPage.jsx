@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import DashboardSidebar from '../components/DashboardSidebar'
@@ -19,6 +18,7 @@ import {
 } from '../data/userDashboardData'
 import { timeRows, weekDays } from '../data/ownerDashboardData'
 import '../styles/UserDashboardPage.css'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 function firstNameFromName(name) {
   const first = String(name || '').trim().split(/\s+/)[0]
@@ -27,6 +27,7 @@ function firstNameFromName(name) {
 
 export default function UserDashboardPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [activeSection, setActiveSection] = useState('overview')
   const [userName, setUserName] = useState('User')
   const [selectedOwnerId, setSelectedOwnerId] = useState(owners[0]?.id || '')
@@ -35,11 +36,13 @@ export default function UserDashboardPage() {
   const [requests, setRequests] = useState(requestSeed)
   const [selectedCalendarAppointmentId, setSelectedCalendarAppointmentId] = useState(null)
   const [selectedFreeSlotCell, setSelectedFreeSlotCell] = useState(null)
+  const [inviteSlots, setInviteSlots] = useState([])
+  const [showInviteModal, setShowInviteModal] = useState(false)
 
   useEffect(() => {
     async function fetchMe() {
       try {
-        const response = await fetch('http://localhost:3000/api/auth/me', {
+        const response = await fetch('/api/auth/me', {
           credentials: 'include',
         })
         if (!response.ok) return
@@ -56,12 +59,38 @@ export default function UserDashboardPage() {
         setUserName('User')
       }
     }
-
     fetchMe()
-  }, [navigate])
+    }, [navigate])
 
-  function handleSidebarSelect(sectionId) {
+  useEffect (() => {
+    const inviteToken = searchParams.get('invite')
+    if (!inviteToken) return 
+    async function fetchInviteSlots() {
+      try {
+        const response = await fetch(`/api/invites/${inviteToken}`, {
+          credentials: 'include'
+        })
+        if (response.status === 401) {
+          navigate(`/auth?mode=login&redirect=/user-dashboard?invite=${inviteToken}`)
+          return
+        }
+        if (!response.ok) return
+        const data = await response.json()
+        setInviteSlots(data.slots || [])
+        setShowInviteModal(true)
+      } catch (err) {
+        console.error('Error fetching invite slots', err)
+      }
+    }
+    fetchInviteSlots()
+  }, [searchParams])
+
+  async function handleSidebarSelect(sectionId) {
     if (sectionId === 'logout') {
+      await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include'
+    })
       navigate('/auth?mode=login')
       return
     }
@@ -324,6 +353,37 @@ export default function UserDashboardPage() {
                 </div>
               </section>
             ) : null}
+
+{showInviteModal && (
+  <div style={{
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    background: 'rgba(0,0,0,0.5)', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', zIndex: 1000
+  }}>
+    <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', maxWidth: '500px', width: '90%' }}>
+      <h2>Available Slots</h2>
+      {inviteSlots.length === 0 ? (
+        <p>No active slots available.</p>
+      ) : (
+        inviteSlots.map(slot => (
+          <div key={slot.id} style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
+            <h3>{slot.title}</h3>
+            <p>
+            {new Date(slot.slot_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} — {slot.start_time} to {slot.end_time}
+            </p>
+
+            <button type="button" 
+              onClick={() => alert(`Slot "${slot.title}" reserved!`)}
+              style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', cursor: 'pointer' }}>
+              Reserve Slot
+            </button>
+          </div>
+        ))
+      )}
+      <button onClick={() => setShowInviteModal(false)}>Close</button>
+    </div>
+  </div>
+)}
 
             {activeSection === 'requests' ? (
               <div className="user-dashboard__workspace">

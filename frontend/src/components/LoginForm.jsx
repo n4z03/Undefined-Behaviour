@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { detectRoleFromEmail, isAllowedMcGillEmail } from '../utils/authHelpers'
 import '../styles/LoginForm.css'
 
-export default function LoginForm({ onSwitchToSignup }) {
+export default function LoginForm({ onSwitchToSignup, onLogin }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -21,7 +21,7 @@ export default function LoginForm({ onSwitchToSignup }) {
     // console.log('Login submit', { email, password, role: detectRoleFromEmail(email) })
   const role = detectRoleFromEmail(email)
 try {
-  const response = await fetch('http://localhost:3000/api/auth/login', {
+  const response = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -35,7 +35,7 @@ try {
   if (data.message === 'Logged in') {
     const serverRole = data?.user?.role
     const detectedRole = serverRole || role
-    window.location.href = detectedRole === 'owner' ? '/owner-dashboard' : '/user-dashboard'
+    if (onLogin) onLogin(data.user)
   }
 } catch (err) {
   setErrors({ email: 'Login failed. Please check backend server and try again.' })

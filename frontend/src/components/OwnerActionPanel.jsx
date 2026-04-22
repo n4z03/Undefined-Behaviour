@@ -33,10 +33,13 @@ function slotStatusLabel(slot) {
 }
 
 function SlotDetailsPanel({ slot, onModeChange, onSlotCreated }) {
+  const [inviteUrl, setInviteUrl] = useState('');
+  const [copyMessage, setCopyMessage] = useState('');
+
   async function handleToggleVisibility() {
     const newStatus = slot.visibility === 'Private' ? 'active' : 'private'
     try {
-      const response = await fetch(`http://localhost:3000/api/ownerSlots/${slot.backendId}/visibility`, {
+      const response = await fetch(`/api/ownerSlots/${slot.backendId}/visibility`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -52,7 +55,7 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated }) {
 
   async function handleDelete() {
     try {
-      const response = await fetch(`http://localhost:3000/api/ownerSlots/${slot.backendId}`, {
+      const response = await fetch(`/api/ownerSlots/${slot.backendId}`, {
         method: 'DELETE',
         credentials: 'include',
       })
@@ -63,6 +66,27 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated }) {
       console.error('Error deleting slot', err)
     }
   }
+
+  // added by Sophia
+  async function handleCopyInviteLink() {
+    try {
+      const response = await fetch('/api/invites/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ label: slot.title })
+      })
+      const data = await response.json()
+      setInviteUrl(data.invite_url)
+      await navigator.clipboard.writeText(data.invite_url)
+      setCopyMessage('Invite link copied to clipboard!')
+      setTimeout(() => setCopyMessage(''), 3000)
+    } catch (err) {
+      console.error('Error generating invite link', err)
+      setCopyMessage('Failed to generate invite link.')
+    }
+  }
+  
   return (
     <>
       <h2>{slot.title}</h2>
@@ -97,7 +121,7 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated }) {
         ) : null}
         <div className="owner-action-panel__detail-block">
           <span className="owner-action-panel__detail-label">Invite link</span>
-          <span className="owner-action-panel__detail-value owner-action-panel__detail-value--break">{slot.inviteLink}</span>
+          <span className="owner-action-panel__detail-value owner-action-panel__detail-value--break">{inviteUrl || slot.inviteLink}</span>
         </div>
       </div>
 
@@ -105,7 +129,7 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated }) {
         <ActionButton onClick={handleToggleVisibility}>{slot.visibility === 'Private' ? 'Activate Slot' : 'Deactivate Slot'}</ActionButton>
         <div className="owner-action-panel__secondary-row">
           <ActionButton kind="secondary" onClick={handleDelete}>Delete</ActionButton>
-          <ActionButton kind="secondary">Copy Invite Link</ActionButton>
+          <ActionButton kind="secondary" onClick={handleCopyInviteLink}>{copyMessage || 'Copy Invite Link'}</ActionButton>
           {slot.bookedEmail ? (
             <ActionButton kind="secondary" onClick={() => window.open(`mailto:${slot.bookedEmail}`, '_blank')}>
               Email Student
@@ -206,7 +230,7 @@ function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
         selectedCell,
       })
 
-      const response = await fetch('http://localhost:3000/api/ownerSlots', {
+      const response = await fetch('/api/ownerSlots', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
