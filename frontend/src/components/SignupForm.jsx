@@ -14,7 +14,7 @@ export default function SignupForm({ onSwitchToLogin }) {
 
   const detectedRole = useMemo(() => detectRoleFromEmail(email), [email])
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     const nextErrors = {}
     if (!fullName.trim()) nextErrors.fullName = 'Full name is required.'
@@ -24,7 +24,22 @@ export default function SignupForm({ onSwitchToLogin }) {
     if (confirmPassword !== password) nextErrors.confirmPassword = 'Passwords must match.'
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
-    console.log('Signup submit', { fullName, email, password, role: detectedRole })
+    try {
+      const response = await fetch('http://localhost:3000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: fullName, email, password, role: detectedRole })
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        setErrors({ submit: data.error || 'Registration failed.' })
+        return
+      }
+      onSwitchToLogin()
+    } catch (err) {
+      setErrors({ submit: 'Unable to reach server. Please try again.' })
+    }
   }
 
   return (
@@ -54,7 +69,8 @@ export default function SignupForm({ onSwitchToLogin }) {
       <label className="auth-form__label" htmlFor="signup-confirm">Confirm Password</label>
       <input id="signup-confirm" className="auth-form__input" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
       {errors.confirmPassword ? <p className="auth-form__error">{errors.confirmPassword}</p> : null}
-
+      
+      {errors.submit ? <p className="auth-form__error">{errors.submit}</p> : null}
       <button type="submit" className="auth-form__submit">Create Account</button>
       <p className="auth-form__switch">Already have an account? <button type="button" onClick={onSwitchToLogin}>Log In</button></p>
     </form>
