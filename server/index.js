@@ -3,6 +3,7 @@ require('dotenv').config()
 
 const express = require('express')
 const cors = require('cors')
+const session = require('express-session')
 
 const authenticationRoutes = require('./routes/auth');
 const bookingRoutes = require('./routes/bookings');
@@ -12,8 +13,16 @@ const ownerSlotsRoutes = require('./routes/ownerSlots'); // added by sophia
 const app = express()
 const port = process.env.PORT || 3000
 
-app.use(cors())
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}))
 app.use(express.json())
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev-secret',
+  resave: false,
+  saveUninitialized: false
+})) // added by sophia
 app.use('/api/auth', authenticationRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/owners', ownerRoutes);
