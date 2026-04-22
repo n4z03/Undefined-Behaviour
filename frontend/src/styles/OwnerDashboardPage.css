@@ -113,6 +113,71 @@
   gap: 0.85rem;
 }
 
+.owner-slot-list {
+  margin-top: 0.55rem;
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
+  border-radius: 14px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.07);
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.owner-slot-list__empty {
+  margin: 0;
+  color: #666666;
+  font-size: 0.9rem;
+}
+
+.owner-slot-list__item {
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+}
+
+.owner-slot-list__item--private {
+  background: #ededed;
+  border-color: #d4d4d4;
+}
+
+.owner-slot-list__item--public {
+  background: #fde8e8;
+  border-color: #ebb9b9;
+}
+
+.owner-slot-list__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.owner-slot-list__top h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #111111;
+}
+
+.owner-slot-list__status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: #777777;
+  border-radius: 999px;
+  padding: 0.16rem 0.45rem;
+}
+
+.owner-slot-list__item--public .owner-slot-list__status {
+  background: #c40000;
+}
+
+.owner-slot-list__meta {
+  margin: 0.3rem 0 0;
+  color: #555555;
+  font-size: 0.84rem;
+}
+
 .recent-requests-preview {
   margin-top: 0;
   background: #fcfcfc;

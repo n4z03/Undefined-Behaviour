@@ -81,11 +81,27 @@ if (!match) {
   });
 });
 
-router.get('/me', (req, res) => {
-    res.json({
-      message: 'No authentication state yet',
-      user: null
-    });
+router.get('/me', async (req, res) => {
+  try {
+    if (!req.session || !req.session.user) {
+      return res.status(401).json({ error: 'Not logged in', user: null });
+    }
+
+    const [rows] = await pool.query(
+      `SELECT id, name, email, role FROM users WHERE id = ?`,
+      [req.session.user.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'User not found', user: null });
+    }
+
+    const user = rows[0];
+    return res.json({ user });
+  } catch (err) {
+    console.error('Error fetching current user:', err);
+    return res.status(500).json({ error: 'Failed to fetch current user', user: null });
+  }
 });
 
 module.exports = router;
