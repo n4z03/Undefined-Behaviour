@@ -2,10 +2,10 @@
 
 import '../styles/DashboardSidebar.css'
 
-export default function DashboardSidebar({ sections, activeSection, onSelect }) {
+export default function DashboardSidebar({ sections, activeSection, onSelect, ariaLabel = 'Dashboard sections' }) {
   return (
     <aside className="dashboard-sidebar">
-      <nav aria-label="Admin dashboard sections">
+      <nav aria-label={ariaLabel}>
         {sections.map((section) => (
           <button
             key={section.id}

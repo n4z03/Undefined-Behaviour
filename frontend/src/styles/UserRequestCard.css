@@ -1,0 +1,55 @@
+.user-request-card {
+  background: #ffffff;
+  border: 1px solid #dfdfdf;
+  border-radius: 12px;
+  padding: 0.75rem 0.8rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.user-request-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-request-card__top h3 {
+  margin: 0;
+  color: #111111;
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.user-request-card__status {
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 0.14rem 0.45rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  font-weight: 700;
+}
+
+.user-request-card__status--pending {
+  background: #8a8a8a;
+}
+
+.user-request-card__status--accepted {
+  background: #1f7a36;
+}
+
+.user-request-card__status--declined {
+  background: #990000;
+}
+
+.user-request-card p {
+  margin: 0.32rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: #555555;
+  font-weight: 400;
+}
+
+.user-request-card__time {
+  font-size: 0.82rem;
+}

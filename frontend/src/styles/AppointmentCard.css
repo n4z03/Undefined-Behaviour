@@ -1,0 +1,73 @@
+.appointment-card {
+  background: #ffffff;
+  border: 1px solid #dfdfdf;
+  border-radius: 12px;
+  padding: 0.75rem 0.8rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.appointment-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.appointment-card__top h3 {
+  margin: 0;
+  color: #111111;
+  font-size: 0.98rem;
+}
+
+.appointment-card__top span {
+  background: #777777;
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 0.14rem 0.45rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  font-weight: 700;
+}
+
+.appointment-card p {
+  margin: 0.32rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: #555555;
+  font-weight: 400;
+}
+
+.appointment-card__owner {
+  color: #111111;
+  font-weight: 700;
+}
+
+.appointment-card__recurring {
+  font-size: 0.82rem;
+}
+
+.appointment-card__actions {
+  margin-top: 0.55rem;
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.appointment-card__actions button,
+.appointment-card__actions a {
+  border: none;
+  border-radius: 10px;
+  background: #c40000;
+  color: #ffffff;
+  cursor: pointer;
+  text-decoration: none;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.4rem 0.62rem;
+}
+
+.appointment-card__actions button:hover,
+.appointment-card__actions a:hover {
+  background: #990000;
+}

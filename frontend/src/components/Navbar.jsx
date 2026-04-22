@@ -15,7 +15,8 @@ export default function Navbar({ variant = 'default' }) {
   const navigate = useNavigate()
   const isHome = location.pathname === '/'
   const isOwnerNav = variant === 'owner'
-  const isAuthPage = location.pathname === '/auth' && !isOwnerNav
+  const isUserNav = variant === 'user'
+  const isAuthPage = location.pathname === '/auth' && !isOwnerNav && !isUserNav
 
   function goToSection(section) {
     if (isHome) {
@@ -50,6 +51,15 @@ export default function Navbar({ variant = 'default' }) {
                   </button>
                 </nav>
                 <span className="navbar__account-label">Admin Account</span>
+              </>
+            ) : isUserNav ? (
+              <>
+                <nav className="navbar__nav" aria-label="Student actions">
+                  <button type="button" className="navbar__link navbar__link--pill" onClick={() => navigate('/auth?mode=login')}>
+                    Log Out
+                  </button>
+                </nav>
+                <span className="navbar__account-label">Student Account</span>
               </>
             ) : (
               <>

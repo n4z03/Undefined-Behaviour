@@ -19,7 +19,7 @@ export default function LoginForm({ onSwitchToSignup }) {
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
     // console.log('Login submit', { email, password, role: detectRoleFromEmail(email) })
-    const role = detectRoleFromEmail(email)
+  const role = detectRoleFromEmail(email)
 try {
   const response = await fetch('http://localhost:3000/api/auth/login', {
     method: 'POST',
@@ -28,11 +28,17 @@ try {
     body: JSON.stringify({ email, password, role })
   })
   const data = await response.json()
+  if (!response.ok) {
+    setErrors({ email: data.error || 'Invalid login credentials.' })
+    return
+  }
   if (data.message === 'Logged in') {
-    window.location.href = '/owner-dashboard'
+    const serverRole = data?.user?.role
+    const detectedRole = serverRole || role
+    window.location.href = detectedRole === 'owner' ? '/owner-dashboard' : '/user-dashboard'
   }
 } catch (err) {
-  console.error('Login error', err)
+  setErrors({ email: 'Login failed. Please check backend server and try again.' })
 }
   }
 

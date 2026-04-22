@@ -1,0 +1,359 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
+import DashboardSidebar from '../components/DashboardSidebar'
+import WeeklyCalendar from '../components/WeeklyCalendar'
+import ExportPanel from '../components/ExportPanel'
+import OwnerList from '../components/OwnerList'
+import AvailableSlotCard from '../components/AvailableSlotCard'
+import AppointmentCard from '../components/AppointmentCard'
+import RequestMeetingForm from '../components/RequestMeetingForm'
+import UserRequestCard from '../components/UserRequestCard'
+import {
+  userSidebarSections,
+  owners,
+  availableSlotsSeed,
+  appointmentsSeed,
+  requestSeed,
+} from '../data/userDashboardData'
+import { timeRows, weekDays } from '../data/ownerDashboardData'
+import '../styles/UserDashboardPage.css'
+
+function firstNameFromName(name) {
+  const first = String(name || '').trim().split(/\s+/)[0]
+  return first || 'User'
+}
+
+export default function UserDashboardPage() {
+  const navigate = useNavigate()
+  const [activeSection, setActiveSection] = useState('overview')
+  const [userName, setUserName] = useState('User')
+  const [selectedOwnerId, setSelectedOwnerId] = useState(owners[0]?.id || '')
+  const [availableSlots, setAvailableSlots] = useState(availableSlotsSeed)
+  const [appointments, setAppointments] = useState(appointmentsSeed)
+  const [requests, setRequests] = useState(requestSeed)
+  const [selectedCalendarAppointmentId, setSelectedCalendarAppointmentId] = useState(null)
+  const [selectedFreeSlotCell, setSelectedFreeSlotCell] = useState(null)
+
+  useEffect(() => {
+    async function fetchMe() {
+      try {
+        const response = await fetch('http://localhost:3000/api/auth/me', {
+          credentials: 'include',
+        })
+        if (!response.ok) return
+        const data = await response.json()
+        const role = data?.user?.role
+        if (role === 'owner') {
+          navigate('/owner-dashboard')
+          return
+        }
+        if (role === 'user') {
+          setUserName(firstNameFromName(data?.user?.name))
+        }
+      } catch {
+        setUserName('User')
+      }
+    }
+
+    fetchMe()
+  }, [navigate])
+
+  function handleSidebarSelect(sectionId) {
+    if (sectionId === 'logout') {
+      navigate('/auth?mode=login')
+      return
+    }
+    setActiveSection(sectionId)
+    setSelectedCalendarAppointmentId(null)
+    setSelectedFreeSlotCell(null)
+  }
+
+  function handleBookSlot(slotId) {
+    const slot = availableSlots.find((item) => item.id === slotId)
+    if (!slot) return
+    setAvailableSlots((current) => current.filter((item) => item.id !== slotId))
+    setAppointments((current) => [
+      {
+        id: `appt-${Date.now()}`,
+        ownerName: slot.ownerName,
+        ownerEmail: slot.ownerEmail,
+        title: slot.title,
+        dateLabel: slot.dateLabel,
+        timeRange: slot.timeRange,
+        status: 'Confirmed',
+        recurringLabel: slot.recurringLabel,
+      },
+      ...current,
+    ])
+  }
+
+  function handleCancelBooking(appointmentId) {
+    const appointment = appointments.find((item) => item.id === appointmentId)
+    if (!appointment) return
+
+    setAppointments((current) => current.filter((item) => item.id !== appointmentId))
+    setAvailableSlots((current) => [
+      {
+        id: `avail-${Date.now()}`,
+        ownerId: owners.find((owner) => owner.name === appointment.ownerName)?.id || owners[0].id,
+        ownerName: appointment.ownerName,
+        ownerEmail: appointment.ownerEmail,
+        title: appointment.title,
+        dateLabel: appointment.dateLabel,
+        timeRange: appointment.timeRange,
+        status: 'Available',
+        visibility: 'Public',
+        recurringLabel: appointment.recurringLabel || null,
+      },
+      ...current,
+    ])
+  }
+
+  function handleSubmitRequest(payload) {
+    const owner = owners.find((item) => item.id === payload.ownerId)
+    if (!owner) return
+
+    const fullMessage = payload.preferredTime
+      ? `${payload.message} (Preferred: ${payload.preferredTime})`
+      : payload.message
+
+    setRequests((current) => [
+      {
+        id: `req-${Date.now()}`,
+        ownerName: owner.name,
+        ownerEmail: owner.email,
+        message: fullMessage,
+        status: 'Pending',
+        createdAt: new Date().toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        }),
+      },
+      ...current,
+    ])
+    setSelectedFreeSlotCell(null)
+  }
+
+  const visibleOwnerSlots = useMemo(
+    () => availableSlots.filter((slot) => slot.ownerId === selectedOwnerId && slot.visibility === 'Public'),
+    [availableSlots, selectedOwnerId],
+  )
+
+  const appointmentCalendarSlots = useMemo(() => {
+    return appointments.map((appointment, index) => {
+      const [dayName, datePart] = appointment.dateLabel.split(',')
+      const [startTime, endTime] = appointment.timeRange.split(' - ')
+      return {
+        id: `appt-cal-${appointment.id}`,
+        title: appointment.title,
+        day: dayName,
+        time: startTime,
+        endTime,
+        dateLabel: appointment.dateLabel,
+        visibility: 'Public',
+        bookingStatus: 'Booked',
+        bookedBy: userName,
+        bookedEmail: null,
+        category: 'booked',
+        recurringLabel: appointment.recurringLabel,
+        inviteLink: `https://mcbook.app/appointment/${appointment.id}`,
+        ownerName: appointment.ownerName,
+        ownerEmail: appointment.ownerEmail,
+        rowSpan: 1,
+        sortOrder: index,
+        datePart: datePart?.trim() || '',
+      }
+    })
+  }, [appointments, userName])
+
+  const selectedCalendarAppointment = useMemo(
+    () => appointmentCalendarSlots.find((slot) => slot.id === selectedCalendarAppointmentId) || null,
+    [appointmentCalendarSlots, selectedCalendarAppointmentId],
+  )
+
+  return (
+    <div className="app">
+      <Navbar variant="user" />
+      <main className="app-main user-dashboard">
+        <div className="user-dashboard__layout">
+          <DashboardSidebar
+            sections={userSidebarSections}
+            activeSection={activeSection}
+            onSelect={handleSidebarSelect}
+            ariaLabel="Student dashboard sections"
+          />
+
+          <section className="user-dashboard__main">
+            <header className="user-dashboard__header">
+              <h1>Hi, {userName}</h1>
+              <p>Manage your appointments, booking requests, and schedule.</p>
+              <p className="user-dashboard__helper">Browse active office hours and reserve available slots.</p>
+            </header>
+
+            {activeSection === 'overview' ? (
+              <div className="user-dashboard__workspace">
+                <WeeklyCalendar
+                  days={weekDays}
+                  timeRows={timeRows}
+                  slots={appointmentCalendarSlots}
+                  selectedSlotId={selectedCalendarAppointmentId}
+                  onSelectSlot={(slot) => {
+                    setSelectedCalendarAppointmentId(slot.id)
+                    setSelectedFreeSlotCell(null)
+                  }}
+                  onSelectEmptyCell={(cell) => {
+                    setSelectedFreeSlotCell(cell)
+                    setSelectedCalendarAppointmentId(null)
+                  }}
+                />
+
+                <div className="user-dashboard__right-stack">
+                  <section className="user-side-panel user-side-panel--appointments">
+                    {!selectedFreeSlotCell ? <h2>Upcoming Meetings</h2> : null}
+                    {selectedFreeSlotCell ? (
+                      <div className="user-side-panel__request-form-wrap">
+                        <RequestMeetingForm
+                          owners={owners}
+                          onSubmit={handleSubmitRequest}
+                          title={`Request for ${selectedFreeSlotCell.day} at ${selectedFreeSlotCell.time}`}
+                          initialPreferredTime={`${selectedFreeSlotCell.day} at ${selectedFreeSlotCell.time}`}
+                          onCancel={() => setSelectedFreeSlotCell(null)}
+                        />
+                      </div>
+                    ) : selectedCalendarAppointment ? (
+                      <div className="user-side-panel__details">
+                        <p>
+                          <strong>Title:</strong> {selectedCalendarAppointment.title}
+                        </p>
+                        <p>
+                          <strong>Owner:</strong> {selectedCalendarAppointment.ownerName}
+                        </p>
+                        <p>
+                          <strong>Date:</strong> {selectedCalendarAppointment.dateLabel}
+                        </p>
+                        <p>
+                          <strong>Time:</strong> {selectedCalendarAppointment.time} - {selectedCalendarAppointment.endTime}
+                        </p>
+                        <div className="user-side-panel__actions">
+                          <a href={`mailto:${selectedCalendarAppointment.ownerEmail}`}>Message Owner</a>
+                          <button
+                            type="button"
+                            onClick={() => handleCancelBooking(selectedCalendarAppointment.id.replace('appt-cal-', ''))}
+                          >
+                            Cancel Booking
+                          </button>
+                        </div>
+                        <button type="button" className="user-side-panel__clear" onClick={() => setSelectedCalendarAppointmentId(null)}>
+                          Clear Selection
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="user-side-panel__list">
+                        {appointments.slice(0, 3).map((appointment) => (
+                          <button
+                            key={appointment.id}
+                            type="button"
+                            className="user-side-panel__meeting"
+                            onClick={() => setSelectedCalendarAppointmentId(`appt-cal-${appointment.id}`)}
+                          >
+                            <strong>{appointment.title}</strong>
+                            <span>{appointment.dateLabel}</span>
+                            <span>{appointment.timeRange}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+
+                  <section className="user-side-panel">
+                    <h2>Recent Requests</h2>
+                    <div className="user-side-panel__request-list">
+                      {requests.slice(0, 2).map((request) => (
+                        <UserRequestCard key={request.id} request={request} />
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              </div>
+            ) : null}
+
+            {activeSection === 'browse-slots' ? (
+              <div className="user-dashboard__workspace">
+                <div className="user-dashboard__left-stack">
+                  <OwnerList owners={owners} selectedOwnerId={selectedOwnerId} onSelectOwner={setSelectedOwnerId} />
+                  <section className="user-panel">
+                    <h2>Browse Available Slots</h2>
+                    <div className="user-card-list">
+                      {visibleOwnerSlots.length === 0 ? (
+                        <p className="user-panel__empty">No active slots for this owner yet.</p>
+                      ) : (
+                        visibleOwnerSlots.map((slot) => <AvailableSlotCard key={slot.id} slot={slot} onBook={handleBookSlot} />)
+                      )}
+                    </div>
+                  </section>
+                </div>
+
+                <aside className="user-side-panel">
+                  <h2>Quick Actions</h2>
+                  <p>Select an owner and reserve an available slot.</p>
+                  <button type="button" onClick={() => setActiveSection('my-appointments')}>
+                    View My Appointments
+                  </button>
+                  <button type="button" onClick={() => setActiveSection('requests')}>
+                    Request a Meeting
+                  </button>
+                </aside>
+              </div>
+            ) : null}
+
+            {activeSection === 'my-appointments' ? (
+              <section className="user-panel">
+                <h2>My Appointments</h2>
+                <div className="user-card-list">
+                  {appointments.length === 0 ? (
+                    <p className="user-panel__empty">No appointments booked yet.</p>
+                  ) : (
+                    appointments.map((appointment) => (
+                      <AppointmentCard key={appointment.id} appointment={appointment} onCancel={handleCancelBooking} />
+                    ))
+                  )}
+                </div>
+              </section>
+            ) : null}
+
+            {activeSection === 'requests' ? (
+              <div className="user-dashboard__workspace">
+                <section className="user-panel">
+                  <RequestMeetingForm owners={owners} onSubmit={handleSubmitRequest} />
+                  <h2>My Requests</h2>
+                  <div className="user-card-list">
+                    {requests.map((request) => (
+                      <UserRequestCard key={request.id} request={request} />
+                    ))}
+                  </div>
+                </section>
+                <aside className="user-side-panel">
+                  <h2>Request Notes</h2>
+                  <p>Pending requests remain visible until an owner accepts or declines.</p>
+                  <p>Accepted requests should be treated as upcoming appointments.</p>
+                </aside>
+              </div>
+            ) : null}
+
+            {activeSection === 'export' ? (
+              <section className="user-panel">
+                <h2>Export to Calendar</h2>
+                <ExportPanel showHeading={false} />
+              </section>
+            ) : null}
+          </section>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  )
+}

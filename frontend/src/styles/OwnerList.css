@@ -1,0 +1,48 @@
+.owner-list {
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
+  border-radius: 14px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.07);
+  padding: 0.9rem 1rem;
+}
+
+.owner-list h3 {
+  margin: 0;
+  color: #111111;
+}
+
+.owner-list__items {
+  margin-top: 0.65rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.owner-list__item {
+  border: 1px solid #d4d4d4;
+  border-radius: 10px;
+  background: #f8f8f8;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  padding: 0.5rem 0.6rem;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.owner-list__item span {
+  color: #111111;
+  font-weight: 700;
+}
+
+.owner-list__item small {
+  color: #666666;
+}
+
+.owner-list__item:hover {
+  border-color: #c40000;
+}
+
+.owner-list__item--active {
+  background: #fde8e8;
+  border-color: #c40000;
+}
