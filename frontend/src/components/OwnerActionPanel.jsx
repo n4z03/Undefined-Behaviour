@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import '../styles/OwnerActionPanel.css'
+import { addMinutes, buildCreateSlotPayload, formatTime24To12, to24Hour } from '../utils/ownerSlotAdapters'
 
 function ActionButton({ children, onClick, kind = 'primary' }) {
   return (
@@ -159,31 +160,46 @@ function GroupForm({ onModeChange }) {
 }
 
 // Functionality edited by Sophia
-function CreateSlotForm({ selectedCell, onModeChange }) {
+function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
   const [visibility, setVisibility] = useState('Private')
-  
   const [title, setTitle] = useState('Office Hours')
+  const [submitError, setSubmitError] = useState('')
+  const [submitSuccess, setSubmitSuccess] = useState('')
+
   async function handleCreate() {
+    setSubmitError('')
+    setSubmitSuccess('')
     try {
+      const payload = buildCreateSlotPayload({
+        title,
+        visibility,
+        selectedCell,
+      })
+
       const response = await fetch('http://localhost:3000/api/ownerSlots', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          title,
-          slot_date: selectedCell?.date || '2026-04-24',
-          start_time: selectedCell?.startTime || '10:00',
-          end_time: selectedCell?.endTime || '10:30',
-          status: visibility === 'Public' ? 'active' : 'private',
-        })
+        body: JSON.stringify(payload),
       })
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Could not create slot. You may not be signed in as an owner.')
+        }
+        throw new Error('Request failed. Check backend status and allowed frontend port.')
+      }
+
       const data = await response.json()
-      console.log('Slot created', data)
+      setSubmitSuccess('Slot created successfully.')
+      if (onSlotCreated) await onSlotCreated(data.slot)
       onModeChange('default')
     } catch (err) {
-      console.error('Error creating slot', err)
+      setSubmitError(err.message || 'Could not create slot.')
     }
   }
+
+  const endTime = selectedCell?.time ? formatTime24To12(addMinutes(to24Hour(selectedCell.time), 30)) : ''
 
   return (
     <>
@@ -198,11 +214,11 @@ function CreateSlotForm({ selectedCell, onModeChange }) {
         </label>
         <label>
           Date
-          <input type="text" defaultValue={selectedCell ? `${selectedCell.day}` : 'Tuesday, April 23'} />
+          <input type="text" value={selectedCell ? `${selectedCell.day}` : ''} readOnly />
         </label>
         <label>
           Time Range
-          <input type="text" defaultValue={selectedCell ? `${selectedCell.time} - 10:30 AM` : '10:00 AM - 10:30 AM'} />
+          <input type="text" value={selectedCell ? `${selectedCell.time} - ${endTime}` : ''} readOnly />
         </label>
         <label>
           Visibility
@@ -218,15 +234,17 @@ function CreateSlotForm({ selectedCell, onModeChange }) {
           Cancel
         </ActionButton>
       </div>
+      {submitError ? <p className="owner-action-panel__feedback owner-action-panel__feedback--error">{submitError}</p> : null}
+      {submitSuccess ? <p className="owner-action-panel__feedback owner-action-panel__feedback--success">{submitSuccess}</p> : null}
     </>
   )
 }
 
-export default function OwnerActionPanel({ panelMode, selectedSlot, selectedCell, onModeChange }) {
+export default function OwnerActionPanel({ panelMode, selectedSlot, selectedCell, onModeChange, onSlotCreated }) {
   return (
     <aside className="owner-action-panel">
       {panelMode === 'slotDetails' && selectedSlot ? <SlotDetailsPanel slot={selectedSlot} onModeChange={onModeChange} /> : null}
-      {panelMode === 'create' ? <CreateSlotForm selectedCell={selectedCell} onModeChange={onModeChange} /> : null}
+      {panelMode === 'create' ? <CreateSlotForm selectedCell={selectedCell} onModeChange={onModeChange} onSlotCreated={onSlotCreated} /> : null}
       {panelMode === 'recurring' ? <RecurringForm onModeChange={onModeChange} /> : null}
       {panelMode === 'group' ? <GroupForm onModeChange={onModeChange} /> : null}
       {panelMode === 'default' ? <DefaultPanel onModeChange={onModeChange} /> : null}

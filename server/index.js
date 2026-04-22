@@ -13,8 +13,17 @@ const ownerSlotsRoutes = require('./routes/ownerSlots'); // added by sophia
 const app = express()
 const port = process.env.PORT || 3000
 
+function isAllowedFrontendOrigin(origin) {
+  // Allow local frontend dev servers on any localhost port.
+  if (!origin) return true
+  return /^http:\/\/localhost:\d+$/.test(origin)
+}
+
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (isAllowedFrontendOrigin(origin)) return callback(null, true)
+    return callback(new Error('CORS blocked: unapproved origin'))
+  },
   credentials: true
 }))
 app.use(express.json())

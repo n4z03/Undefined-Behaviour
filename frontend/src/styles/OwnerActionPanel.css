@@ -223,3 +223,17 @@
   display: grid;
   gap: 0.48rem;
 }
+
+.owner-action-panel__feedback {
+  margin: 0.55rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.owner-action-panel__feedback--error {
+  color: #8f1a1a;
+}
+
+.owner-action-panel__feedback--success {
+  color: #1f5d2e;
+}

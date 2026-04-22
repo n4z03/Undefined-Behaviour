@@ -46,6 +46,27 @@
   color: #777777;
 }
 
+.owner-dashboard__notice {
+  margin: 0.55rem 0 0;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  background: #f4f4f4;
+  color: #333333;
+}
+
+.owner-dashboard__notice--error {
+  background: #ffeaea;
+  color: #8f1a1a;
+  border: 1px solid #f0bcbc;
+}
+
+.owner-dashboard__notice--success {
+  background: #e9f6ed;
+  color: #1f5d2e;
+  border: 1px solid #b9dfc4;
+}
+
 .owner-dashboard__workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 290px;
