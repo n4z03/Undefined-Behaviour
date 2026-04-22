@@ -6,7 +6,7 @@ const router = express.Router();
 const pool = require('../db');
 const bcrypt = require('bcrypt');
 
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
     const { name, email, password } = req.body || {};
 
     if (
@@ -32,15 +32,32 @@ router.post('/register', (req, res) => {
         role = 'user';
       }
 
-      // Return user info
-      res.json({
-        message: 'registered',
-        user: {
-          name: name.trim(),
-          email: email.trim(),
-          role
+      try {
+        // Check if email already exists
+        const [existing] = await pool.query(
+            `SELECT id FROM users WHERE email = ?`, [email.trim()]
+        );
+        if (existing.length > 0) {
+            return res.status(400).json({ error: 'Email already registered.' });
         }
-      });
+
+        // Hash the password
+        const password_hash = await bcrypt.hash(password, 10);
+
+        // Insert into database
+        const [result] = await pool.query(
+            `INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)`,
+            [name.trim(), email.trim(), password_hash, role]
+        );
+
+        res.json({
+            message: 'registered',
+            user: { id: result.insertId, name: name.trim(), email: email.trim(), role }
+        });
+    } catch (err) {
+        console.error('Error registering user:', err);
+        res.status(500).json({ error: 'Registration failed.' });
+    }
 });
 
 router.post('/login', async (req, res) => {
