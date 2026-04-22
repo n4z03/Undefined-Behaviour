@@ -10,6 +10,10 @@ const bookingRoutes = require('./routes/bookings');
 const ownerRoutes = require('./routes/owners');
 const ownerSlotsRoutes = require('./routes/ownerSlots'); // added by sophia
 
+const recurringSlotRoutes = require('./routes/recurringSlots'); // added by Bonita
+const meetingRequestRoutes = require('./routes/meetingRequests'); // added by Bonita
+const groupMeetingRoutes = require('./routes/groupMeeting'); // added by Bonita
+
 const app = express()
 const port = process.env.PORT || 3000
 
@@ -36,6 +40,9 @@ app.use('/api/auth', authenticationRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/owners', ownerRoutes);
 app.use('/api/ownerSlots', ownerSlotsRoutes); // added by sophia
+app.use('/api/recurringSlots', recurringSlotRoutes); // added by Bonita
+app.use('/api/meetingRequests', meetingRequestRoutes); // added by Bonita
+app.use('/api/groupMeeting', groupMeetingRoutes); // added by Bonita
 
 app.get('/api/health', (req, res) => {
   res.json({ message: 'server running' })
