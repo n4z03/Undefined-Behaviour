@@ -349,4 +349,86 @@ router.delete('/:id', requireLogin, requireOwner, async (req, res) => {
     }
 });
 
+// ─────────────────────────────────────────────
+// POST /api/recurringSlots/:slotId/book
+// User books a specific active child slot.
+// Returns owner email for mailto notification.
+// ─────────────────────────────────────────────
+router.post('/:slotId/book', requireLogin, async (req, res) => {
+    const user_id = req.user.id;
+    const slot_id = Number(req.params.slotId);
+
+    if (!Number.isInteger(slot_id)) {
+        return res.status(400).json({ error: 'Invalid slot id.' });
+    }
+
+    try {
+        // Fetch the slot and confirm it is active and recurring
+        const [slotRows] = await pool.query(
+            `SELECT bs.*, u.name AS owner_name, u.email AS owner_email
+             FROM booking_slots bs
+             JOIN users u ON bs.owner_id = u.id
+             WHERE bs.id = ? AND bs.status = 'active' AND bs.is_recurring = true`,
+            [slot_id]
+        );
+
+        if (slotRows.length === 0) {
+            return res.status(404).json({ error: 'Slot not found or not available.' });
+        }
+
+        const slot = slotRows[0];
+
+        // Prevent owner from booking their own slot
+        if (slot.owner_id === user_id) {
+            return res.status(403).json({ error: 'You cannot book your own slot.' });
+        }
+
+        // Check how many confirmed bookings exist for this slot
+        const [countRows] = await pool.query(
+            `SELECT COUNT(*) AS count FROM bookings
+             WHERE slot_id = ? AND status = 'confirmed'`,
+            [slot_id]
+        );
+
+        if (countRows[0].count >= slot.max_bookings) {
+            return res.status(400).json({ error: 'This slot is fully booked.' });
+        }
+
+        // Insert the booking - INSERT IGNORE handles duplicate gracefully
+        const [result] = await pool.query(
+            `INSERT IGNORE INTO bookings (slot_id, user_id, status)
+             VALUES (?, ?, 'confirmed')`,
+            [slot_id, user_id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(400).json({ error: 'You have already booked this slot.' });
+        }
+
+        // Fetch user info for the notify object
+        const [userRows] = await pool.query(
+            `SELECT name, email FROM users WHERE id = ?`, [user_id]
+        );
+        const user = userRows[0];
+
+        res.status(201).json({
+            message: 'Slot booked successfully.',
+            slot_id,
+            slot_date: slot.slot_date,
+            start_time: slot.start_time,
+            end_time: slot.end_time,
+            // Frontend uses this to build mailto: notification to the owner
+            notify: {
+                to: slot.owner_email,
+                subject: `New booking for your office hours`,
+                body: `Hi ${slot.owner_name}, ${user.name} (${user.email}) has booked your office hours on ${slot.slot_date} from ${slot.start_time} to ${slot.end_time}.`,
+            },
+        });
+
+    } catch (err) {
+        console.error('Error booking slot:', err);
+        res.status(500).json({ error: 'Failed to book slot.' });
+    }
+});
+
 module.exports = router;
