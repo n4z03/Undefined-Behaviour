@@ -6,7 +6,7 @@
   align-items: flex-start;
 }
 
-/* Three columns: left panel | centered card | spacer — keeps the gray box in the visual middle */
+
 .auth-page__layout {
   display: grid;
   grid-template-columns: 1fr minmax(0, 520px) 1fr;
@@ -41,7 +41,7 @@
   padding: 1.25rem;
 }
 
-/* Info panel sits outside the gray card, to the left of center */
+
 .signup-rules-panel {
   background: #ffffff;
   border-radius: 10px;

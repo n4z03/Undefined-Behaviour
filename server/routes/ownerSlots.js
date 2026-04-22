@@ -432,7 +432,7 @@ router.delete("/:id", requireLogin, requireOwner, async (req, res) => {
 
         // Store affected users before deleting, so the owner can follow up if needed
         const [bookedUsers] = await pool.query(
-            `SELECT DISTINCT u.id, u.name, u.email 
+            `SELECT DISTINCT u.id, u.name, u.email, b.booked_at
             FROM bookings b
             JOIN users u ON b.user_id = u.id
             WHERE b.slot_id = ? AND b.status = 'confirmed'

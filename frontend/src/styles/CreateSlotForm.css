@@ -1,0 +1,76 @@
+/* code written by Rupneet (ID: 261096653) */
+
+.create-slot-card {
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 14px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  padding: 0.95rem;
+}
+
+.create-slot-card h3 {
+  margin: 0;
+}
+
+.create-slot-card p {
+  margin: 0.45rem 0 0.8rem;
+  color: #555;
+}
+
+.create-slot-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.create-slot-form label {
+  font-weight: 700;
+  margin: 0.45rem 0 0.3rem;
+}
+
+.create-slot-form input,
+.create-slot-form select {
+  border: 1px solid #d8d8d8;
+  border-radius: 10px;
+  padding: 0.62rem 0.75rem;
+  font: inherit;
+}
+
+.create-slot-form input:focus,
+.create-slot-form select:focus {
+  outline: 2px solid rgba(196, 0, 0, 0.3);
+  border-color: #990000;
+}
+
+.create-slot-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.create-slot-form__check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.create-slot-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.8rem;
+}
+
+.create-slot-form__actions button {
+  border: none;
+  border-radius: 10px;
+  background: #c40000;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.55rem 0.8rem;
+}
+
+.create-slot-form__actions button:hover {
+  background: #990000;
+}

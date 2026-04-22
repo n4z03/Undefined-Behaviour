@@ -1,0 +1,130 @@
+/* code written by Rupneet (ID: 261096653) */
+
+.calendar-block {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 9px;
+  text-align: left;
+  cursor: pointer;
+  padding: 0.32rem 0.38rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition:
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.calendar-block:hover {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+}
+
+.calendar-block__title {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-block__time {
+  margin: 0.12rem 0 0;
+  font-size: 0.66rem;
+  font-weight: 400;
+  line-height: 1.25;
+  color: inherit;
+  opacity: 0.78;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-block__status {
+  margin: 0.18rem 0 0;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.92;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-block--private {
+  background: #ebebeb;
+  border-color: rgba(0, 0, 0, 0.08);
+  color: #111111;
+}
+
+.calendar-block--private .calendar-block__time {
+  color: #555555;
+  opacity: 0.95;
+}
+
+.calendar-block--private .calendar-block__status {
+  color: #666666;
+}
+
+.calendar-block--public {
+  background: #fde8e8;
+  border-color: rgba(180, 60, 60, 0.22);
+  color: #5c1414;
+}
+
+.calendar-block--public .calendar-block__time {
+  opacity: 0.85;
+}
+
+.calendar-block--public .calendar-block__status {
+  color: #8b2222;
+}
+
+.calendar-block--booked {
+  background: #c40000;
+  border-color: #8f0000;
+  color: #ffffff;
+}
+
+.calendar-block--booked .calendar-block__time {
+  color: #ffffff;
+  opacity: 0.88;
+}
+
+.calendar-block--booked .calendar-block__status {
+  color: #ffffff;
+  opacity: 0.95;
+}
+
+.calendar-block--recurring {
+  background: #ffeaea;
+  border-color: rgba(160, 70, 70, 0.2);
+  color: #5a1818;
+}
+
+.calendar-block--recurring .calendar-block__time {
+  opacity: 0.82;
+}
+
+.calendar-block--recurring .calendar-block__status {
+  color: #7a2828;
+}
+
+.calendar-block--group {
+  background: #f3f3f3;
+  border: 1px solid #c6c6c6;
+  color: #333333;
+}
+
+.calendar-block--group .calendar-block__time {
+  color: #555555;
+}
+
+.calendar-block--group .calendar-block__status {
+  color: #666666;
+}

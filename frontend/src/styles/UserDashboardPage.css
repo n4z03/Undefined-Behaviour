@@ -1,0 +1,265 @@
+/* User dashboard layout mirrors owner dashboard style */
+
+.user-dashboard {
+  max-width: 1280px;
+}
+
+.user-dashboard__layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 1.15rem;
+  align-items: start;
+}
+
+.user-dashboard__main {
+  min-width: 0;
+}
+
+.user-dashboard__header {
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
+  border-radius: 14px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.07);
+  padding: 1.15rem 1.25rem;
+  margin-bottom: 1.45rem;
+}
+
+.user-dashboard__header h1 {
+  margin: 0;
+  font-size: 1.38rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #111111;
+}
+
+.user-dashboard__header p {
+  margin: 0.4rem 0 0;
+  font-size: 0.93rem;
+  font-weight: 400;
+  color: #666666;
+  line-height: 1.45;
+}
+
+.user-dashboard__helper {
+  font-size: 0.87rem;
+  font-weight: 400;
+  color: #777777;
+}
+
+.user-dashboard__overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.user-dashboard__workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 1.05rem;
+  align-items: start;
+}
+
+.user-dashboard__left-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.user-dashboard__workspace > .weekly-calendar {
+  min-width: 0;
+}
+
+.user-dashboard__right-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.user-panel {
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
+  border-radius: 14px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.07);
+  padding: 0.9rem 1rem;
+}
+
+.user-panel h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111111;
+}
+
+.user-panel__empty {
+  margin: 0.55rem 0 0;
+  font-size: 0.9rem;
+  color: #666666;
+}
+
+.user-card-list {
+  margin-top: 0.7rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.user-side-panel {
+  background: #e8e8e8;
+  border: 1px solid #d8d8d8;
+  border-radius: 14px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.08);
+  padding: 1rem 1rem;
+}
+
+.user-side-panel h2 {
+  margin: 0;
+  font-size: 1.06rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111111;
+}
+
+.user-side-panel p {
+  margin: 0.38rem 0 0.85rem;
+  color: #666666;
+  font-size: 0.85rem;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.user-side-panel button {
+  width: 100%;
+  margin-top: 0.55rem;
+  border: none;
+  border-radius: 10px;
+  background: #c40000;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 0.52rem 0.68rem;
+  transition: background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.user-side-panel button:hover {
+  background: #990000;
+}
+
+.user-side-panel__details p {
+  margin: 0.35rem 0 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.user-side-panel__actions {
+  margin-top: 0.6rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.user-side-panel__actions a,
+.user-side-panel__actions button {
+  margin-top: 0;
+  border-radius: 10px;
+  padding: 0.5rem 0.62rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  text-align: center;
+}
+
+.user-side-panel__actions a {
+  background: #ebebeb;
+  color: #2a2a2a;
+  border: 1px solid #c8c8c8;
+  font-weight: 600;
+}
+
+.user-side-panel__actions a:hover {
+  background: #e0e0e0;
+  border-color: #bcbcbc;
+}
+
+.user-side-panel button.user-side-panel__clear {
+  margin-top: 0.4rem;
+  border: none;
+  background: transparent;
+  color: #990000;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-align: left;
+  padding: 0;
+  width: auto;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: 0;
+}
+
+.user-side-panel button.user-side-panel__clear:hover {
+  color: #7a0000;
+  background: transparent;
+}
+
+.user-side-panel__list {
+  margin-top: 0.55rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.user-side-panel button.user-side-panel__meeting {
+  margin-top: 0;
+  background: #c40000;
+  color: #ffffff;
+  border: 1px solid #9d0000;
+  border-radius: 10px;
+  text-align: left;
+  font-weight: 600;
+  padding: 0.55rem 0.62rem;
+  display: grid;
+  gap: 0.18rem;
+  width: 100%;
+}
+
+.user-side-panel button.user-side-panel__meeting:hover {
+  background: #990000;
+}
+
+.user-side-panel__meeting strong {
+  font-size: 0.86rem;
+}
+
+.user-side-panel__meeting span {
+  font-size: 0.8rem;
+  color: #ffffff;
+  opacity: 0.95;
+}
+
+.user-side-panel__request-list {
+  margin-top: 0.55rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.user-side-panel__request-form-wrap .request-meeting-form {
+  margin-bottom: 0;
+}
+
+.user-side-panel__request-list .user-request-card {
+  box-shadow: none;
+  background: #f8f8f8;
+}
+
+@media (max-width: 1080px) {
+  .user-dashboard__workspace,
+  .user-dashboard__overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .user-dashboard__layout {
+    grid-template-columns: 1fr;
+  }
+}

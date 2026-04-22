@@ -1,0 +1,64 @@
+.request-meeting-form {
+  background: #f8f8f8;
+  border: 1px solid #dfdfdf;
+  border-radius: 12px;
+  padding: 0.8rem;
+  margin-bottom: 0.9rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.request-meeting-form h3 {
+  margin: 0;
+  color: #111111;
+}
+
+.request-meeting-form label {
+  display: grid;
+  gap: 0.2rem;
+  color: #333333;
+  font-size: 0.85rem;
+}
+
+.request-meeting-form input,
+.request-meeting-form textarea,
+.request-meeting-form select {
+  border: 1px solid #d3d3d3;
+  border-radius: 9px;
+  font: inherit;
+  padding: 0.45rem 0.5rem;
+  background: #ffffff;
+}
+
+.request-meeting-form input:focus,
+.request-meeting-form textarea:focus,
+.request-meeting-form select:focus {
+  outline: none;
+  border-color: #c40000;
+  box-shadow: 0 0 0 2px rgba(196, 0, 0, 0.15);
+}
+
+.request-meeting-form button {
+  border: none;
+  border-radius: 10px;
+  background: #c40000;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.5rem 0.65rem;
+}
+
+.request-meeting-form button:hover {
+  background: #990000;
+}
+
+.request-meeting-form__cancel {
+  background: #f4f4f4 !important;
+  color: #222222 !important;
+  border: 1px solid #c9c9c9 !important;
+}
+
+.request-meeting-form__cancel:hover {
+  background: #e8e8e8 !important;
+}

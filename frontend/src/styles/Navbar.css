@@ -74,6 +74,13 @@
   flex-wrap: wrap;
 }
 
+.navbar__account-label {
+  color: #ffffff;
+  font-size: 0.86rem;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
 .navbar__btn {
   border: none;
   font: inherit;

@@ -1,0 +1,285 @@
+/* code written by Rupneet (ID: 261096653) */
+
+.owner-dashboard {
+  max-width: 1280px;
+}
+
+.owner-dashboard__layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 1.15rem;
+  align-items: start;
+}
+
+.owner-dashboard__main {
+  min-width: 0;
+}
+
+.owner-dashboard__header {
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
+  border-radius: 14px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.07);
+  padding: 1.15rem 1.25rem;
+  margin-bottom: 1.45rem;
+}
+
+.owner-dashboard__header h1 {
+  margin: 0;
+  font-size: 1.38rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #111111;
+}
+
+.owner-dashboard__header p {
+  margin: 0.4rem 0 0;
+  font-size: 0.93rem;
+  font-weight: 400;
+  color: #666666;
+  line-height: 1.45;
+}
+
+.owner-dashboard__helper {
+  font-size: 0.87rem;
+  font-weight: 400;
+  color: #777777;
+}
+
+.owner-dashboard__notice {
+  margin: 0.55rem 0 0;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  background: #f4f4f4;
+  color: #333333;
+}
+
+.owner-dashboard__notice--error {
+  background: #ffeaea;
+  color: #8f1a1a;
+  border: 1px solid #f0bcbc;
+}
+
+.owner-dashboard__notice--success {
+  background: #e9f6ed;
+  color: #1f5d2e;
+  border: 1px solid #b9dfc4;
+}
+
+.owner-dashboard__workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 1.05rem;
+  align-items: start;
+}
+
+/* Let the calendar shrink and scroll internally instead of clipping Friday */
+.owner-dashboard__workspace > .weekly-calendar {
+  min-width: 0;
+}
+
+.owner-dashboard__right-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.owner-section {
+  margin-top: 0.9rem;
+}
+
+.owner-section h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111111;
+}
+
+.owner-section__subtitle {
+  margin: 0.4rem 0 0.85rem;
+  font-size: 0.92rem;
+  font-weight: 400;
+  color: #666666;
+  line-height: 1.45;
+}
+
+.owner-request-list {
+  margin-top: 0.45rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.owner-slot-list {
+  margin-top: 0.55rem;
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
+  border-radius: 14px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.07);
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.owner-slot-list__empty {
+  margin: 0;
+  color: #666666;
+  font-size: 0.9rem;
+}
+
+.owner-slot-list__item {
+  width: 100%;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.owner-slot-list__item:hover {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.owner-slot-list__item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px rgba(196, 0, 0, 0.35);
+}
+
+.owner-slot-list__item--private {
+  background: #ededed;
+  border-color: #d4d4d4;
+}
+
+.owner-slot-list__item--public {
+  background: #fde8e8;
+  border-color: #ebb9b9;
+}
+
+.owner-slot-list__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.owner-slot-list__top h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #111111;
+}
+
+.owner-slot-list__status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: #777777;
+  border-radius: 999px;
+  padding: 0.16rem 0.45rem;
+}
+
+.owner-slot-list__item--public .owner-slot-list__status {
+  background: #c40000;
+}
+
+.owner-slot-list__meta {
+  margin: 0.3rem 0 0;
+  color: #555555;
+  font-size: 0.84rem;
+}
+
+.recent-requests-preview {
+  margin-top: 0;
+  background: #fcfcfc;
+  border: 1px solid #e0e0e0;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+  padding: 0.95rem 1.05rem;
+}
+
+.recent-requests-preview__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.recent-requests-preview__top h3 {
+  margin: 0;
+  min-width: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #111111;
+}
+
+.recent-requests-preview__top button {
+  flex-shrink: 0;
+  border: 1px solid #c40000;
+  background: #ffffff;
+  color: #c40000;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  padding: 0.28rem 0.5rem;
+  line-height: 1.2;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.recent-requests-preview__top button:hover {
+  background: #c40000;
+  color: #ffffff;
+}
+
+.recent-requests-preview__list {
+  margin-top: 0.65rem;
+  display: grid;
+  gap: 0.48rem;
+}
+
+.recent-requests-preview__item {
+  border: 1px solid #e4e4e4;
+  border-radius: 10px;
+  background: #f6f6f6;
+  padding: 0.58rem 0.68rem;
+}
+
+.recent-requests-preview__item p {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  color: #111111;
+}
+
+.recent-requests-preview__item span {
+  color: #666666;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 1080px) {
+  .owner-dashboard__workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .owner-dashboard__right-stack {
+    max-width: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .owner-dashboard__layout {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+}

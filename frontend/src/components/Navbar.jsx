@@ -10,11 +10,13 @@ function scrollToId(id) {
   }
 }
 
-export default function Navbar() {
+export default function Navbar({ variant = 'default' }) {
   const location = useLocation()
   const navigate = useNavigate()
   const isHome = location.pathname === '/'
-  const isAuthPage = location.pathname === '/auth'
+  const isOwnerNav = variant === 'owner'
+  const isUserNav = variant === 'user'
+  const isAuthPage = location.pathname === '/auth' && !isOwnerNav && !isUserNav
 
   function goToSection(section) {
     if (isHome) {
@@ -41,30 +43,52 @@ export default function Navbar() {
 
         {!isAuthPage ? (
           <div className="navbar__right">
-            <nav className="navbar__nav" aria-label="Main">
-              <button
-                type="button"
-                className="navbar__link navbar__link--pill"
-                onClick={() => navigate('/auth')}
-              >
-                Browse Slots
-              </button>
-              <button
-                type="button"
-                className="navbar__link navbar__link--pill"
-                onClick={() => goToSection('how')}
-              >
-                How it Works
-              </button>
-            </nav>
-            <div className="navbar__actions">
-              <button type="button" className="navbar__btn navbar__btn--login" onClick={() => navigate('/auth?mode=login')}>
-                Log In
-              </button>
-              <button type="button" className="navbar__btn navbar__btn--signup" onClick={() => navigate('/auth?mode=signup&role=owner')}>
-                Sign Up
-              </button>
-            </div>
+            {isOwnerNav ? (
+              <>
+                <nav className="navbar__nav" aria-label="Admin actions">
+                  <button type="button" className="navbar__link navbar__link--pill" onClick={() => navigate('/auth?mode=login')}>
+                    Log Out
+                  </button>
+                </nav>
+                <span className="navbar__account-label">Admin Account</span>
+              </>
+            ) : isUserNav ? (
+              <>
+                <nav className="navbar__nav" aria-label="Student actions">
+                  <button type="button" className="navbar__link navbar__link--pill" onClick={() => navigate('/auth?mode=login')}>
+                    Log Out
+                  </button>
+                </nav>
+                <span className="navbar__account-label">Student Account</span>
+              </>
+            ) : (
+              <>
+                <nav className="navbar__nav" aria-label="Main">
+                  <button
+                    type="button"
+                    className="navbar__link navbar__link--pill"
+                    onClick={() => navigate('/auth')}
+                  >
+                    Browse Slots
+                  </button>
+                  <button
+                    type="button"
+                    className="navbar__link navbar__link--pill"
+                    onClick={() => goToSection('how')}
+                  >
+                    How it Works
+                  </button>
+                </nav>
+                <div className="navbar__actions">
+                  <button type="button" className="navbar__btn navbar__btn--login" onClick={() => navigate('/auth?mode=login')}>
+                    Log In
+                  </button>
+                  <button type="button" className="navbar__btn navbar__btn--signup" onClick={() => navigate('/auth?mode=signup&role=owner')}>
+                    Sign Up
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ) : null}
       </div>

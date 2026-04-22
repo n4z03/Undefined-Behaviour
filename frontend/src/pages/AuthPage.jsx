@@ -1,6 +1,6 @@
 // code written by Rupneet (ID: 261096653)
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -15,11 +15,10 @@ function getModeFromSearch(search) {
   return mode === 'signup' ? 'signup' : 'login'
 }
 
-export default function AuthPage({ onLogin }) {
+export default function AuthPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const [activeMode, setActiveMode] = useState(getModeFromSearch(location.search))
-  const role = useMemo(() => new URLSearchParams(location.search).get('role'), [location.search])
 
   useEffect(() => {
     setActiveMode(getModeFromSearch(location.search))
@@ -28,7 +27,6 @@ export default function AuthPage({ onLogin }) {
   function changeMode(mode) {
     const params = new URLSearchParams()
     params.set('mode', mode)
-    if (mode === 'signup' && role === 'owner') params.set('role', 'owner')
     navigate(`/auth?${params.toString()}`)
   }
 
@@ -44,7 +42,7 @@ export default function AuthPage({ onLogin }) {
             <div className="auth-card">
               <AuthTabs activeMode={activeMode} onModeChange={changeMode} />
               {activeMode === 'login' ? (
-                <LoginForm onSwitchToSignup={() => changeMode('signup')} onLogin={onLogin} />
+                <LoginForm onSwitchToSignup={() => changeMode('signup')} />
               ) : (
                 <SignupForm onSwitchToLogin={() => changeMode('login')} />
               )}
