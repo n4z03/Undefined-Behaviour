@@ -1,52 +1,39 @@
 // code written by Rupneet (ID: 261096653)
-// code added by Nazifa Ahmed (261112966)
 
 import { useState } from 'react'
-import { isAllowedMcGillEmail } from '../utils/authHelpers'
+import { detectRoleFromEmail, isAllowedMcGillEmail } from '../utils/authHelpers'
 import '../styles/LoginForm.css'
 
-export default function LoginForm({ onSwitchToSignup, onLogin }) {
+export default function LoginForm({ onSwitchToSignup }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState({})
-  const [submitMessage, setSubmitMessage] = useState('')
 
   async function handleSubmit(e) {
     e.preventDefault()
-    setSubmitMessage('')
     const nextErrors = {}
     if (!email.trim()) nextErrors.email = 'Email is required.'
     else if (!isAllowedMcGillEmail(email)) nextErrors.email = 'Use a McGill email address.'
     if (!password.trim()) nextErrors.password = 'Password is required.'
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
-
-    try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password,
-        }),
-      })
-
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) {
-        setSubmitMessage(data.error || 'Login failed.')
-        return
-      }
-
-      console.log('Logged in user', data.user)
-      setSubmitMessage('Login successful.')
-      setErrors({})
-      if (onLogin) onLogin(data.user)
-    } catch (error) {
-      setSubmitMessage('Unable to reach server. Please try again.')
-    }
+    // console.log('Login submit', { email, password, role: detectRoleFromEmail(email) })
+    const role = detectRoleFromEmail(email)
+try {
+  const response = await fetch('http://localhost:3000/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ email, password, role })
+  })
+  const data = await response.json()
+  if (data.message === 'Logged in') {
+    window.location.href = '/owner-dashboard'
+  }
+} catch (err) {
+  console.error('Login error', err)
+}
   }
 
   return (
@@ -68,7 +55,6 @@ export default function LoginForm({ onSwitchToSignup, onLogin }) {
       {errors.password ? <p className="auth-form__error">{errors.password}</p> : null}
 
       <button type="submit" className="auth-form__submit">Log In</button>
-      {submitMessage ? <p className="auth-form__submit-message">{submitMessage}</p> : null}
       <p className="auth-form__switch">Don't have an account? <button type="button" onClick={onSwitchToSignup}>Sign Up</button></p>
     </form>
   )

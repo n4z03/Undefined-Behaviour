@@ -1,0 +1,63 @@
+/* code written by Rupneet (ID: 261096653) */
+
+.recurring-card {
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 12px;
+  padding: 0.8rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.recurring-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.recurring-card h3 {
+  margin: 0;
+}
+
+.recurring-card p {
+  margin: 0.35rem 0 0;
+  color: #555;
+}
+
+.recurring-card__status {
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+  color: #fff;
+  font-weight: 700;
+}
+
+.recurring-card__status--active {
+  background: #c40000;
+}
+
+.recurring-card__status--draft {
+  background: #8a8a8a;
+}
+
+.recurring-card__actions {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin-top: 0.7rem;
+}
+
+.recurring-card__actions button {
+  border: none;
+  border-radius: 10px;
+  background: #c40000;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.83rem;
+  font-weight: 700;
+  padding: 0.4rem 0.65rem;
+}
+
+.recurring-card__actions button:hover {
+  background: #990000;
+}

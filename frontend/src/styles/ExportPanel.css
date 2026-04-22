@@ -1,0 +1,65 @@
+/* code written by Rupneet (ID: 261096653) */
+
+.export-panel {
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
+  border-radius: 14px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.07);
+  padding: 0.95rem;
+}
+
+.export-panel--compact {
+  background: #f8f8f8;
+  box-shadow: none;
+}
+
+.export-panel h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111111;
+}
+
+.export-panel p {
+  margin: 0.45rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #666666;
+  font-weight: 400;
+}
+
+.export-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.export-panel h3 + .export-panel__actions {
+  margin-top: 0.8rem;
+}
+
+.export-panel > .export-panel__actions:first-child {
+  margin-top: 0;
+}
+
+.export-panel__actions button {
+  border: none;
+  border-radius: 10px;
+  background: #c40000;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 0.48rem 0.75rem;
+  transition: background-color 0.18s ease;
+}
+
+.export-panel__actions button:hover {
+  background: #990000;
+}
+
+.export-panel__note {
+  font-size: 0.82rem;
+}

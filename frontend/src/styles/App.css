@@ -45,7 +45,6 @@ body {
   margin-bottom: 2rem;
 }
 
-/* No accordion: hero flows straight into footer */
 .app-main--no-accordion .landing-top {
   margin-bottom: 0;
 }

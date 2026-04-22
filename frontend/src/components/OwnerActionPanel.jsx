@@ -1,0 +1,235 @@
+// code written by Rupneet (ID: 261096653)
+
+import { useState } from 'react'
+import '../styles/OwnerActionPanel.css'
+
+function ActionButton({ children, onClick, kind = 'primary' }) {
+  return (
+    <button type="button" className={`owner-action-panel__btn owner-action-panel__btn--${kind}`} onClick={onClick}>
+      {children}
+    </button>
+  )
+}
+
+function DefaultPanel({ onModeChange }) {
+  return (
+    <>
+      <h2>Actions</h2>
+      <p className="owner-action-panel__muted">Pick an action to start. Slot details will appear here when you select a calendar block.</p>
+      <div className="owner-action-panel__stack">
+        <ActionButton onClick={() => onModeChange('create')}>Create Slot</ActionButton>
+        <ActionButton onClick={() => onModeChange('recurring')}>Start Recurring Office Hours</ActionButton>
+        <ActionButton onClick={() => onModeChange('group')}>Start Group Meeting</ActionButton>
+      </div>
+    </>
+  )
+}
+
+function slotStatusLabel(slot) {
+  if (slot.bookingStatus === 'Booked') return 'Booked'
+  if (slot.bookingStatus === 'Draft') return 'Draft'
+  return 'Available'
+}
+
+function SlotDetailsPanel({ slot, onModeChange }) {
+  return (
+    <>
+      <h2>{slot.title}</h2>
+      <p className="owner-action-panel__muted">{slot.dateLabel}</p>
+
+      <div className="owner-action-panel__details">
+        <div className="owner-action-panel__detail-row">
+          <span className="owner-action-panel__detail-label">Time</span>
+          <span className="owner-action-panel__detail-value">
+            {slot.time} – {slot.endTime}
+          </span>
+        </div>
+        <div className="owner-action-panel__detail-row">
+          <span className="owner-action-panel__detail-label">Visibility</span>
+          <span className="owner-action-panel__detail-value">{slot.visibility}</span>
+        </div>
+        <div className="owner-action-panel__detail-row">
+          <span className="owner-action-panel__detail-label">Status</span>
+          <span className="owner-action-panel__detail-value">{slotStatusLabel(slot)}</span>
+        </div>
+        {slot.bookedBy ? (
+          <div className="owner-action-panel__detail-row">
+            <span className="owner-action-panel__detail-label">Booked by</span>
+            <span className="owner-action-panel__detail-value">{slot.bookedBy}</span>
+          </div>
+        ) : null}
+        {slot.recurringLabel ? (
+          <div className="owner-action-panel__detail-row">
+            <span className="owner-action-panel__detail-label">Recurring</span>
+            <span className="owner-action-panel__detail-value">{slot.recurringLabel}</span>
+          </div>
+        ) : null}
+        <div className="owner-action-panel__detail-block">
+          <span className="owner-action-panel__detail-label">Invite link</span>
+          <span className="owner-action-panel__detail-value owner-action-panel__detail-value--break">{slot.inviteLink}</span>
+        </div>
+      </div>
+
+      <div className="owner-action-panel__slot-actions">
+        <ActionButton>{slot.visibility === 'Private' ? 'Activate Slot' : 'Deactivate Slot'}</ActionButton>
+        <div className="owner-action-panel__secondary-row">
+          <ActionButton kind="secondary">Delete</ActionButton>
+          <ActionButton kind="secondary">Copy Invite Link</ActionButton>
+          {slot.bookedEmail ? (
+            <ActionButton kind="secondary" onClick={() => window.open(`mailto:${slot.bookedEmail}`, '_blank')}>
+              Email Student
+            </ActionButton>
+          ) : null}
+        </div>
+        <button type="button" className="owner-action-panel__text-link" onClick={() => onModeChange('default')}>
+          Clear Selection
+        </button>
+      </div>
+    </>
+  )
+}
+
+function RecurringForm({ onModeChange }) {
+  return (
+    <>
+      <h2>Recurring Office Hours</h2>
+      <p className="owner-action-panel__muted">Set up a repeating block and review it in the weekly calendar.</p>
+      <div className="owner-action-panel__form">
+        <label>
+          Title
+          <input type="text" defaultValue="Weekly Office Hours" />
+        </label>
+        <label>
+          Day(s)
+          <input type="text" defaultValue="Monday, Wednesday" />
+        </label>
+        <label>
+          Time
+          <input type="text" defaultValue="3:00 PM - 4:00 PM" />
+        </label>
+        <label>
+          Number of weeks
+          <input type="number" defaultValue={6} />
+        </label>
+        <label>
+          Visibility
+          <select defaultValue="Private">
+            <option>Private</option>
+            <option>Public</option>
+          </select>
+        </label>
+      </div>
+      <div className="owner-action-panel__row">
+        <ActionButton>Save Recurring Schedule</ActionButton>
+        <ActionButton kind="ghost" onClick={() => onModeChange('default')}>
+          Cancel
+        </ActionButton>
+      </div>
+    </>
+  )
+}
+
+function GroupForm({ onModeChange }) {
+  return (
+    <>
+      <h2>Group Meeting Draft</h2>
+      <p className="owner-action-panel__muted">Use the calendar to pick candidate times before finalizing the meeting.</p>
+      <div className="owner-action-panel__form">
+        <label>
+          Meeting title
+          <input type="text" defaultValue="COMP 307 Project Review" />
+        </label>
+        <label>
+          Invited users
+          <input type="text" defaultValue="4 invited" />
+        </label>
+        <label>
+          Candidate time note
+          <textarea rows="3" defaultValue="Select two candidate blocks from Thursday and Friday afternoons." />
+        </label>
+      </div>
+      <div className="owner-action-panel__row">
+        <ActionButton>Save Draft</ActionButton>
+        <ActionButton kind="ghost" onClick={() => onModeChange('default')}>
+          Finalize Later
+        </ActionButton>
+      </div>
+    </>
+  )
+}
+
+// Functionality edited by Sophia
+function CreateSlotForm({ selectedCell, onModeChange }) {
+  const [visibility, setVisibility] = useState('Private')
+  
+  const [title, setTitle] = useState('Office Hours')
+  async function handleCreate() {
+    try {
+      const response = await fetch('http://localhost:3000/api/ownerSlots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          title,
+          slot_date: selectedCell?.date || '2026-04-24',
+          start_time: selectedCell?.startTime || '10:00',
+          end_time: selectedCell?.endTime || '10:30',
+          status: visibility === 'Public' ? 'active' : 'private',
+        })
+      })
+      const data = await response.json()
+      console.log('Slot created', data)
+      onModeChange('default')
+    } catch (err) {
+      console.error('Error creating slot', err)
+    }
+  }
+
+  return (
+    <>
+      <h2>Create Slot</h2>
+      <p className="owner-action-panel__muted">
+        {selectedCell ? `Creating slot for ${selectedCell.day} at ${selectedCell.time}.` : 'Choose a day and time from the calendar, then fill details.'}
+      </p>
+      <div className="owner-action-panel__form">
+        <label>
+          Title
+          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
+        </label>
+        <label>
+          Date
+          <input type="text" defaultValue={selectedCell ? `${selectedCell.day}` : 'Tuesday, April 23'} />
+        </label>
+        <label>
+          Time Range
+          <input type="text" defaultValue={selectedCell ? `${selectedCell.time} - 10:30 AM` : '10:00 AM - 10:30 AM'} />
+        </label>
+        <label>
+          Visibility
+          <select value={visibility} onChange={(e) => setVisibility(e.target.value)}>
+            <option value="Private">Private</option>
+            <option value="Public">Public</option>
+          </select>
+        </label>
+      </div>
+      <div className="owner-action-panel__row">
+        <ActionButton onClick={handleCreate}>{visibility === 'Public' ? 'Activate Slot' : 'Create Private Slot'}</ActionButton>
+        <ActionButton kind="ghost" onClick={() => onModeChange('default')}>
+          Cancel
+        </ActionButton>
+      </div>
+    </>
+  )
+}
+
+export default function OwnerActionPanel({ panelMode, selectedSlot, selectedCell, onModeChange }) {
+  return (
+    <aside className="owner-action-panel">
+      {panelMode === 'slotDetails' && selectedSlot ? <SlotDetailsPanel slot={selectedSlot} onModeChange={onModeChange} /> : null}
+      {panelMode === 'create' ? <CreateSlotForm selectedCell={selectedCell} onModeChange={onModeChange} /> : null}
+      {panelMode === 'recurring' ? <RecurringForm onModeChange={onModeChange} /> : null}
+      {panelMode === 'group' ? <GroupForm onModeChange={onModeChange} /> : null}
+      {panelMode === 'default' ? <DefaultPanel onModeChange={onModeChange} /> : null}
+    </aside>
+  )
+}
