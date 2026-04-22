@@ -6,8 +6,10 @@ function pad2(value) {
   return String(value).padStart(2, '0')
 }
 
+// added by Sophia
 function parseDateParts(slotDate) {
-  const [year, month, day] = String(slotDate).split('-').map(Number)
+  const dateOnly = String(slotDate).split('T')[0]
+  const [year, month, day] = dateOnly.split('-').map(Number)
   return { year, month, day }
 }
 
