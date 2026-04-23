@@ -71,12 +71,15 @@ export default function UserDashboardPage() {
           credentials: 'include'
         })
         if (response.status === 401) {
-          navigate(`/auth?mode=login&redirect=/user-dashboard?invite=${inviteToken}`)
+          const slotId = searchParams.get('slot')
+          navigate(`/auth?mode=login&redirect=/user-dashboard?invite=${inviteToken}${slotId ? `%26slot=${slotId}` : ''}`)
           return
         }
         if (!response.ok) return
         const data = await response.json()
-        setInviteSlots(data.slots || [])
+        const slotId = searchParams.get('slot')
+        const filtered = slotId ? data.slots.filter(s => s.id === Number(slotId)) : data.slots
+        setInviteSlots(filtered || [])
         setShowInviteModal(true)
       } catch (err) {
         console.error('Error fetching invite slots', err)
@@ -369,7 +372,7 @@ export default function UserDashboardPage() {
           <div key={slot.id} style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
             <h3>{slot.title}</h3>
             <p>
-            {new Date(slot.slot_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} — {slot.start_time} to {slot.end_time}
+            {new Date((slot.slot_date).split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} - {slot.start_time} to {slot.end_time}
             </p>
 
             <button type="button" 

@@ -1,4 +1,5 @@
 // code written by Rupneet (ID: 261096653)
+// button functionalities added by sophia
 
 import { useState } from 'react'
 import '../styles/OwnerActionPanel.css'
@@ -69,12 +70,14 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated }) {
 
   // added by Sophia
   async function handleCopyInviteLink() {
+    console.log('slot backendId:', slot.backendId)
+    console.log('slot:', slot)
     try {
       const response = await fetch('/api/invites/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ label: slot.title })
+        body: JSON.stringify({ label: slot.title, slot_id: slot.backendId })
       })
       const data = await response.json()
       setInviteUrl(data.invite_url)
