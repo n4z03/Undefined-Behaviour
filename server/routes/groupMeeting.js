@@ -1,6 +1,5 @@
 // Bonita Baladi, 261097353
 
-
 // Booking type 2: group meeting calendar method
 const express = require('express');
 const router = express.Router();
@@ -82,6 +81,7 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
     }
 
     const conn = await pool.getConnection();
+    let committed = false;
     try {
         await conn.beginTransaction();
 
@@ -110,6 +110,11 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
         }
 
         await conn.commit();
+        committed = true;
+
+        // FIX: release the lock BEFORE calling pool.query(), otherwise
+        // pool.query() tries to acquire the same lock and self-deadlocks.
+        conn.release();
 
         // Return group + all slot options
         const [groupRows] = await pool.query(
@@ -127,11 +132,12 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
         });
 
     } catch (err) {
-        await conn.rollback();
+        if (!committed) {
+            await conn.rollback();
+            conn.release();
+        }
         console.error('Error creating group meeting:', err);
         res.status(500).json({ error: 'Failed to create group meeting.' });
-    } finally {
-        conn.release();
     }
 });
 
@@ -247,20 +253,23 @@ router.post('/:groupId/vote', requireLogin, async (req, res) => {
             return res.status(403).json({ error: 'Owners cannot vote in their own group meeting.' });
         }
 
-        // Confirm all slot_ids belong to this group
+        // Confirm all slot_ids belong to this group.
+        // FIX: SQLite doesn't auto-expand IN (?) for arrays like MySQL does.
+        // Build one placeholder per id: IN (?, ?, ...)
+        const placeholders = slot_ids.map(() => '?').join(', ');
         const [validSlots] = await pool.query(
-            `SELECT id FROM booking_slots WHERE group_id = ? AND id IN (?)`,
-            [group_id, slot_ids]
+            `SELECT id FROM booking_slots WHERE group_id = ? AND id IN (${placeholders})`,
+            [group_id, ...slot_ids]
         );
         if (validSlots.length !== slot_ids.length) {
             return res.status(400).json({ error: 'One or more slot_ids do not belong to this group.' });
         }
 
-        // Insert votes - use INSERT IGNORE to skip duplicates (user already voted for this slot)
+        // FIX: INSERT OR IGNORE is the correct SQLite syntax (INSERT IGNORE is MySQL-only)
         let inserted = 0;
         for (const slot_id of slot_ids) {
             const [result] = await pool.query(
-                `INSERT IGNORE INTO bookings (slot_id, user_id, status)
+                `INSERT OR IGNORE INTO bookings (slot_id, user_id, status)
                  VALUES (?, ?, 'confirmed')`,
                 [slot_id, user_id]
             );
@@ -355,6 +364,7 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
         );
         if (groupRows.length === 0) {
             await conn.rollback();
+            conn.release();
             return res.status(404).json({ error: 'Group not found.' });
         }
 
@@ -365,6 +375,7 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
         );
         if (slotRows.length === 0) {
             await conn.rollback();
+            conn.release();
             return res.status(404).json({ error: 'Slot not found in this group.' });
         }
 
@@ -410,10 +421,10 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
 
                 const child_slot_id = childResult.insertId;
 
-                // Book all voters for this child slot
+                // FIX: INSERT OR IGNORE is the correct SQLite syntax
                 for (const voter of voters) {
                     await conn.query(
-                        `INSERT IGNORE INTO bookings (slot_id, user_id, status)
+                        `INSERT OR IGNORE INTO bookings (slot_id, user_id, status)
                          VALUES (?, ?, 'confirmed')`,
                         [child_slot_id, voter.id]
                     );
@@ -422,6 +433,7 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
         }
 
         await conn.commit();
+        conn.release();
 
         res.json({
             message: is_recurring
@@ -441,10 +453,9 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
 
     } catch (err) {
         await conn.rollback();
+        conn.release();
         console.error('Error confirming slot:', err);
         res.status(500).json({ error: 'Failed to confirm slot.' });
-    } finally {
-        conn.release();
     }
 });
 

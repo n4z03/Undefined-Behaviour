@@ -114,48 +114,46 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
 
         const parent_id = parentResult.insertId;
 
-        // 2. Generate child slots, one per week after the first
-        //    Week 0 = the parent itself, so children start at week 1
-        const childValues = [];
+        // 2. Generate child slots, one per week after the first.
+        //    FIX: SQLite does not support the MySQL `INSERT INTO t VALUES ?` batch syntax
+        //    with a nested array. We insert each child individually instead.
         for (let w = 1; w <= weeks; w++) {
             const childDate = addWeeks(slot_date, w);
-            childValues.push([
-                owner_id, parent_id, title.trim(), description, childDate,
-                start_time, end_time, location, status, max_bookings,
-            ]);
-        }
-
-        if (childValues.length > 0) {
             await conn.query(
                 `INSERT INTO booking_slots (
                     owner_id, parent_slot_id, title, description, slot_date,
                     start_time, end_time, location, slot_type, status, max_bookings,
                     is_recurring, recurrence_weeks
-                ) VALUES ?`,
-                // map each child row; slot_type, is_recurring, recurrence_weeks are literals
-                [childValues.map(r => [...r, 'office_hours', true, null])]
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'office_hours', ?, ?, true, NULL)`,
+                [
+                    owner_id, parent_id, title.trim(), description, childDate,
+                    start_time, end_time, location, status, max_bookings,
+                ]
             );
         }
 
         await conn.commit();
 
-        // Return the parent + the number of children created
+        // Return the parent + the number of children created.
+        // conn is still valid here — we haven't released it yet and this
+        // query goes through the connection, not pool.query(), so no deadlock.
         const [parentRows] = await conn.query(
             `SELECT * FROM booking_slots WHERE id = ?`, [parent_id]
         );
 
+        conn.release();
+
         res.status(201).json({
             message: `Recurring slot created with ${weeks} occurrence(s).`,
             parent: parentRows[0],
-            children_created: childValues.length,
+            children_created: weeks,
         });
 
     } catch (err) {
         await conn.rollback();
+        conn.release();
         console.error('Error creating recurring slot:', err);
         res.status(500).json({ error: 'Failed to create recurring slot.' });
-    } finally {
-        conn.release();
     }
 });
 
@@ -305,6 +303,7 @@ router.delete('/:id', requireLogin, requireOwner, async (req, res) => {
 
         if (parentRows.length === 0) {
             await conn.rollback();
+            conn.release();
             return res.status(404).json({ error: 'Recurring slot not found.' });
         }
 
@@ -332,6 +331,7 @@ router.delete('/:id', requireLogin, requireOwner, async (req, res) => {
         );
 
         await conn.commit();
+        conn.release();
 
         res.json({
             message: 'Recurring slot and all occurrences deleted.',
@@ -342,10 +342,9 @@ router.delete('/:id', requireLogin, requireOwner, async (req, res) => {
 
     } catch (err) {
         await conn.rollback();
+        conn.release();
         console.error('Error deleting recurring slot:', err);
         res.status(500).json({ error: 'Failed to delete recurring slot.' });
-    } finally {
-        conn.release();
     }
 });
 
@@ -394,9 +393,9 @@ router.post('/:slotId/book', requireLogin, async (req, res) => {
             return res.status(400).json({ error: 'This slot is fully booked.' });
         }
 
-        // Insert the booking - INSERT IGNORE handles duplicate gracefully
+        // FIX: INSERT OR IGNORE is the correct SQLite syntax (INSERT IGNORE is MySQL-only)
         const [result] = await pool.query(
-            `INSERT IGNORE INTO bookings (slot_id, user_id, status)
+            `INSERT OR IGNORE INTO bookings (slot_id, user_id, status)
              VALUES (?, ?, 'confirmed')`,
             [slot_id, user_id]
         );
