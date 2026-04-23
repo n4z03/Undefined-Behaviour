@@ -1,6 +1,7 @@
 // code written by Rupneet (ID: 261096653)
 
 import { useState } from 'react'
+import { apiFetch } from '../api'
 import '../styles/OwnerActionPanel.css'
 import { addMinutes, buildCreateSlotPayload, formatTime24To12, to24Hour } from '../utils/ownerSlotAdapters'
 
@@ -39,7 +40,7 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated }) {
   async function handleToggleVisibility() {
     const newStatus = slot.visibility === 'Private' ? 'active' : 'private'
     try {
-      const response = await fetch(`/api/ownerSlots/${slot.backendId}/visibility`, {
+      const response = await apiFetch(`/api/ownerSlots/${slot.backendId}/visibility`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -55,7 +56,7 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated }) {
 
   async function handleDelete() {
     try {
-      const response = await fetch(`/api/ownerSlots/${slot.backendId}`, {
+      const response = await apiFetch(`/api/ownerSlots/${slot.backendId}`, {
         method: 'DELETE',
         credentials: 'include',
       })
@@ -70,7 +71,7 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated }) {
   // added by Sophia
   async function handleCopyInviteLink() {
     try {
-      const response = await fetch('/api/invites/generate', {
+      const response = await apiFetch('/api/invites/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -230,7 +231,7 @@ function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
         selectedCell,
       })
 
-      const response = await fetch('/api/ownerSlots', {
+      const response = await apiFetch('/api/ownerSlots', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

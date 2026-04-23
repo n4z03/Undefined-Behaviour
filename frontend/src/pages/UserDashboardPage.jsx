@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { apiFetch } from '../api'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import DashboardSidebar from '../components/DashboardSidebar'
@@ -42,7 +43,7 @@ export default function UserDashboardPage() {
   useEffect(() => {
     async function fetchMe() {
       try {
-        const response = await fetch('/api/auth/me', {
+        const response = await apiFetch('/api/auth/me', {
           credentials: 'include',
         })
         if (!response.ok) return
@@ -67,7 +68,7 @@ export default function UserDashboardPage() {
     if (!inviteToken) return 
     async function fetchInviteSlots() {
       try {
-        const response = await fetch(`/api/invites/${inviteToken}`, {
+        const response = await apiFetch(`/api/invites/${inviteToken}`, {
           credentials: 'include'
         })
         if (response.status === 401) {
@@ -87,7 +88,7 @@ export default function UserDashboardPage() {
 
   async function handleSidebarSelect(sectionId) {
     if (sectionId === 'logout') {
-      await fetch('/api/auth/logout', {
+      await apiFetch('/api/auth/logout', {
       method: 'POST',
       credentials: 'include'
     })

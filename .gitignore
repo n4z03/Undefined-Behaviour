@@ -9,6 +9,7 @@ build/
 .env
 .env.*
 !.env.example
+!frontend/.env.production
 
 # Logs and OS noise
 *.log
