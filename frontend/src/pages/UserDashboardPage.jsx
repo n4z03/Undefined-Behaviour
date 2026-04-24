@@ -1,5 +1,4 @@
 // Rupneet Shahriar (261096653)
-// Rupneet Shahriar (261096653)
 //code added by Nazifa 261112966
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -306,10 +305,7 @@ export default function UserDashboardPage() {
 
   async function handleSidebarSelect(sectionId) {
     if (sectionId === 'logout') {
-      await fetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include'
-    })
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
       navigate('/auth?mode=login')
       return
     }

@@ -1,7 +1,5 @@
 // code written by Rupneet (ID: 261096653)
 // Button functionalities added by Sophia (261149930)
-// code written by Rupneet (ID: 261096653)
-// Button functionalities added by Sophia (261149930)
 // code added by Nazifa (261112966)
 import { useEffect, useState } from 'react'
 import '../styles/OwnerActionPanel.css'
