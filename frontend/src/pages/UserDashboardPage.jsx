@@ -1,3 +1,6 @@
+// Rupneet Shahriar (261096653)
+// Code added by Nazifa Ahmed (261112966)
+
 import { useEffect, useMemo, useState } from 'react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -7,6 +10,7 @@ import ExportPanel from '../components/ExportPanel'
 import OwnerList from '../components/OwnerList'
 import AvailableSlotCard from '../components/AvailableSlotCard'
 import AppointmentCard from '../components/AppointmentCard'
+import CancelBookingCard from '../components/CancelBookingCard'
 import RequestMeetingForm from '../components/RequestMeetingForm'
 import UserRequestCard from '../components/UserRequestCard'
 import {
@@ -38,6 +42,9 @@ export default function UserDashboardPage() {
   const [selectedFreeSlotCell, setSelectedFreeSlotCell] = useState(null)
   const [inviteSlots, setInviteSlots] = useState([])
   const [showInviteModal, setShowInviteModal] = useState(false)
+  // Nazifa Ahmed (261112966)
+  const [cancelTarget, setCancelTarget] = useState(null)
+  const [cancelLoading, setCancelLoading] = useState(false)
 
   useEffect(() => {
     async function fetchMe() {
@@ -121,26 +128,44 @@ export default function UserDashboardPage() {
     ])
   }
 
-  function handleCancelBooking(appointmentId) {
-    const appointment = appointments.find((item) => item.id === appointmentId)
-    if (!appointment) return
+  // Added by Nazifa
+  function requestCancel(appointmentOrId) {
+    const appt =
+      typeof appointmentOrId === 'object' && appointmentOrId != null && 'id' in appointmentOrId
+        ? appointmentOrId
+        : appointments.find((item) => item.id === String(appointmentOrId))
+    if (appt) setCancelTarget(appt)
+  }
 
-    setAppointments((current) => current.filter((item) => item.id !== appointmentId))
-    setAvailableSlots((current) => [
-      {
-        id: `avail-${Date.now()}`,
-        ownerId: owners.find((owner) => owner.name === appointment.ownerName)?.id || owners[0].id,
-        ownerName: appointment.ownerName,
-        ownerEmail: appointment.ownerEmail,
-        title: appointment.title,
-        dateLabel: appointment.dateLabel,
-        timeRange: appointment.timeRange,
-        status: 'Available',
-        visibility: 'Public',
-        recurringLabel: appointment.recurringLabel || null,
-      },
-      ...current,
-    ])
+  // Added by Nazifa
+  async function confirmCancelBooking() {
+    if (!cancelTarget) return
+    setCancelLoading(true)
+    const appointment = cancelTarget
+    try {
+      const response = await fetch(`/api/bookings/${appointment.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        window.alert(err.error || 'Unable to cancel this booking. Please try again.')
+        return
+      }
+      setAppointments((c) => c.filter((a) => a.id !== appointment.id))
+      setSelectedCalendarAppointmentId(null)
+      setCancelTarget(null)
+      const subj = encodeURIComponent(`Cancelled: ${appointment.title}`)
+      const body = encodeURIComponent(
+        `Hi ${appointment.ownerName},\n\nI have cancelled my booking for "${appointment.title}" on ${appointment.dateLabel} (${appointment.timeRange}).\n\n— ${userName}`,
+      )
+      window.location.href = `mailto:${appointment.ownerEmail}?subject=${subj}&body=${body}`
+    } catch (e) {
+      console.error(e)
+      window.alert('Unable to complete the cancellation. Please try again.')
+    } finally {
+      setCancelLoading(false)
+    }
   }
 
   function handleSubmitRequest(payload) {
@@ -181,6 +206,7 @@ export default function UserDashboardPage() {
       const [startTime, endTime] = appointment.timeRange.split(' - ')
       return {
         id: `appt-cal-${appointment.id}`,
+        bookingId: appointment.id,
         title: appointment.title,
         day: dayName,
         time: startTime,
@@ -274,7 +300,12 @@ export default function UserDashboardPage() {
                           <a href={`mailto:${selectedCalendarAppointment.ownerEmail}`}>Message Owner</a>
                           <button
                             type="button"
-                            onClick={() => handleCancelBooking(selectedCalendarAppointment.id.replace('appt-cal-', ''))}
+                            onClick={() => {
+                              const a = appointments.find(
+                                (x) => x.id === String(selectedCalendarAppointment.bookingId),
+                              )
+                              if (a) requestCancel(a)
+                            }}
                           >
                             Cancel Booking
                           </button>
@@ -350,7 +381,7 @@ export default function UserDashboardPage() {
                     <p className="user-panel__empty">No appointments booked yet.</p>
                   ) : (
                     appointments.map((appointment) => (
-                      <AppointmentCard key={appointment.id} appointment={appointment} onCancel={handleCancelBooking} />
+                      <AppointmentCard key={appointment.id} appointment={appointment} onCancel={requestCancel} />
                     ))
                   )}
                 </div>
@@ -417,6 +448,16 @@ export default function UserDashboardPage() {
         </div>
       </main>
       <Footer />
+      {cancelTarget ? (
+        <CancelBookingCard
+          appointment={cancelTarget}
+          isLoading={cancelLoading}
+          onClose={() => {
+            if (!cancelLoading) setCancelTarget(null)
+          }}
+          onConfirm={confirmCancelBooking}
+        />
+      ) : null}
     </div>
   )
 }

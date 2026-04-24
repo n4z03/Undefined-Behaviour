@@ -3,7 +3,7 @@ import '../styles/OwnerList.css'
 export default function OwnerList({ owners, selectedOwnerId, onSelectOwner }) {
   return (
     <section className="owner-list">
-      <h3>Owners with Active Slots</h3>
+      <h3>Instructors with Active Slots</h3>
       <div className="owner-list__items">
         {owners.map((owner) => (
           <button
