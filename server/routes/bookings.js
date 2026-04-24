@@ -21,6 +21,12 @@ function requireUser(req, res, next) {
     next();
 }
 
+async function tryRollback(conn) {
+    try {
+        await conn.rollback();
+    } catch (e) {}
+}
+
 // GET /api/bookings/available-slots
 // This will return all active slots not owned by the current user that still have space
 // + that the current user hasn't already booked.
@@ -130,26 +136,25 @@ router.post('/book-slot/:slotId', requireLogin, requireUser, async (req, res) =>
         );
 
         if (slotRows.length === 0) {
-            await conn.rollback();
+            await tryRollback(conn);
             return res.status(404).json({ error: 'Slot not found or not active.' });
         }
 
         const slot = slotRows[0];
 
-        if (slot.owner_id === user_id) {
-            await conn.rollback();
+        if (Number(slot.owner_id) === Number(user_id)) {
+            await tryRollback(conn);
             return res.status(400).json({ error: 'You cannot book your own slot.' });
         }
 
-        // Check the user hasn't already booked this slot
         const [existingRows] = await conn.query(
-            `SELECT id FROM bookings
-             WHERE slot_id = ? AND user_id = ? AND status = 'confirmed'`,
+            `SELECT id, status FROM bookings
+             WHERE slot_id = ? AND user_id = ?`,
             [slot_id, user_id]
         );
-
-        if (existingRows.length > 0) {
-            await conn.rollback();
+        const existing = existingRows[0];
+        if (existing && existing.status === 'confirmed') {
+            await tryRollback(conn);
             return res.status(400).json({ error: 'You have already booked this slot.' });
         }
 
@@ -161,26 +166,43 @@ router.post('/book-slot/:slotId', requireLogin, requireUser, async (req, res) =>
         );
 
         if (countRows[0].count >= slot.max_bookings) {
-            await conn.rollback();
+            await tryRollback(conn);
             return res.status(400).json({ error: 'This slot is fully booked.' });
         }
 
-        const [result] = await conn.query(
-            `INSERT INTO bookings (slot_id, user_id, status) VALUES (?, ?, 'confirmed')`,
-            [slot_id, user_id]
-        );
-
-        await conn.commit();
-
-        const [userRows] = await pool.query(
+        const [userRows] = await conn.query(
             `SELECT name, email FROM users WHERE id = ?`,
             [user_id]
         );
+        if (!userRows || userRows.length === 0) {
+            await tryRollback(conn);
+            return res.status(500).json({ error: 'User not found.' });
+        }
         const booker = userRows[0];
+
+        let bookingId;
+        if (existing && existing.status === 'cancelled') {
+            await conn.query(
+                `UPDATE bookings
+                 SET status = 'confirmed',
+                     updated_at = datetime('now')
+                 WHERE id = ? AND user_id = ? AND slot_id = ?`,
+                [existing.id, user_id, slot_id]
+            );
+            bookingId = existing.id;
+        } else {
+            const [result] = await conn.query(
+                `INSERT INTO bookings (slot_id, user_id, status) VALUES (?, ?, 'confirmed')`,
+                [slot_id, user_id]
+            );
+            bookingId = result.insertId;
+        }
+
+        await conn.commit();
 
         res.status(201).json({
             message: 'Slot booked successfully.',
-            booking_id: result.insertId,
+            booking_id: bookingId,
             notify: {
                 to: slot.owner_email,
                 subject: `New booking: ${slot.title}`,
@@ -189,7 +211,7 @@ router.post('/book-slot/:slotId', requireLogin, requireUser, async (req, res) =>
         });
 
     } catch (err) {
-        await conn.rollback();
+        await tryRollback(conn);
         console.error('Error booking slot:', err);
         res.status(500).json({ error: 'Failed to book slot.' });
     } finally {
