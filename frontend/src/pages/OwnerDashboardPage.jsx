@@ -256,8 +256,10 @@ export default function OwnerDashboardPage() {
             {activeSection === 'export' ? (
               <section className="owner-section">
                 <h2>Export to Calendar</h2>
-                <ExportPanel showHeading={true} /> // Bonita changed this to true: Shouldn't owner=true?
-              </section>
+                
+		    <ExportPanel showHeading={false} isOwner={true}/>  {/* Bonita added isOwner = true --> don't we need this? */}
+              
+		    </section>
             ) : null}
           </section>
         </div>

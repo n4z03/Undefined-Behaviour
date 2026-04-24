@@ -11,9 +11,10 @@ import OwnerList from '../components/OwnerList'
 import AvailableSlotCard from '../components/AvailableSlotCard'
 import AppointmentCard from '../components/AppointmentCard'
 import CancelBookingCard from '../components/CancelBookingCard'
+import RescheduleBookingCard from '../components/RescheduleBookingCard'
 import RequestMeetingForm from '../components/RequestMeetingForm'
 import UserRequestCard from '../components/UserRequestCard'
-import { userSidebarSections, owners, requestSeed } from '../data/userDashboardData'
+import { userSidebarSections } from '../data/userDashboardData'
 import { timeRows, weekDays } from '../data/ownerDashboardData'
 import { formatTime24To12 } from '../utils/ownerSlotAdapters'
 import '../styles/UserDashboardPage.css'
@@ -60,6 +61,8 @@ function buildBrowseOwnersFromRows(slotRows) {
 function mapApiBookingToAppointment(row) {
   return {
     id: String(row.booking_id),
+    slotId: String(row.slot_id),
+    ownerId: String(row.owner_id),
     ownerName: row.owner_name,
     ownerEmail: row.owner_email,
     title: row.title,
@@ -67,6 +70,45 @@ function mapApiBookingToAppointment(row) {
     timeRange: `${formatTime24To12(row.start_time)} - ${formatTime24To12(row.end_time)}`,
     status: 'Confirmed',
     recurringLabel: Number(row.is_recurring) === 1 ? 'Recurring' : null,
+  }
+}
+
+// Nazifa (261112966)
+// /api/meetingRequests/outgoing row for pending requests
+function mapOutgoingRequest(mr) {
+  let proposedDate = ''
+  let proposedStart = '10:00'
+  let proposedEnd = '10:30'
+  let lineSubject = ''
+  const subj = (mr.subject || '').trim()
+  const m = subj.match(/^\[(\d{4}-\d{2}-\d{2})\s+([0-9:]+)\s*-\s*([0-9:]+)\]\s*(.*)$/)
+  if (m) {
+    proposedDate = m[1]
+    proposedStart = m[2].length >= 5 ? m[2].slice(0, 5) : m[2]
+    proposedEnd = m[3].length >= 5 ? m[3].slice(0, 5) : m[3]
+    lineSubject = m[4].trim()
+  }
+  const st = (mr.status || '').toLowerCase()
+  return {
+    id: String(mr.id),
+    ownerName: mr.owner_name,
+    ownerEmail: mr.owner_email,
+    ownerId: String(mr.owner_id),
+    message: mr.message,
+    status: st === 'pending' ? 'Pending' : st === 'accepted' ? 'Accepted' : 'Declined',
+    statusRaw: mr.status,
+    createdAt: mr.created_at
+      ? new Date(mr.created_at).toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        })
+      : '',
+    proposedDate: proposedDate || new Date().toISOString().slice(0, 10),
+    proposedStart,
+    proposedEnd,
+    lineSubject,
   }
 }
 
@@ -88,7 +130,8 @@ export default function UserDashboardPage() {
   const [browseSlotsError, setBrowseSlotsError] = useState(null)
   // Nazifa Ahmed (261112966) — real bookings loaded from API; seed only used as fallback shape reference
   const [appointments, setAppointments] = useState([])
-  const [requests, setRequests] = useState(requestSeed)
+  const [requests, setRequests] = useState([])
+  const [meetingOwnerOptions, setMeetingOwnerOptions] = useState([])
   const [selectedCalendarAppointmentId, setSelectedCalendarAppointmentId] = useState(null)
   const [selectedFreeSlotCell, setSelectedFreeSlotCell] = useState(null)
   const [inviteSlots, setInviteSlots] = useState([])
@@ -96,6 +139,9 @@ export default function UserDashboardPage() {
   // Nazifa Ahmed (261112966)
   const [cancelTarget, setCancelTarget] = useState(null)
   const [cancelLoading, setCancelLoading] = useState(false)
+  const [rescheduleTarget, setRescheduleTarget] = useState(null)
+  const [rescheduleLoading, setRescheduleLoading] = useState(false)
+  const [rescheduleErr, setRescheduleErr] = useState(null)
 
   // Load only after we know a student is logged in.
   // avoids any issues with 401 errors when there is no session
@@ -107,6 +153,34 @@ export default function UserDashboardPage() {
       setAppointments((data.bookings || []).map(mapApiBookingToAppointment))
     } catch (e) {
       console.error('Could not load bookings:', e)
+    }
+  }, [])
+
+  const loadOutgoingRequests = useCallback(async () => {
+    try {
+      const res = await fetch('/api/meetingRequests/outgoing', { credentials: 'include' })
+      if (!res.ok) return
+      const data = await res.json()
+      setRequests((data.requests || []).map(mapOutgoingRequest))
+    } catch (e) {
+      console.error('Could not load your requests', e)
+    }
+  }, [])
+
+  const loadMeetingOwnerList = useCallback(async () => {
+    try {
+      const res = await fetch('/api/owners', { credentials: 'include' })
+      if (!res.ok) return
+      const data = await res.json()
+      setMeetingOwnerOptions(
+        (data.owners || []).map((o) => ({
+          id: String(o.id),
+          name: o.name,
+          email: o.email,
+        })),
+      )
+    } catch (e) {
+      console.error('Could not load owners', e)
     }
   }, [])
 
@@ -172,6 +246,10 @@ export default function UserDashboardPage() {
           setUserName(firstNameFromName(data?.user?.name))
           await loadMyBookings()
           if (cancel) return
+          await loadOutgoingRequests()
+          if (cancel) return
+          await loadMeetingOwnerList()
+          if (cancel) return
           await loadAvailableSlots()
         } else {
           setBrowseSlotsLoading(false)
@@ -187,7 +265,7 @@ export default function UserDashboardPage() {
     return () => {
       cancel = true
     }
-  }, [navigate, loadMyBookings, loadAvailableSlots])
+  }, [navigate, loadMyBookings, loadAvailableSlots, loadOutgoingRequests, loadMeetingOwnerList])
 
   useEffect (() => {
     const inviteToken = searchParams.get('invite')
@@ -308,37 +386,121 @@ export default function UserDashboardPage() {
     }
   }
 
-  function handleSubmitRequest(payload) {
-    const owner = owners.find((item) => item.id === payload.ownerId)
-    if (!owner) return
+  function openReschedule(appointment) {
+    if (!isServerBookingId(appointment.id)) return
+    setRescheduleErr(null)
+    setRescheduleTarget(appointment)
+    loadAvailableSlots()
+  }
 
-    const fullMessage = payload.preferredTime
-      ? `${payload.message} (Preferred: ${payload.preferredTime})`
-      : payload.message
+  async function confirmReschedule(newSlotId) {
+    if (!rescheduleTarget) return
+    setRescheduleLoading(true)
+    setRescheduleErr(null)
+    try {
+      const res = await fetch(`/api/bookings/${rescheduleTarget.id}/reschedule`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ slot_id: Number(newSlotId) }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setRescheduleErr(
+          data.error || (data.errors && data.errors[0]) || 'Could not move this booking',
+        )
+        return
+      }
+      setRescheduleTarget(null)
+      await loadMyBookings()
+      await loadAvailableSlots()
+    } catch (e) {
+      console.error(e)
+      setRescheduleErr('Request failed')
+    } finally {
+      setRescheduleLoading(false)
+    }
+  }
 
-    setRequests((current) => [
-      {
-        id: `req-${Date.now()}`,
-        ownerName: owner.name,
-        ownerEmail: owner.email,
-        message: fullMessage,
-        status: 'Pending',
-        createdAt: new Date().toLocaleString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
+  async function handleSubmitRequest(payload) {
+    const ownerIdNum = Number(payload.ownerId)
+    if (!Number.isInteger(ownerIdNum) || ownerIdNum < 1) {
+      window.alert('Choose an instructor from the list (load the dashboard with the server running).')
+      return
+    }
+    const addSecs = (t) => (t && t.length === 5 ? `${t}:00` : t)
+    try {
+      const res = await fetch('/api/meetingRequests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          owner_id: ownerIdNum,
+          message: payload.message,
+          subject: payload.subject && payload.subject.trim() ? payload.subject.trim() : null,
+          proposed_date: payload.proposedDate,
+          proposed_start: addSecs(payload.proposedStart),
+          proposed_end: addSecs(payload.proposedEnd),
         }),
-      },
-      ...current,
-    ])
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        window.alert((data.errors && data.errors[0]) || data.error || 'Could not send the request')
+        return
+      }
+      await loadOutgoingRequests()
+    } catch (e) {
+      console.error(e)
+      window.alert('Could not send the request')
+    }
     setSelectedFreeSlotCell(null)
+  }
+
+  async function handleUpdateRequest(requestId, body) {
+    const addSecs = (t) => (t && t.length === 5 ? `${t}:00` : t)
+    try {
+      const res = await fetch(`/api/meetingRequests/${requestId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          message: body.message,
+          subject: body.subject && body.subject.trim() ? body.subject.trim() : null,
+          proposed_date: body.proposedDate,
+          proposed_start: addSecs(body.proposedStart),
+          proposed_end: addSecs(body.proposedEnd),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        window.alert((data.errors && data.errors[0]) || data.error || 'Could not update')
+        return false
+      }
+      await loadOutgoingRequests()
+      return true
+    } catch (e) {
+      console.error(e)
+      window.alert('Could not update')
+      return false
+    }
   }
 
   const visibleOwnerSlots = useMemo(
     () => availableSlots.filter((slot) => slot.ownerId === selectedOwnerId && slot.visibility === 'Public'),
     [availableSlots, selectedOwnerId],
   )
+
+  // only other slots for the same instructor (owner) as the booking
+  const rescheduleSlotOptions = useMemo(() => {
+    if (!rescheduleTarget || !rescheduleTarget.ownerId) return []
+    const oid = String(rescheduleTarget.ownerId)
+    return availableSlots
+      .filter((s) => s.ownerId === oid)
+      .map((s) => ({
+        id: s.id,
+        label: `${s.dateLabel} · ${s.timeRange} — ${s.title}`,
+      }))
+  }, [availableSlots, rescheduleTarget])
 
   const appointmentCalendarSlots = useMemo(() => {
     return appointments.map((appointment, index) => {
@@ -372,6 +534,11 @@ export default function UserDashboardPage() {
     () => appointmentCalendarSlots.find((slot) => slot.id === selectedCalendarAppointmentId) || null,
     [appointmentCalendarSlots, selectedCalendarAppointmentId],
   )
+
+  const appointmentForSelectedCalSlot = useMemo(() => {
+    if (!selectedCalendarAppointment) return null
+    return appointments.find((x) => x.id === String(selectedCalendarAppointment.bookingId)) || null
+  }, [selectedCalendarAppointment, appointments])
 
   return (
     <div className="app">
@@ -415,7 +582,7 @@ export default function UserDashboardPage() {
                     {selectedFreeSlotCell ? (
                       <div className="user-side-panel__request-form-wrap">
                         <RequestMeetingForm
-                          owners={owners}
+                          owners={meetingOwnerOptions}
                           onSubmit={handleSubmitRequest}
                           title={`Request for ${selectedFreeSlotCell.day} at ${selectedFreeSlotCell.time}`}
                           initialPreferredTime={`${selectedFreeSlotCell.day} at ${selectedFreeSlotCell.time}`}
@@ -438,13 +605,15 @@ export default function UserDashboardPage() {
                         </p>
                         <div className="user-side-panel__actions">
                           <a href={`mailto:${selectedCalendarAppointment.ownerEmail}`}>Message Owner</a>
+                          {appointmentForSelectedCalSlot && isServerBookingId(appointmentForSelectedCalSlot.id) ? (
+                            <button type="button" onClick={() => openReschedule(appointmentForSelectedCalSlot)}>
+                              Change time
+                            </button>
+                          ) : null}
                           <button
                             type="button"
                             onClick={() => {
-                              const a = appointments.find(
-                                (x) => x.id === String(selectedCalendarAppointment.bookingId),
-                              )
-                              if (a) requestCancel(a)
+                              if (appointmentForSelectedCalSlot) requestCancel(appointmentForSelectedCalSlot)
                             }}
                           >
                             Cancel Booking
@@ -476,7 +645,11 @@ export default function UserDashboardPage() {
                     <h2>Recent Requests</h2>
                     <div className="user-side-panel__request-list">
                       {requests.slice(0, 2).map((request) => (
-                        <UserRequestCard key={request.id} request={request} />
+                        <UserRequestCard
+                          key={request.id}
+                          request={request}
+                          onUpdate={handleUpdateRequest}
+                        />
                       ))}
                     </div>
                   </section>
@@ -502,11 +675,7 @@ export default function UserDashboardPage() {
                         <h2>Browse Available Slots</h2>
                         <div className="user-card-list">
                           {browseOwners.length === 0 ? (
-                            <p className="user-panel__empty">
-                              No active public slots were returned from the server. From the project server folder, run
-                              &quot;npm run seed:demo-slots&quot; to insert demo data, then sign in with a
-                              @mail.mcgill.ca test account to browse and book.
-                            </p>
+                            <p className="user-panel__empty">No available slots right now.</p>
                           ) : visibleOwnerSlots.length === 0 ? (
                             <p className="user-panel__empty">No slots listed for this instructor (try another one).</p>
                           ) : (
@@ -541,7 +710,14 @@ export default function UserDashboardPage() {
                     <p className="user-panel__empty">No appointments booked yet.</p>
                   ) : (
                     appointments.map((appointment) => (
-                      <AppointmentCard key={appointment.id} appointment={appointment} onCancel={requestCancel} />
+                      <AppointmentCard
+                        key={appointment.id}
+                        appointment={appointment}
+                        onCancel={requestCancel}
+                        onReschedule={
+                          isServerBookingId(appointment.id) ? () => openReschedule(appointment) : undefined
+                        }
+                      />
                     ))
                   )}
                 </div>
@@ -582,11 +758,11 @@ export default function UserDashboardPage() {
             {activeSection === 'requests' ? (
               <div className="user-dashboard__workspace">
                 <section className="user-panel">
-                  <RequestMeetingForm owners={owners} onSubmit={handleSubmitRequest} />
+                  <RequestMeetingForm owners={meetingOwnerOptions} onSubmit={handleSubmitRequest} />
                   <h2>My Requests</h2>
                   <div className="user-card-list">
                     {requests.map((request) => (
-                      <UserRequestCard key={request.id} request={request} />
+                      <UserRequestCard key={request.id} request={request} onUpdate={handleUpdateRequest} />
                     ))}
                   </div>
                 </section>
@@ -616,6 +792,21 @@ export default function UserDashboardPage() {
             if (!cancelLoading) setCancelTarget(null)
           }}
           onConfirm={confirmCancelBooking}
+        />
+      ) : null}
+      {rescheduleTarget ? (
+        <RescheduleBookingCard
+          appointment={rescheduleTarget}
+          slotOptions={rescheduleSlotOptions}
+          isLoading={rescheduleLoading}
+          errMsg={rescheduleErr}
+          onClose={() => {
+            if (!rescheduleLoading) {
+              setRescheduleTarget(null)
+              setRescheduleErr(null)
+            }
+          }}
+          onConfirm={confirmReschedule}
         />
       ) : null}
     </div>

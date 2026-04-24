@@ -62,3 +62,21 @@
 .request-meeting-form__cancel:hover {
   background: #e8e8e8 !important;
 }
+
+.request-meeting-form__time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.request-meeting-form__note {
+  font-size: 0.8rem;
+  color: #555;
+  margin: 0.2rem 0;
+  line-height: 1.35;
+}
+
+.request-meeting-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
