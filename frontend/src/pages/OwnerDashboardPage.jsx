@@ -55,7 +55,8 @@ export default function OwnerDashboardPage() {
 
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
-          throw new Error('Could not load slots. Please check your login session.')
+          navigate('/auth?mode=login', { replace: true })
+          return
         }
         throw new Error('Could not load slots. Please check backend access and allowed frontend port.')
       }
@@ -80,9 +81,18 @@ export default function OwnerDashboardPage() {
           credentials: 'include',
         })
 
+        if (response.status === 401 || response.status === 403) {
+          navigate('/auth?mode=login', { replace: true })
+          return
+        }
         if (!response.ok) return
         const me = await response.json()
-        const nextName = firstNameOrAdmin(me && me.user && me.user.name)
+        // If somehow a user accesses here, redirect them
+        if (me?.user?.role !== 'owner') {
+          navigate('/user-dashboard', { replace: true })
+          return
+        }
+        const nextName = firstNameOrAdmin(me?.user?.name)
         setOwnerName(nextName)
       } catch {
         setOwnerName('Admin')

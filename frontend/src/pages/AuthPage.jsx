@@ -1,4 +1,5 @@
 // code written by Rupneet (ID: 261096653)
+// Code added by Nazifa (261112966)
 
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -20,6 +21,19 @@ export default function AuthPage() {
   const navigate = useNavigate()
   const [activeMode, setActiveMode] = useState(getModeFromSearch(location.search))
   const redirectPath = new URLSearchParams(location.search).get('redirect') // added by sophia
+
+  // Redirect already-logged-in users away from the auth page
+  // Added by nazifa
+  useEffect(() => {
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data?.user) return
+        const dest = redirectPath || (data.user.role === 'owner' ? '/owner-dashboard' : '/user-dashboard')
+        navigate(dest, { replace: true })
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     setActiveMode(getModeFromSearch(location.search))
