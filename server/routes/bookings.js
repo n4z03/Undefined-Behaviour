@@ -219,6 +219,156 @@ router.post('/book-slot/:slotId', requireLogin, requireUser, async (req, res) =>
     }
 });
 
+// Fixed /api/bookings/:bookingId/reschedule
+// Move a confirmed booking to a different open slot (same as changing date/time from the user side).
+router.patch('/:bookingId/reschedule', requireLogin, requireUser, async (req, res) => {
+    const user_id = req.user.id;
+    const booking_id = Number(req.params.bookingId);
+    const new_slot_id = Number(req.body && req.body.slot_id);
+
+    if (!Number.isInteger(booking_id)) {
+        return res.status(400).json({ error: 'Invalid booking id.' });
+    }
+    if (!Number.isInteger(new_slot_id) || new_slot_id < 1) {
+        return res.status(400).json({ error: 'Invalid slot id.' });
+    }
+
+    const conn = await pool.getConnection();
+    try {
+        await conn.beginTransaction();
+
+        const [bookRows] = await conn.query(
+            `SELECT b.id, b.slot_id, b.status
+             FROM bookings b
+             WHERE b.id = ? AND b.user_id = ?`,
+            [booking_id, user_id]
+        );
+        if (bookRows.length === 0) {
+            await tryRollback(conn);
+            return res.status(404).json({ error: 'Booking not found.' });
+        }
+        const booking = bookRows[0];
+        if (booking.status !== 'confirmed') {
+            await tryRollback(conn);
+            return res.status(400).json({ error: 'Only active bookings can be rescheduled.' });
+        }
+
+        const old_slot_id = Number(booking.slot_id);
+        if (new_slot_id === old_slot_id) {
+            await tryRollback(conn);
+            return res.status(400).json({ error: 'Pick a different time slot than your current one.' });
+        }
+
+        const [oldSlotRows] = await conn.query(
+            `SELECT owner_id FROM booking_slots WHERE id = ?`,
+            [old_slot_id]
+        );
+        if (oldSlotRows.length === 0) {
+            await tryRollback(conn);
+            return res.status(404).json({ error: 'Current slot is missing.' });
+        }
+        const oldOwnerId = Number(oldSlotRows[0].owner_id);
+
+        const [newSlotRows] = await conn.query(
+            `SELECT bs.*, u.name AS owner_name, u.email AS owner_email
+             FROM booking_slots bs
+             JOIN users u ON bs.owner_id = u.id
+             WHERE bs.id = ? AND bs.status = 'active'`,
+            [new_slot_id]
+        );
+        if (newSlotRows.length === 0) {
+            await tryRollback(conn);
+            return res.status(404).json({ error: 'That slot is not available.' });
+        }
+        const newSlot = newSlotRows[0];
+
+        if (oldOwnerId !== Number(newSlot.owner_id)) {
+            await tryRollback(conn);
+            return res.status(400).json({
+                error: 'You can only switch to another time with the same instructor.',
+            });
+        }
+
+        if (Number(newSlot.owner_id) === Number(user_id)) {
+            await tryRollback(conn);
+            return res.status(400).json({ error: 'You cannot book your own slot.' });
+        }
+
+        const [clash] = await conn.query(
+            `SELECT id FROM bookings
+             WHERE slot_id = ? AND user_id = ? AND status = 'confirmed' AND id != ?`,
+            [new_slot_id, user_id, booking_id]
+        );
+        if (clash.length > 0) {
+            await tryRollback(conn);
+            return res.status(400).json({ error: 'You already have a booking in that slot.' });
+        }
+
+        const [countRows] = await conn.query(
+            `SELECT COUNT(*) AS count FROM bookings
+             WHERE slot_id = ? AND status = 'confirmed'`,
+            [new_slot_id]
+        );
+        if (countRows[0].count >= newSlot.max_bookings) {
+            await tryRollback(conn);
+            return res.status(400).json({ error: 'That slot is full.' });
+        }
+
+        await conn.query(
+            `DELETE FROM bookings
+             WHERE user_id = ? AND slot_id = ? AND status = 'cancelled'`,
+            [user_id, new_slot_id]
+        );
+
+        await conn.query(
+            `UPDATE bookings
+             SET slot_id = ?,
+                 updated_at = datetime('now')
+             WHERE id = ? AND user_id = ? AND status = 'confirmed'`,
+            [new_slot_id, booking_id, user_id]
+        );
+
+        await conn.commit();
+
+        // Must use conn.query here, not pool.query — the connection still holds the global
+        // lock until conn.release() in `finally`, so pool.query would deadlock waiting on acquire().
+        const [rows] = await conn.query(
+            `SELECT
+                b.id          AS booking_id,
+                b.notes,
+                b.booked_at,
+                bs.id         AS slot_id,
+                bs.title,
+                bs.description,
+                bs.slot_date,
+                bs.start_time,
+                bs.end_time,
+                bs.location,
+                bs.slot_type,
+                bs.is_recurring,
+                u.id          AS owner_id,
+                u.name        AS owner_name,
+                u.email       AS owner_email
+            FROM bookings b
+            JOIN booking_slots bs ON b.slot_id = bs.id
+            JOIN users u ON bs.owner_id = u.id
+            WHERE b.id = ? AND b.user_id = ?`,
+            [booking_id, user_id]
+        );
+
+        res.json({
+            message: 'Booking rescheduled.',
+            booking: rows[0] || null,
+        });
+    } catch (err) {
+        await tryRollback(conn);
+        console.error('Error rescheduling booking:', err);
+        res.status(500).json({ error: 'Failed to reschedule booking.' });
+    } finally {
+        conn.release();
+    }
+});
+
 // DELETE /api/bookings/:bookingId
 // Cancels the current user's booking (changes status to cancelled)
 // The slot will then become available again for others to book.

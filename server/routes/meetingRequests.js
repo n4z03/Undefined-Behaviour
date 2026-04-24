@@ -1,4 +1,5 @@
 // Bonita Baladi, 261097353
+// Code added by Nazifa Ahmed (261112966)
 
 // Booking type 1: request a meeting
 
@@ -331,6 +332,87 @@ router.patch('/:id/decline', requireLogin, requireOwner, async (req, res) => {
     } catch (err) {
         console.error('Error declining request:', err);
         res.status(500).json({ error: 'Failed to decline request.' });
+    }
+});
+
+// edit pending requests done by Nazifa Ahmed (261112966)
+router.patch('/:id', requireLogin, requireUser, async (req, res) => {
+    const user_id = req.user.id;
+    const request_id = Number(req.params.id);
+    if (!Number.isInteger(request_id)) {
+        return res.status(400).json({ error: 'Invalid request id.' });
+    }
+
+    const {
+        message,
+        subject = null,
+        proposed_date,
+        proposed_start,
+        proposed_end,
+    } = req.body;
+
+    const errors = [];
+    if (!message || typeof message !== 'string' || !message.trim()) {
+        errors.push('message is required.');
+    }
+    if (!proposed_date || !/^\d{4}-\d{2}-\d{2}$/.test(proposed_date)) {
+        errors.push('proposed_date must be in YYYY-MM-DD format.');
+    }
+    if (!proposed_start || !/^\d{2}:\d{2}(:\d{2})?$/.test(proposed_start)) {
+        errors.push('proposed_start must be in HH:MM or HH:MM:SS format.');
+    }
+    if (!proposed_end || !/^\d{2}:\d{2}(:\d{2})?$/.test(proposed_end)) {
+        errors.push('proposed_end must be in HH:MM or HH:MM:SS format.');
+    }
+    if (proposed_start && proposed_end && proposed_start >= proposed_end) {
+        errors.push('proposed_start must be earlier than proposed_end.');
+    }
+    if (errors.length > 0) {
+        return res.status(400).json({ errors });
+    }
+
+    try {
+        const [rows] = await pool.query(
+            `SELECT * FROM meeting_requests WHERE id = ? AND user_id = ?`,
+            [request_id, user_id]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Request not found.' });
+        }
+        if (rows[0].status !== 'pending') {
+            return res.status(400).json({ error: 'You can only edit a pending request.' });
+        }
+
+        const timePrefix = `[${proposed_date} ${proposed_start} - ${proposed_end}]`;
+        const fullSubject = subject && String(subject).trim()
+            ? `${timePrefix} ${String(subject).trim()}`
+            : timePrefix;
+
+        await pool.query(
+            `UPDATE meeting_requests
+             SET message = ?,
+                 subject = ?,
+                 updated_at = datetime('now')
+             WHERE id = ? AND user_id = ?`,
+            [message.trim(), fullSubject, request_id, user_id]
+        );
+
+        const [out] = await pool.query(
+            `SELECT mr.*, o.name AS owner_name, o.email AS owner_email
+             FROM meeting_requests mr
+             JOIN users o ON mr.owner_id = o.id
+             WHERE mr.id = ?`,
+            [request_id]
+        );
+
+        res.json({
+            message: 'Request updated.',
+            request: out[0] || null,
+        });
+    } catch (err) {
+        console.error('Error updating meeting request:', err);
+        res.status(500).json({ error: 'Failed to update request.' });
     }
 });
 
