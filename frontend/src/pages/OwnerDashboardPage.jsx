@@ -1,5 +1,7 @@
 // Code written by Rupneet (ID: 261096653)
-// code added by Sophia Casalme (261149930) and Nazifa Ahmed (261112966)
+// code added by Sophia Casalme (261149930), Nazifa Ahmed (261112966)
+// Bonita Baladi (261097353) - wired meetingRequestsData to /api/meetingRequests/incoming,
+//   removed hardcoded meetingRequests import, fixed RecentRequestsPreview and RequestCard renders
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -15,7 +17,7 @@ import {
   sidebarSections,
   weekDays,
   timeRows,
-  meetingRequests,
+  // meetingRequests removed by Bonita - now fetched from backend
 } from '../data/ownerDashboardData'
 import {
   getNextDateForWeekday,
@@ -44,6 +46,41 @@ export default function OwnerDashboardPage() {
   const [panelMode, setPanelMode] = useState('default')
   // so group meeting list reloads when i make a new one
   const [groupRefreshKey, setGroupRefreshKey] = useState(0)
+
+  // added by Bonita - fetch real requests from backend instead of hardcoded data
+  const [meetingRequestsData, setMeetingRequestsData] = useState([])
+
+  useEffect(() => {
+    async function fetchRequests() {
+      try {
+        const res = await fetch('/api/meetingRequests/incoming', { credentials: 'include' })
+        if (!res.ok) return
+        const data = await res.json()
+        setMeetingRequestsData(data.requests || [])
+      } catch (e) {
+        console.error('Failed to fetch meeting requests:', e)
+      }
+    }
+    fetchRequests()
+  }, [])
+
+  // added by Bonita - accept/decline handlers wired to backend
+  async function handleAccept(requestId) {
+    try {
+      const res = await fetch(`/api/meetingRequests/${requestId}/accept`, { method: 'PATCH', credentials: 'include' })
+      if (!res.ok) return
+      setMeetingRequestsData(prev => prev.map(r => r.id === requestId ? { ...r, status: 'accepted' } : r))
+      await fetchOwnerSlots() // refresh calendar with new slot
+    } catch (e) { console.error('Error accepting request:', e) }
+  }
+
+  async function handleDecline(requestId) {
+    try {
+      const res = await fetch(`/api/meetingRequests/${requestId}/decline`, { method: 'PATCH', credentials: 'include' })
+      if (!res.ok) return
+      setMeetingRequestsData(prev => prev.map(r => r.id === requestId ? { ...r, status: 'declined' } : r))
+    } catch (e) { console.error('Error declining request:', e) }
+  }
 
   async function fetchOwnerSlots() {
     setLoadingSlots(true)
@@ -222,9 +259,11 @@ export default function OwnerDashboardPage() {
                       onSlotPatched={handleSlotPatched}
                       onSlotDeleted={handleSlotDeleted}
                     />
-                    {activeSection === 'overview' ? (
-                      <RecentRequestsPreview requests={meetingRequests.slice(0, 2)} onViewAll={() => handleSidebarSelect('requests')} />
-                    ) : null}
+                    {/* added by Bonita - show live pending requests preview */}
+                    <RecentRequestsPreview
+                      requests={meetingRequestsData.filter(r => r.status === 'pending').slice(0, 2)}
+                      onViewAll={() => handleSidebarSelect('requests')}
+                    />
                   </div>
                 </div>
               </>
@@ -292,16 +331,18 @@ export default function OwnerDashboardPage() {
                   shows on the calendar when you open that block — not here.
                 </p>
                 <div className="owner-request-list">
-                  {meetingRequests.map((request) => (
-                    <RequestCard key={request.id} request={request} />
+                  {/* added by Bonita - render real requests from backend */}
+                  {meetingRequestsData.map((request) => (
+                    <RequestCard key={request.id} request={request} onAccept={handleAccept} onDecline={handleDecline} />
                   ))}
                 </div>
               </section>
             ) : null}
 
-	  {activeSection === 'export' ? (
+            {activeSection === 'export' ? (
               <section className="owner-section">
                 <h2>Export to Calendar</h2>
+                {/* Bonita added isOwner={true} */}
                 <ExportPanel showHeading={false} isOwner={true} />
               </section>
             ) : null}
