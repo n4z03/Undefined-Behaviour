@@ -1,0 +1,110 @@
+/* Nazifa Ahmed (261112966) */
+.cancelbook-card-bg {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.cancelbook-card {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  max-width: 420px;
+  width: 100%;
+  padding: 1.2rem 1.4rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.cancelbook-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.cancelbook-card__top h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.cancelbook-card__close {
+  border: 0;
+  background: #eee;
+  width: 2rem;
+  height: 2rem;
+  line-height: 1;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+.cancelbook-card__close:disabled { opacity: 0.5; }
+
+.cancelbook-card__blurb {
+  font-size: 0.9rem;
+  color: #444;
+  margin: 0 0 0.8rem 0;
+}
+
+.cancelbook-card__info {
+  list-style: none;
+  padding: 0.6rem 0.7rem;
+  margin: 0 0 0.6rem 0;
+  background: #f4f4f4;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.cancelbook-card__info li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+.cancelbook-card__info li:last-child { border: 0; }
+.cancelbook-card__info span {
+  color: #666;
+  font-size: 0.8rem;
+}
+.cancelbook-card__info b { font-weight: 600; }
+
+.cancelbook-card__hint {
+  font-size: 0.75rem;
+  color: #666;
+  margin: 0 0 1rem 0;
+}
+
+.cancelbook-card__btns {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.cancelbook-card__btn {
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  font-weight: 600;
+}
+.cancelbook-card__btn--secondary {
+  background: #e8e8e8;
+  color: #333;
+}
+.cancelbook-card__btn--primary {
+  background: #b30000;
+  color: #fff;
+}
+.cancelbook-card__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

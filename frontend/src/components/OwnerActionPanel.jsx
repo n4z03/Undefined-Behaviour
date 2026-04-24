@@ -1,7 +1,8 @@
 // code written by Rupneet (ID: 261096653)
 // button functionalities added by sophia
+// Nazifa Ahmed (261112966) - owner can change date/time on a slot
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import '../styles/OwnerActionPanel.css'
 import { addMinutes, buildCreateSlotPayload, formatTime24To12, to24Hour } from '../utils/ownerSlotAdapters'
 
@@ -33,9 +34,23 @@ function slotStatusLabel(slot) {
   return 'Available'
 }
 
-function SlotDetailsPanel({ slot, onModeChange, onSlotCreated }) {
+function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched }) {
   const [inviteUrl, setInviteUrl] = useState('');
   const [copyMessage, setCopyMessage] = useState('');
+  const [editingWhen, setEditingWhen] = useState(false);
+  const [dateStr, setDateStr] = useState('');
+  const [startStr, setStartStr] = useState('');
+  const [endStr, setEndStr] = useState('');
+  const [saveErr, setSaveErr] = useState('');
+
+  useEffect(() => {
+    if (!slot) return
+    setDateStr(slot.dateInput || '')
+    setStartStr(slot.timeInputStart || '10:00')
+    setEndStr(slot.timeInputEnd || '10:30')
+    setSaveErr('')
+    setEditingWhen(false)
+  }, [slot])
 
   async function handleToggleVisibility() {
     const newStatus = slot.visibility === 'Private' ? 'active' : 'private'
@@ -51,6 +66,61 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated }) {
       onModeChange('default')
     } catch (err) {
       console.error('Error toggling visibility', err)
+    }
+  }
+
+  function resetWhenFields() {
+    setDateStr(slot.dateInput || '')
+    setStartStr(slot.timeInputStart || '10:00')
+    setEndStr(slot.timeInputEnd || '10:30')
+    setSaveErr('')
+  }
+
+  async function saveWhen() {
+    setSaveErr('')
+    if (!dateStr) {
+      setSaveErr('Pick a date first')
+      return
+    }
+    // server also validates
+    const a = (startStr || '0:0').split(':').map((x) => parseInt(x, 10) || 0)
+    const b = (endStr || '0:0').split(':').map((x) => parseInt(x, 10) || 0)
+    const startMins = a[0] * 60 + a[1]
+    const endMins = b[0] * 60 + b[1]
+    if (endMins <= startMins) {
+      setSaveErr('End has to be after start')
+      return
+    }
+    // backend wanted HH:MM:SS for tests
+    const withSecs = (t) => (t && t.length === 5 ? `${t}:00` : t)
+    try {
+      const res = await fetch(`/api/ownerSlots/${slot.backendId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          slot_date: dateStr,
+          start_time: withSecs(startStr),
+          end_time: withSecs(endStr),
+        }),
+      })
+      let data = {}
+      try {
+        data = await res.json()
+      } catch (_) {
+        // non-json error page or empty
+      }
+      if (!res.ok) {
+        const msg = data.error || (data.errors && data.errors[0]) || 'Something went wrong'
+        setSaveErr(msg)
+        return
+      }
+      setEditingWhen(false)
+      if (onSlotPatched && data.slot) onSlotPatched(data.slot)
+      else if (onSlotCreated) await onSlotCreated()
+    } catch (e) {
+      console.error(e)
+      setSaveErr("Didn't save, try again")
     }
   }
 
@@ -122,23 +192,63 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated }) {
             <span className="owner-action-panel__detail-value">{slot.recurringLabel}</span>
           </div>
         ) : null}
+        {editingWhen ? (
+          <div className="owner-action-panel__form owner-action-panel__form--tight">
+            <label>
+              Date
+              <input type="date" value={dateStr} onChange={(e) => setDateStr(e.target.value)} />
+            </label>
+            <label>
+              Start
+              <input type="time" value={startStr} onChange={(e) => setStartStr(e.target.value)} />
+            </label>
+            <label>
+              End
+              <input type="time" value={endStr} onChange={(e) => setEndStr(e.target.value)} />
+            </label>
+          </div>
+        ) : null}
         <div className="owner-action-panel__detail-block">
           <span className="owner-action-panel__detail-label">Invite link</span>
           <span className="owner-action-panel__detail-value owner-action-panel__detail-value--break">{inviteUrl || slot.inviteLink}</span>
         </div>
       </div>
 
+      {editingWhen && saveErr ? (
+        <p className="owner-action-panel__feedback owner-action-panel__feedback--error">{saveErr}</p>
+      ) : null}
+
       <div className="owner-action-panel__slot-actions">
-        <ActionButton onClick={handleToggleVisibility}>{slot.visibility === 'Private' ? 'Activate Slot' : 'Deactivate Slot'}</ActionButton>
-        <div className="owner-action-panel__secondary-row">
-          <ActionButton kind="secondary" onClick={handleDelete}>Delete</ActionButton>
-          <ActionButton kind="secondary" onClick={handleCopyInviteLink}>{copyMessage || 'Copy Invite Link'}</ActionButton>
-          {slot.bookedEmail ? (
-            <ActionButton kind="secondary" onClick={() => window.open(`mailto:${slot.bookedEmail}`, '_blank')}>
-              Email Student
+        {editingWhen ? (
+          <div className="owner-action-panel__row">
+            <ActionButton onClick={saveWhen}>Save date & time</ActionButton>
+            <ActionButton
+              kind="ghost"
+              onClick={() => {
+                setEditingWhen(false)
+                resetWhenFields()
+              }}
+            >
+              Cancel
             </ActionButton>
-          ) : null}
-        </div>
+          </div>
+        ) : (
+          <>
+            <ActionButton onClick={handleToggleVisibility}>
+              {slot.visibility === 'Private' ? 'Activate Slot' : 'Deactivate Slot'}
+            </ActionButton>
+            <div className="owner-action-panel__secondary-row">
+              <ActionButton kind="secondary" onClick={() => setEditingWhen(true)}>Edit date & time</ActionButton>
+              <ActionButton kind="secondary" onClick={handleDelete}>Delete</ActionButton>
+              <ActionButton kind="secondary" onClick={handleCopyInviteLink}>{copyMessage || 'Copy Invite Link'}</ActionButton>
+              {slot.bookedEmail ? (
+                <ActionButton kind="secondary" onClick={() => window.open(`mailto:${slot.bookedEmail}`, '_blank')}>
+                  Email Student
+                </ActionButton>
+              ) : null}
+            </div>
+          </>
+        )}
         <button type="button" className="owner-action-panel__text-link" onClick={() => onModeChange('default')}>
           Clear Selection
         </button>
@@ -297,10 +407,17 @@ function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
   )
 }
 
-export default function OwnerActionPanel({ panelMode, selectedSlot, selectedCell, onModeChange, onSlotCreated }) {
+export default function OwnerActionPanel({ panelMode, selectedSlot, selectedCell, onModeChange, onSlotCreated, onSlotPatched }) {
   return (
     <aside className="owner-action-panel">
-      {panelMode === 'slotDetails' && selectedSlot ? <SlotDetailsPanel slot={selectedSlot} onModeChange={onModeChange} onSlotCreated={onSlotCreated} /> : null}
+      {panelMode === 'slotDetails' && selectedSlot ? (
+        <SlotDetailsPanel
+          slot={selectedSlot}
+          onModeChange={onModeChange}
+          onSlotCreated={onSlotCreated}
+          onSlotPatched={onSlotPatched}
+        />
+      ) : null}
       {panelMode === 'create' ? <CreateSlotForm selectedCell={selectedCell} onModeChange={onModeChange} onSlotCreated={onSlotCreated} /> : null}
       {panelMode === 'recurring' ? <RecurringForm onModeChange={onModeChange} /> : null}
       {panelMode === 'group' ? <GroupForm onModeChange={onModeChange} /> : null}

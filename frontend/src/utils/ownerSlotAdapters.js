@@ -1,9 +1,19 @@
-// Frontend adapters for owner slot API data
+// Frontend helpers for owner slot data
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 function pad2(value) {
   return String(value).padStart(2, '0')
+}
+
+// db gives "10:00:00" or "10:00" -> html time input wants "10:00"
+function timeForInput(dbTime) {
+  if (!dbTime) return '10:00'
+  const parts = String(dbTime).split(':')
+  const h = parts[0] != null ? Number(parts[0]) : 0
+  const m = parts[1] != null ? Number(parts[1]) : 0
+  if (Number.isNaN(h) || Number.isNaN(m)) return '10:00'
+  return `${pad2(h)}:${pad2(m)}`
 }
 
 // added by Sophia
@@ -97,6 +107,9 @@ export function mapBackendSlotToCalendarSlot(slot) {
     time: formatTime24To12(slot.start_time),
     endTime: formatTime24To12(slot.end_time),
     dateLabel: dateLabelFromDate(slot.slot_date),
+    dateInput: String(slot.slot_date || '').split('T')[0],
+    timeInputStart: timeForInput(slot.start_time),
+    timeInputEnd: timeForInput(slot.end_time),
     visibility: status,
     bookingStatus,
     bookedBy: slot.booked_by_name || null,

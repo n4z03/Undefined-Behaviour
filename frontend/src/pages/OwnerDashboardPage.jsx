@@ -1,4 +1,5 @@
 // code written by Rupneet (ID: 261096653)
+// code added by Nazifa Ahmed (261112966)
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -16,7 +17,11 @@ import {
   timeRows,
   meetingRequests,
 } from '../data/ownerDashboardData'
-import { getNextDateForWeekday, mapBackendSlotsToCalendarSlots } from '../utils/ownerSlotAdapters'
+import {
+  getNextDateForWeekday,
+  mapBackendSlotToCalendarSlot,
+  mapBackendSlotsToCalendarSlots,
+} from '../utils/ownerSlotAdapters'
 
 function firstNameOrAdmin(fullName) {
   const part = String(fullName || '').trim().split(/\s+/)[0]
@@ -132,6 +137,13 @@ export default function OwnerDashboardPage() {
     setTimeout(() => setActionMessage(''), 3500)
   }
 
+  async function handleSlotPatched(row) {
+    if (row) setSelectedSlot(mapBackendSlotToCalendarSlot(row))
+    await fetchOwnerSlots()
+    setActionMessage('Date/time saved')
+    setTimeout(() => setActionMessage(''), 3200)
+  }
+
   async function handleLogout() {
     await fetch('/api/auth/logout', {
       method: 'POST',
@@ -175,6 +187,7 @@ export default function OwnerDashboardPage() {
                       selectedCell={selectedCell}
                       onModeChange={handlePanelModeChange}
                       onSlotCreated={handleSlotCreated}
+                      onSlotPatched={handleSlotPatched}
                     />
                     {activeSection === 'overview' ? (
                       <RecentRequestsPreview requests={meetingRequests.slice(0, 2)} onViewAll={() => handleSidebarSelect('requests')} />
@@ -222,6 +235,7 @@ export default function OwnerDashboardPage() {
                       selectedCell={selectedCell}
                       onModeChange={handlePanelModeChange}
                       onSlotCreated={handleSlotCreated}
+                      onSlotPatched={handleSlotPatched}
                     />
                   </div>
                 </div>
