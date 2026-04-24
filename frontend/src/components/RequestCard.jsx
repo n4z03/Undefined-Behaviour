@@ -1,5 +1,5 @@
 // code written by Rupneet (ID: 261096653)
-// code added by Sophia (261149930)
+// functionality code added by Sophia (261149930)
 
 import '../styles/RequestCard.css'
 

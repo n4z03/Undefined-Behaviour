@@ -44,6 +44,7 @@ export default function OwnerDashboardPage() {
   const [panelMode, setPanelMode] = useState('default')
   // so group meeting list reloads when i make a new one
   const [groupRefreshKey, setGroupRefreshKey] = useState(0)
+  const [meetingRequestsData, setMeetingRequestsData] = useState([])
 
   async function fetchOwnerSlots() {
     setLoadingSlots(true)
@@ -100,6 +101,22 @@ export default function OwnerDashboardPage() {
     }
 
     fetchOwnerName()
+  }, [])
+
+  useEffect(() => {
+    async function fetchRequests() {
+      try {
+        const response = await fetch('/api/meetingRequests/incoming', {
+          credentials: 'include'
+        })
+        if (!response.ok) return
+        const data = await response.json()
+        setMeetingRequestsData(data.requests || [])
+      } catch (err) {
+        console.error('Error fetching requests:', err)
+      }
+    }
+    fetchRequests()
   }, [])
 
   async function handleSidebarSelect(sectionId) {
@@ -184,6 +201,37 @@ export default function OwnerDashboardPage() {
     navigate('/auth?mode=login')
   }
 
+  async function handleAccept(requestId) {
+    try {
+      const response = await fetch(`/api/meetingRequests/${requestId}/accept`, {
+        method: 'PATCH',
+        credentials: 'include'
+      })
+      if (!response.ok) return
+      setMeetingRequestsData(prev => prev.map(r => 
+        r.id === requestId ? { ...r, status: 'accepted' } : r
+      ))
+      await fetchOwnerSlots()
+    } catch (err) {
+      console.error('Error accepting request:', err)
+    }
+  }
+  
+  async function handleDecline(requestId) {
+    try {
+      const response = await fetch(`/api/meetingRequests/${requestId}/decline`, {
+        method: 'PATCH',
+        credentials: 'include'
+      })
+      if (!response.ok) return
+      setMeetingRequestsData(prev => prev.map(r => 
+        r.id === requestId ? { ...r, status: 'declined' } : r
+      ))
+    } catch (err) {
+      console.error('Error declining request:', err)
+    }
+  }
+
   return (
     <div className="app">
       <Navbar variant="owner" />
@@ -223,7 +271,7 @@ export default function OwnerDashboardPage() {
                       onSlotDeleted={handleSlotDeleted}
                     />
                     {activeSection === 'overview' ? (
-                      <RecentRequestsPreview requests={meetingRequests.slice(0, 2)} onViewAll={() => handleSidebarSelect('requests')} />
+                      <RecentRequestsPreview requests={meetingRequestsData.filter(r => r.status === 'pending').slice(0, 2)} onViewAll={() => handleSidebarSelect('requests')} />
                     ) : null}
                   </div>
                 </div>
@@ -292,8 +340,8 @@ export default function OwnerDashboardPage() {
                   shows on the calendar when you open that block — not here.
                 </p>
                 <div className="owner-request-list">
-                  {meetingRequests.map((request) => (
-                    <RequestCard key={request.id} request={request} />
+                  {meetingRequestsData.map((request) => (
+                    <RequestCard key={request.id} request={request} onAccept={handleAccept} onDecline={handleDecline} />
                   ))}
                 </div>
               </section>
