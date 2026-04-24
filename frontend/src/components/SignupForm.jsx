@@ -1,6 +1,7 @@
 // code written by Rupneet (ID: 261096653)
 
 import { useMemo, useState } from 'react'
+import { apiFetch } from '../api'
 import { detectRoleFromEmail, ROLE_OWNER, ROLE_USER } from '../utils/authHelpers'
 import '../styles/LoginForm.css'
 import '../styles/SignupForm.css'
@@ -25,7 +26,7 @@ export default function SignupForm({ onSwitchToLogin }) {
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await apiFetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

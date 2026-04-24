@@ -2,6 +2,7 @@
 // logout functionality added by Sophia
 
 import { useLocation, useNavigate } from 'react-router-dom'
+import { apiFetch } from '../api'
 import '../styles/Navbar.css'
 
 function scrollToId(id) {
@@ -48,7 +49,7 @@ export default function Navbar({ variant = 'default' }) {
               <>
                 <nav className="navbar__nav" aria-label="Admin actions">
                   <button type="button" className="navbar__link navbar__link--pill" onClick={async () => {
-                  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+                  await apiFetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
                   navigate('/auth?mode=login')}}>
                     Log Out
                   </button>
@@ -59,7 +60,7 @@ export default function Navbar({ variant = 'default' }) {
               <>
                 <nav className="navbar__nav" aria-label="Student actions">
                   <button type="button" className="navbar__link navbar__link--pill" onClick={async () => {
-                    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+                    await apiFetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
                     navigate('/auth?mode=login')}}>
                     Log Out
                   </button>

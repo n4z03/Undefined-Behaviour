@@ -1,7 +1,8 @@
 // code written by Rupneet (ID: 261096653)
-// some parts added by Sophia Casalme (261149930)
+// some parts added by Sophia Casalme (261149930), Nazifa Ahmed (261112966)
 
 import { useState } from 'react'
+import { apiFetch } from '../api'
 import '../styles/CreateSlotForm.css'
 
 export default function CreateSlotForm() {
@@ -16,7 +17,7 @@ export default function CreateSlotForm() {
   async function handleSubmit(e) {
     e.preventDefault()
     try {
-      const response = await fetch('/api/ownerSlots', {
+      const response = await apiFetch('/api/ownerSlots', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

@@ -2,6 +2,7 @@
 // .ics export functionality added by Bonita Baladi (261097353)
 
 import { useState } from 'react'
+import { apiFetch } from '../api'
 import '../styles/ExportPanel.css'
  
 export default function ExportPanel({ compact = false, showHeading = true, isOwner = false }) {
@@ -18,7 +19,7 @@ export default function ExportPanel({ compact = false, showHeading = true, isOwn
       : '/api/calendar/export'
  
     try {
-      const response = await fetch(endpoint, {
+      const response = await apiFetch(endpoint, {
         method: 'GET',
         credentials: 'include',  // send session cookie
       })

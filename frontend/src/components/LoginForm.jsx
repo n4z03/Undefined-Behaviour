@@ -1,6 +1,7 @@
 // code written by Rupneet (ID: 261096653)
 
 import { useState } from 'react'
+import { apiFetch } from '../api'
 import { detectRoleFromEmail, isAllowedMcGillEmail } from '../utils/authHelpers'
 import '../styles/LoginForm.css'
 
@@ -21,7 +22,7 @@ export default function LoginForm({ onSwitchToSignup, onLogin }) {
     // console.log('Login submit', { email, password, role: detectRoleFromEmail(email) })
   const role = detectRoleFromEmail(email)
 try {
-  const response = await fetch('/api/auth/login', {
+  const response = await apiFetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',

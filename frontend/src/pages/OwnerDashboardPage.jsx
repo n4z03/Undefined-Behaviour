@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { apiFetch } from '../api'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import DashboardSidebar from '../components/DashboardSidebar'
@@ -46,7 +47,7 @@ export default function OwnerDashboardPage() {
     setLoadingSlots(true)
     setLoadError('')
     try {
-      const response = await fetch('/api/ownerSlots', {
+      const response = await apiFetch('/api/ownerSlots', {
         credentials: 'include',
       })
 
@@ -91,7 +92,7 @@ export default function OwnerDashboardPage() {
   useEffect(() => {
     async function fetchOwnerName() {
       try {
-        const response = await fetch('/api/auth/me', {
+        const response = await apiFetch('/api/auth/me', {
           credentials: 'include',
         })
 
@@ -109,7 +110,7 @@ export default function OwnerDashboardPage() {
 
   async function handleSidebarSelect(sectionId) {
     if (sectionId === 'logout') {
-      await fetch('/api/auth/logout', {
+      await apiFetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include'
       })
@@ -182,7 +183,7 @@ export default function OwnerDashboardPage() {
   }
 
   async function handleLogout() {
-    await fetch('/api/auth/logout', {
+    await apiFetch('/api/auth/logout', {
       method: 'POST',
       credentials: 'include'
     })
