@@ -1,10 +1,11 @@
 // code written by Rupneet (ID: 261096653)
 // button functionalities added by sophia
-// Nazifa Ahmed (261112966) - owner can change date/time on a slot
+// Nazifa Ahmed (261112966) - owner can change date/time on a slot + cancellation email functionality
 
 import { useEffect, useState } from 'react'
 import '../styles/OwnerActionPanel.css'
 import { addMinutes, buildCreateSlotPayload, formatTime24To12, to24Hour } from '../utils/ownerSlotAdapters'
+import CancelBookingCard from './CancelBookingCard'
 
 function ActionButton({ children, onClick, kind = 'primary' }) {
   return (
@@ -34,7 +35,71 @@ function slotStatusLabel(slot) {
   return 'Available'
 }
 
-function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched }) {
+function slotHasBookings(slot) {
+  const n = slot.bookingCount != null ? Number(slot.bookingCount) : 0
+  if (n > 0) return true
+  return slot.bookingStatus === 'Booked'
+}
+
+function openSlotCancelledMailto(affectedUsers, slot) {
+  const emails = affectedUsers.map((u) => u && u.email).filter(Boolean)
+  if (emails.length === 0) return
+  const to = emails.join(',')
+  const subject = encodeURIComponent('Your booking was cancelled')
+  const body = encodeURIComponent(
+    "Hi, your booking for this time was cancelled (the slot was removed or unpublished).\n\n" +
+      `${slot.title}\n` +
+      `${slot.dateLabel}, ${slot.time}–${slot.endTime}\n\n` +
+      'Please book another time on McBook if you still need a meeting.\n',
+  )
+  const href = `mailto:${to}?subject=${subject}&body=${body}`
+  window.open(href, '_blank', 'noopener,noreferrer')
+}
+
+function ownerSlotCancelDialogProps(action, s) {
+  const booked = slotHasBookings(s)
+  const timeRange = `${s.time} – ${s.endTime}`
+  const rows = [
+    { label: 'Title', value: s.title },
+    { label: 'Date', value: s.dateLabel },
+    { label: 'Time', value: timeRange },
+  ]
+  if (booked && s.bookedBy) {
+    rows.push({ label: 'Booked by', value: s.bookedBy })
+  }
+  if (action === 'deactivate') {
+    return {
+      title: 'Deactivate this slot?',
+      blurb:
+        'This cancels all student bookings for this time. A draft email will open so you can notify them. They can rebook if you turn the slot on again.',
+      infoRows: rows,
+      hint: 'When you continue, your email app may open with a message for affected students.',
+      keepLabel: 'Keep slot public',
+      confirmLabel: 'Deactivate & notify',
+    }
+  }
+  if (booked) {
+    return {
+      title: 'Remove this time?',
+      blurb:
+        'This removes the block from your calendar and cancels all student bookings. A draft email will open so you can notify them.',
+      infoRows: rows,
+      hint: 'When you continue, your email app may open with a message for students.',
+      keepLabel: 'Keep slot',
+      confirmLabel: 'Remove from calendar',
+    }
+  }
+  return {
+    title: 'Remove this time?',
+    blurb: 'This block will disappear from your calendar. There are no student bookings on it.',
+    infoRows: rows,
+    hint: 'You can add a new office hour block later.',
+    keepLabel: 'Keep it',
+    confirmLabel: 'Remove',
+  }
+}
+
+function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, onSlotDeleted }) {
   const [inviteUrl, setInviteUrl] = useState('');
   const [copyMessage, setCopyMessage] = useState('');
   const [editingWhen, setEditingWhen] = useState(false);
@@ -42,6 +107,10 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched }) 
   const [startStr, setStartStr] = useState('');
   const [endStr, setEndStr] = useState('');
   const [saveErr, setSaveErr] = useState('');
+  const [deleteErr, setDeleteErr] = useState('');
+  const [visibilityErr, setVisibilityErr] = useState('');
+  const [ownerCancelDialog, setOwnerCancelDialog] = useState(null)
+  const [ownerCancelLoading, setOwnerCancelLoading] = useState(false)
 
   useEffect(() => {
     if (!slot) return
@@ -50,23 +119,110 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched }) 
     setEndStr(slot.timeInputEnd || '10:30')
     setSaveErr('')
     setEditingWhen(false)
+    setVisibilityErr('')
+    setOwnerCancelDialog(null)
   }, [slot])
 
   async function handleToggleVisibility() {
-    const newStatus = slot.visibility === 'Private' ? 'active' : 'private'
+    const nextStatus = slot.visibility === 'Private' ? 'active' : 'private'
+    if (nextStatus === 'private' && slotHasBookings(slot)) {
+      setOwnerCancelDialog({ action: 'deactivate', slot })
+      return
+    }
+    setVisibilityErr('')
     try {
-      const response = await fetch(`/api/ownerSlots/${slot.backendId}/visibility`, {
+      const res = await fetch(`/api/ownerSlots/${slot.backendId}/visibility`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: nextStatus }),
       })
-      if (!response.ok) throw new Error('Failed to update visibility')
-      if (onSlotCreated) await onSlotCreated()
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setVisibilityErr(data.error || 'Could not update visibility')
+        return
+      }
+      const n = (data.affectedUsers || []).length
+      if (n > 0) openSlotCancelledMailto(data.affectedUsers, slot)
+      if (nextStatus === 'private') {
+        if (onSlotDeleted) {
+          await onSlotDeleted({ affectedCount: n, reason: 'deactivate' })
+        } else if (onSlotCreated) {
+          await onSlotCreated()
+        }
+      } else if (onSlotCreated) {
+        await onSlotCreated()
+      }
       onModeChange('default')
-    } catch (err) {
-      console.error('Error toggling visibility', err)
+    } catch (e) {
+      console.error(e)
+      setVisibilityErr('Could not update visibility')
     }
+  }
+
+  function openRemoveSlotDialog() {
+    setDeleteErr('')
+    setOwnerCancelDialog({ action: 'remove', slot })
+  }
+
+  async function handleConfirmOwnerCancel() {
+    if (!ownerCancelDialog) return
+    const { action, slot: which } = ownerCancelDialog
+    setOwnerCancelLoading(true)
+    setDeleteErr('')
+    setVisibilityErr('')
+    try {
+      if (action === 'remove') {
+        const res = await fetch(`/api/ownerSlots/${which.backendId}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          setDeleteErr(data.error || "Couldn't remove that slot")
+          return
+        }
+        const list = data.affectedUsers || []
+        if (list.length) openSlotCancelledMailto(list, which)
+        if (onSlotDeleted) {
+          await onSlotDeleted({ affectedCount: list.length, reason: 'delete' })
+        } else if (onSlotCreated) {
+          await onSlotCreated()
+        }
+        onModeChange('default')
+      } else {
+        const res = await fetch(`/api/ownerSlots/${which.backendId}/visibility`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ status: 'private' }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          setVisibilityErr(data.error || 'Could not update visibility')
+          return
+        }
+        const list = data.affectedUsers || []
+        if (list.length) openSlotCancelledMailto(list, which)
+        if (onSlotDeleted) {
+          await onSlotDeleted({ affectedCount: list.length, reason: 'deactivate' })
+        } else if (onSlotCreated) {
+          await onSlotCreated()
+        }
+        onModeChange('default')
+      }
+      setOwnerCancelDialog(null)
+    } catch (e) {
+      console.error(e)
+      setDeleteErr("Something went wrong, try again.")
+    } finally {
+      setOwnerCancelLoading(false)
+    }
+  }
+
+  function handleCloseOwnerCancel() {
+    if (ownerCancelLoading) return
+    setOwnerCancelDialog(null)
   }
 
   function resetWhenFields() {
@@ -121,20 +277,6 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched }) 
     } catch (e) {
       console.error(e)
       setSaveErr("Didn't save, try again")
-    }
-  }
-
-  async function handleDelete() {
-    try {
-      const response = await fetch(`/api/ownerSlots/${slot.backendId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      })
-      if (!response.ok) throw new Error('Failed to delete slot')
-      if (onSlotCreated) await onSlotCreated()
-      onModeChange('default')
-    } catch (err) {
-      console.error('Error deleting slot', err)
     }
   }
 
@@ -217,6 +359,15 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched }) 
       {editingWhen && saveErr ? (
         <p className="owner-action-panel__feedback owner-action-panel__feedback--error">{saveErr}</p>
       ) : null}
+      {deleteErr ? <p className="owner-action-panel__feedback owner-action-panel__feedback--error">{deleteErr}</p> : null}
+      {visibilityErr ? (
+        <p className="owner-action-panel__feedback owner-action-panel__feedback--error">{visibilityErr}</p>
+      ) : null}
+      {slotHasBookings(slot) && !editingWhen ? (
+        <p className="owner-action-panel__hint">
+          If you deactivate, students lose this booking and must rebook if you publish the slot again.
+        </p>
+      ) : null}
 
       <div className="owner-action-panel__slot-actions">
         {editingWhen ? (
@@ -239,7 +390,9 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched }) 
             </ActionButton>
             <div className="owner-action-panel__secondary-row">
               <ActionButton kind="secondary" onClick={() => setEditingWhen(true)}>Edit date & time</ActionButton>
-              <ActionButton kind="secondary" onClick={handleDelete}>Delete</ActionButton>
+              <ActionButton kind="secondary" onClick={openRemoveSlotDialog}>
+                Cancel
+              </ActionButton>
               <ActionButton kind="secondary" onClick={handleCopyInviteLink}>{copyMessage || 'Copy Invite Link'}</ActionButton>
               {slot.bookedEmail ? (
                 <ActionButton kind="secondary" onClick={() => window.open(`mailto:${slot.bookedEmail}`, '_blank')}>
@@ -253,6 +406,14 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched }) 
           Clear Selection
         </button>
       </div>
+      {ownerCancelDialog && ownerCancelDialog.slot ? (
+        <CancelBookingCard
+          {...ownerSlotCancelDialogProps(ownerCancelDialog.action, ownerCancelDialog.slot)}
+          isLoading={ownerCancelLoading}
+          onClose={handleCloseOwnerCancel}
+          onConfirm={handleConfirmOwnerCancel}
+        />
+      ) : null}
     </>
   )
 }
@@ -407,7 +568,7 @@ function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
   )
 }
 
-export default function OwnerActionPanel({ panelMode, selectedSlot, selectedCell, onModeChange, onSlotCreated, onSlotPatched }) {
+export default function OwnerActionPanel({ panelMode, selectedSlot, selectedCell, onModeChange, onSlotCreated, onSlotPatched, onSlotDeleted }) {
   return (
     <aside className="owner-action-panel">
       {panelMode === 'slotDetails' && selectedSlot ? (
@@ -416,6 +577,7 @@ export default function OwnerActionPanel({ panelMode, selectedSlot, selectedCell
           onModeChange={onModeChange}
           onSlotCreated={onSlotCreated}
           onSlotPatched={onSlotPatched}
+          onSlotDeleted={onSlotDeleted}
         />
       ) : null}
       {panelMode === 'create' ? <CreateSlotForm selectedCell={selectedCell} onModeChange={onModeChange} onSlotCreated={onSlotCreated} /> : null}

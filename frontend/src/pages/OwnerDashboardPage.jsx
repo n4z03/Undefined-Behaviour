@@ -144,6 +144,24 @@ export default function OwnerDashboardPage() {
     setTimeout(() => setActionMessage(''), 3200)
   }
 
+  async function handleSlotDeleted({ affectedCount, reason = 'delete' }) {
+    await fetchOwnerSlots()
+    if (affectedCount > 0) {
+      if (reason === 'deactivate') {
+        setActionMessage(
+          `Slot deactivated. Student bookings were cancelled, and a draft email was opened to notify ${affectedCount} student${affectedCount === 1 ? '' : 's'}.`,
+        )
+      } else {
+        setActionMessage(
+          `Slot removed. A draft email was opened to notify ${affectedCount} student${affectedCount === 1 ? '' : 's'}.`,
+        )
+      }
+    } else {
+      setActionMessage(reason === 'deactivate' ? 'Slot deactivated.' : 'Slot removed.')
+    }
+    setTimeout(() => setActionMessage(''), 5000)
+  }
+
   async function handleLogout() {
     await fetch('/api/auth/logout', {
       method: 'POST',
@@ -188,6 +206,7 @@ export default function OwnerDashboardPage() {
                       onModeChange={handlePanelModeChange}
                       onSlotCreated={handleSlotCreated}
                       onSlotPatched={handleSlotPatched}
+                      onSlotDeleted={handleSlotDeleted}
                     />
                     {activeSection === 'overview' ? (
                       <RecentRequestsPreview requests={meetingRequests.slice(0, 2)} onViewAll={() => handleSidebarSelect('requests')} />
@@ -236,6 +255,7 @@ export default function OwnerDashboardPage() {
                       onModeChange={handlePanelModeChange}
                       onSlotCreated={handleSlotCreated}
                       onSlotPatched={handleSlotPatched}
+                      onSlotDeleted={handleSlotDeleted}
                     />
                   </div>
                 </div>
@@ -245,6 +265,10 @@ export default function OwnerDashboardPage() {
             {activeSection === 'requests' ? (
               <section className="owner-section">
                 <h2>Meeting Requests</h2>
+                <p className="owner-section__subtitle">
+                  Students asking you to set up a new time. If someone <strong>reserved a slot you published</strong>, that
+                  shows on the calendar when you open that block — not here.
+                </p>
                 <div className="owner-request-list">
                   {meetingRequests.map((request) => (
                     <RequestCard key={request.id} request={request} />
