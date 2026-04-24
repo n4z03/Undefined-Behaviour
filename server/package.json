@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
-    "populate": "node scripts/populating-script.js"
+    "build-frontend": "cd ../frontend && npm run build"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

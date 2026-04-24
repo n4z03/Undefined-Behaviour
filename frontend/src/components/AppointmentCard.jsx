@@ -1,6 +1,6 @@
 import '../styles/AppointmentCard.css'
 
-export default function AppointmentCard({ appointment, onCancel, onReschedule }) {
+export default function AppointmentCard({ appointment, onCancel }) {
   return (
     <article className="appointment-card">
       <div className="appointment-card__top">
@@ -13,11 +13,6 @@ export default function AppointmentCard({ appointment, onCancel, onReschedule })
       {appointment.recurringLabel ? <p className="appointment-card__recurring">{appointment.recurringLabel}</p> : null}
       <div className="appointment-card__actions">
         <a href={`mailto:${appointment.ownerEmail}`}>Message Owner</a>
-        {onReschedule ? (
-          <button type="button" onClick={onReschedule}>
-            Change time
-          </button>
-        ) : null}
         <button type="button" onClick={() => onCancel(appointment.id)}>
           Cancel Booking
         </button>
