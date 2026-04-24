@@ -4,6 +4,7 @@ export const userSidebarSections = [
   { id: 'overview', label: 'Overview' },
   { id: 'browse-slots', label: 'Browse Slots' },
   { id: 'my-appointments', label: 'My Appointments' },
+  { id: 'group-meetings', label: 'Group Meetings' },
   { id: 'requests', label: 'Requests' },
   { id: 'export', label: 'Export to Calendar' },
 ]

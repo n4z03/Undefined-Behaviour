@@ -1,10 +1,8 @@
-// code written by Rupneet (ID: 261096653)
-// code added by Nazifa Ahmed (261112966)
-// code added by Sophia Casalme (261149930)
+// Code written by Rupneet (ID: 261096653)
+// code added by Sophia Casalme (261149930) and Nazifa Ahmed (261112966)
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { apiFetch } from '../api'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import DashboardSidebar from '../components/DashboardSidebar'
@@ -24,12 +22,14 @@ import {
   mapBackendSlotToCalendarSlot,
   mapBackendSlotsToCalendarSlots,
 } from '../utils/ownerSlotAdapters'
+import GroupMeetingForm from '../components/GroupMeetingForm'
+import GroupMeetingManager from '../components/GroupMeetingManager'
+import '../styles/OwnerDashboardPage.css'
 
 function firstNameOrAdmin(fullName) {
   const part = String(fullName || '').trim().split(/\s+/)[0]
   return part || 'Admin'
 }
-import '../styles/OwnerDashboardPage.css'
 
 export default function OwnerDashboardPage() {
   const navigate = useNavigate()
@@ -42,12 +42,14 @@ export default function OwnerDashboardPage() {
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [selectedCell, setSelectedCell] = useState(null)
   const [panelMode, setPanelMode] = useState('default')
+  // so group meeting list reloads when i make a new one
+  const [groupRefreshKey, setGroupRefreshKey] = useState(0)
 
   async function fetchOwnerSlots() {
     setLoadingSlots(true)
     setLoadError('')
     try {
-      const response = await apiFetch('/api/ownerSlots', {
+      const response = await fetch('/api/ownerSlots', {
         credentials: 'include',
       })
 
@@ -58,8 +60,8 @@ export default function OwnerDashboardPage() {
         throw new Error('Could not load slots. Please check backend access and allowed frontend port.')
       }
 
-      const data = await response.json()
-      setSlots(mapBackendSlotsToCalendarSlots(data.slots || []))
+      const out = await response.json()
+      setSlots(mapBackendSlotsToCalendarSlots(out.slots || []))
     } catch (error) {
       setLoadError(error.message || 'Could not load slots. Please try again.')
     } finally {
@@ -71,34 +73,16 @@ export default function OwnerDashboardPage() {
     fetchOwnerSlots()
   }, [])
 
-  const [meetingRequestsData, setMeetingRequestsData] = useState([])
-
-  useEffect(() => {
-    async function fetchRequests() {
-      try {
-        const response = await fetch('/api/meetingRequests/incoming', {
-          credentials: 'include'
-        })
-        if (!response.ok) return
-        const data = await response.json()
-        setMeetingRequestsData(data.requests || [])
-      } catch (err) {
-        console.error('Error fetching requests:', err)
-      }
-    }
-    fetchRequests()
-  }, [])
-
   useEffect(() => {
     async function fetchOwnerName() {
       try {
-        const response = await apiFetch('/api/auth/me', {
+        const response = await fetch('/api/auth/me', {
           credentials: 'include',
         })
 
         if (!response.ok) return
-        const data = await response.json()
-        const nextName = firstNameOrAdmin(data?.user?.name)
+        const me = await response.json()
+        const nextName = firstNameOrAdmin(me && me.user && me.user.name)
         setOwnerName(nextName)
       } catch {
         setOwnerName('Admin')
@@ -110,7 +94,7 @@ export default function OwnerDashboardPage() {
 
   async function handleSidebarSelect(sectionId) {
     if (sectionId === 'logout') {
-      await apiFetch('/api/auth/logout', {
+      await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include'
       })
@@ -183,42 +167,11 @@ export default function OwnerDashboardPage() {
   }
 
   async function handleLogout() {
-    await apiFetch('/api/auth/logout', {
+    await fetch('/api/auth/logout', {
       method: 'POST',
       credentials: 'include'
     })
     navigate('/auth?mode=login')
-  }
-
-  async function handleAccept(requestId) {
-    try {
-      const response = await fetch(`/api/meetingRequests/${requestId}/accept`, {
-        method: 'PATCH',
-        credentials: 'include'
-      })
-      if (!response.ok) return
-      setMeetingRequestsData(prev => prev.map(r => 
-        r.id === requestId ? { ...r, status: 'accepted' } : r
-      ))
-      await fetchOwnerSlots() // refresh calendar
-    } catch (err) {
-      console.error('Error accepting request:', err)
-    }
-  }
-  
-  async function handleDecline(requestId) {
-    try {
-      const response = await fetch(`/api/meetingRequests/${requestId}/decline`, {
-        method: 'PATCH',
-        credentials: 'include'
-      })
-      if (!response.ok) return
-      setMeetingRequestsData(prev => prev.map(r => 
-        r.id === requestId ? { ...r, status: 'declined' } : r
-      ))
-    } catch (err) {
-      console.error('Error declining request:', err)
-    }
   }
 
   return (
@@ -260,7 +213,7 @@ export default function OwnerDashboardPage() {
                       onSlotDeleted={handleSlotDeleted}
                     />
                     {activeSection === 'overview' ? (
-                      <RecentRequestsPreview requests={meetingRequestsData.filter(r => r.status === 'pending').slice(0, 2)} onViewAll={() => handleSidebarSelect('requests')} />
+                      <RecentRequestsPreview requests={meetingRequests.slice(0, 2)} onViewAll={() => handleSidebarSelect('requests')} />
                     ) : null}
                   </div>
                 </div>
@@ -313,6 +266,14 @@ export default function OwnerDashboardPage() {
               </>
             ) : null}
 
+            {/* Code added by Nazifa */}
+            {activeSection === 'group-meeting' ? (
+              <div className="owner-dashboard__workspace" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <GroupMeetingForm onCreated={() => setGroupRefreshKey((k) => k + 1)} />
+                <GroupMeetingManager refreshKey={groupRefreshKey} />
+              </div>
+            ) : null}
+
             {activeSection === 'requests' ? (
               <section className="owner-section">
                 <h2>Meeting Requests</h2>
@@ -321,8 +282,8 @@ export default function OwnerDashboardPage() {
                   shows on the calendar when you open that block — not here.
                 </p>
                 <div className="owner-request-list">
-                  {meetingRequestsData.map((request) => (
-                    <RequestCard key={request.id} request={request} onAccept={handleAccept} onDecline={handleDecline} />
+                  {meetingRequests.map((request) => (
+                    <RequestCard key={request.id} request={request} />
                   ))}
                 </div>
               </section>
@@ -331,7 +292,7 @@ export default function OwnerDashboardPage() {
             {activeSection === 'export' ? (
               <section className="owner-section">
                 <h2>Export to Calendar</h2>
-                <ExportPanel showHeading={false} isOwner={true}/>  {/* Bonita added isOwner = true --> don't we need this? */}
+                <ExportPanel showHeading={false} isOwner={true} />
               </section>
             ) : null}
           </section>
