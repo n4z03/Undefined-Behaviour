@@ -4,6 +4,8 @@ require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const session = require('express-session')
+const path = require('path')
+const SQLiteStore = require('connect-sqlite3')(session)
 
 const authenticationRoutes = require('./routes/auth');
 const bookingRoutes = require('./routes/bookings');
@@ -45,10 +47,17 @@ app.use(
     resave: false,
     saveUninitialized: false,
     name: 'connect.sid',
+    store: new SQLiteStore({
+      db: 'sessions.db',
+      dir: path.join(__dirname, '..', 'data'),
+      table: 'sessions',
+    }),
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
       path: '/',
+      // https only in prod (course server) — local dev is http so this stays off there
+      secure: process.env.NODE_ENV === 'production',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     },
   }),

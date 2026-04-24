@@ -48,7 +48,7 @@ function openSlotCancelledMailto(affectedUsers, slot) {
   const to = emails.join(',')
   const subject = encodeURIComponent('Your booking was cancelled')
   const body = encodeURIComponent(
-    'Hi, your booking for this time was cancelled (the slot was removed or unpublished).\n\n' +
+    "Hi, your booking for this time was cancelled (the slot was removed or unpublished).\n\n" +
       `${slot.title}\n` +
       `${slot.dateLabel}, ${slot.time}–${slot.endTime}\n\n` +
       'Please book another time on McBook if you still need a meeting.\n',
@@ -101,15 +101,15 @@ function ownerSlotCancelDialogProps(action, s) {
 }
 
 function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, onSlotDeleted }) {
-  const [inviteUrl, setInviteUrl] = useState('')
-  const [copyMessage, setCopyMessage] = useState('')
-  const [editingWhen, setEditingWhen] = useState(false)
-  const [dateStr, setDateStr] = useState('')
-  const [startStr, setStartStr] = useState('')
-  const [endStr, setEndStr] = useState('')
-  const [saveErr, setSaveErr] = useState('')
-  const [deleteErr, setDeleteErr] = useState('')
-  const [visibilityErr, setVisibilityErr] = useState('')
+  const [inviteUrl, setInviteUrl] = useState('');
+  const [copyMessage, setCopyMessage] = useState('');
+  const [editingWhen, setEditingWhen] = useState(false);
+  const [dateStr, setDateStr] = useState('');
+  const [startStr, setStartStr] = useState('');
+  const [endStr, setEndStr] = useState('');
+  const [saveErr, setSaveErr] = useState('');
+  const [deleteErr, setDeleteErr] = useState('');
+  const [visibilityErr, setVisibilityErr] = useState('');
   const [ownerCancelDialog, setOwnerCancelDialog] = useState(null)
   const [ownerCancelLoading, setOwnerCancelLoading] = useState(false)
 
@@ -132,22 +132,22 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
     }
     setVisibilityErr('')
     try {
-      const res = await fetch(`/api/ownerSlots/${slot.backendId}/visibility`, {
+      const response = await fetch(`/api/ownerSlots/${slot.backendId}/visibility`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ status: nextStatus }),
       })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setVisibilityErr(data.error || 'Could not update visibility')
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        setVisibilityErr(json.error || 'Could not update visibility')
         return
       }
-      const n = (data.affectedUsers || []).length
-      if (n > 0) openSlotCancelledMailto(data.affectedUsers, slot)
+      const affectedCount = (json.affectedUsers || []).length
+      if (affectedCount > 0) openSlotCancelledMailto(json.affectedUsers, slot)
       if (nextStatus === 'private') {
         if (onSlotDeleted) {
-          await onSlotDeleted({ affectedCount: n, reason: 'deactivate' })
+          await onSlotDeleted({ affectedCount, reason: 'deactivate' })
         } else if (onSlotCreated) {
           await onSlotCreated()
         }
@@ -168,23 +168,23 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
 
   async function handleConfirmOwnerCancel() {
     if (!ownerCancelDialog) return
-    const { action, slot: which } = ownerCancelDialog
+    const { action, slot: theSlot } = ownerCancelDialog
     setOwnerCancelLoading(true)
     setDeleteErr('')
     setVisibilityErr('')
     try {
       if (action === 'remove') {
-        const res = await fetch(`/api/ownerSlots/${which.backendId}`, {
+        const response = await fetch(`/api/ownerSlots/${theSlot.backendId}`, {
           method: 'DELETE',
           credentials: 'include',
         })
-        const data = await res.json().catch(() => ({}))
-        if (!res.ok) {
-          setDeleteErr(data.error || "Couldn't remove that slot")
+        const json = await response.json().catch(() => ({}))
+        if (!response.ok) {
+          setDeleteErr(json.error || "Couldn't remove that slot")
           return
         }
-        const list = data.affectedUsers || []
-        if (list.length) openSlotCancelledMailto(list, which)
+        const list = json.affectedUsers || []
+        if (list.length) openSlotCancelledMailto(list, theSlot)
         if (onSlotDeleted) {
           await onSlotDeleted({ affectedCount: list.length, reason: 'delete' })
         } else if (onSlotCreated) {
@@ -192,19 +192,19 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
         }
         onModeChange('default')
       } else {
-        const res = await fetch(`/api/ownerSlots/${which.backendId}/visibility`, {
+        const response = await fetch(`/api/ownerSlots/${theSlot.backendId}/visibility`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ status: 'private' }),
         })
-        const data = await res.json().catch(() => ({}))
-        if (!res.ok) {
-          setVisibilityErr(data.error || 'Could not update visibility')
+        const json = await response.json().catch(() => ({}))
+        if (!response.ok) {
+          setVisibilityErr(json.error || 'Could not update visibility')
           return
         }
-        const list = data.affectedUsers || []
-        if (list.length) openSlotCancelledMailto(list, which)
+        const list = json.affectedUsers || []
+        if (list.length) openSlotCancelledMailto(list, theSlot)
         if (onSlotDeleted) {
           await onSlotDeleted({ affectedCount: list.length, reason: 'deactivate' })
         } else if (onSlotCreated) {
@@ -215,7 +215,7 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
       setOwnerCancelDialog(null)
     } catch (e) {
       console.error(e)
-      setDeleteErr('Something went wrong, try again.')
+      setDeleteErr("Something went wrong, try again.")
     } finally {
       setOwnerCancelLoading(false)
     }
@@ -239,17 +239,19 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
       setSaveErr('Pick a date first')
       return
     }
-    const a = (startStr || '0:0').split(':').map((x) => parseInt(x, 10) || 0)
-    const b = (endStr || '0:0').split(':').map((x) => parseInt(x, 10) || 0)
-    const startMins = a[0] * 60 + a[1]
-    const endMins = b[0] * 60 + b[1]
+    // server also validates
+    const startParts = (startStr || '0:0').split(':').map((n) => parseInt(n, 10) || 0)
+    const endParts = (endStr || '0:0').split(':').map((n) => parseInt(n, 10) || 0)
+    const startMins = startParts[0] * 60 + startParts[1]
+    const endMins = endParts[0] * 60 + endParts[1]
     if (endMins <= startMins) {
       setSaveErr('End has to be after start')
       return
     }
+    // backend wanted HH:MM:SS for tests
     const withSecs = (t) => (t && t.length === 5 ? `${t}:00` : t)
     try {
-      const res = await fetch(`/api/ownerSlots/${slot.backendId}`, {
+      const response = await fetch(`/api/ownerSlots/${slot.backendId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -259,17 +261,19 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
           end_time: withSecs(endStr),
         }),
       })
-      let data = {}
+      let json = {}
       try {
-        data = await res.json()
-      } catch (_) {}
-      if (!res.ok) {
-        const msg = data.error || (data.errors && data.errors[0]) || 'Something went wrong'
+        json = await response.json()
+      } catch (_) {
+        // non-json error page or empty
+      }
+      if (!response.ok) {
+        const msg = json.error || (json.errors && json.errors[0]) || 'Something went wrong'
         setSaveErr(msg)
         return
       }
       setEditingWhen(false)
-      if (onSlotPatched && data.slot) onSlotPatched(data.slot)
+      if (onSlotPatched && json.slot) onSlotPatched(json.slot)
       else if (onSlotCreated) await onSlotCreated()
     } catch (e) {
       console.error(e)
@@ -286,11 +290,11 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ label: slot.title, slot_id: slot.backendId }),
+        body: JSON.stringify({ label: slot.title, slot_id: slot.backendId })
       })
-      const data = await response.json()
-      setInviteUrl(data.invite_url)
-      await navigator.clipboard.writeText(data.invite_url)
+      const json = await response.json()
+      setInviteUrl(json.invite_url)
+      await navigator.clipboard.writeText(json.invite_url)
       setCopyMessage('Invite link copied to clipboard!')
       setTimeout(() => setCopyMessage(''), 3000)
     } catch (err) {
@@ -298,7 +302,7 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
       setCopyMessage('Failed to generate invite link.')
     }
   }
-
+  
   return (
     <>
       <h2>{slot.title}</h2>
@@ -386,15 +390,11 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
               {slot.visibility === 'Private' ? 'Activate Slot' : 'Deactivate Slot'}
             </ActionButton>
             <div className="owner-action-panel__secondary-row">
-              <ActionButton kind="secondary" onClick={() => setEditingWhen(true)}>
-                Edit date & time
-              </ActionButton>
+              <ActionButton kind="secondary" onClick={() => setEditingWhen(true)}>Edit date & time</ActionButton>
               <ActionButton kind="secondary" onClick={openRemoveSlotDialog}>
                 Cancel
               </ActionButton>
-              <ActionButton kind="secondary" onClick={handleCopyInviteLink}>
-                {copyMessage || 'Copy Invite Link'}
-              </ActionButton>
+              <ActionButton kind="secondary" onClick={handleCopyInviteLink}>{copyMessage || 'Copy Invite Link'}</ActionButton>
               {slot.bookedEmail ? (
                 <ActionButton kind="secondary" onClick={() => window.open(`mailto:${slot.bookedEmail}`, '_blank')}>
                   Email Student
@@ -576,9 +576,9 @@ function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
         throw new Error('Request failed. Check backend status and allowed frontend port.')
       }
 
-      const data = await response.json()
+      const json = await response.json()
       setSubmitSuccess('Slot created successfully.')
-      if (onSlotCreated) await onSlotCreated(data.slot)
+      if (onSlotCreated) await onSlotCreated(json.slot)
       onModeChange('default')
     } catch (err) {
       setSubmitError(err.message || 'Could not create slot.')
@@ -591,9 +591,7 @@ function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
     <>
       <h2>Create Slot</h2>
       <p className="owner-action-panel__muted">
-        {selectedCell
-          ? `Creating slot for ${selectedCell.day} at ${selectedCell.time}.`
-          : 'Choose a day and time from the calendar, then fill details.'}
+        {selectedCell ? `Creating slot for ${selectedCell.day} at ${selectedCell.time}.` : 'Choose a day and time from the calendar, then fill details.'}
       </p>
       <div className="owner-action-panel__form">
         <label>

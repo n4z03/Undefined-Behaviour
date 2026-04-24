@@ -1,0 +1,470 @@
+/* Nazifa Ahmed 261112966 */
+
+.groupmeeting-card {
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
+  border-radius: 14px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.07);
+  padding: 1rem 1.1rem;
+}
+
+.groupmeeting-card h2 {
+  margin: 0 0 0.2rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111111;
+}
+
+.groupmeeting-card > p,
+.groupmeeting-card > p {
+  margin: 0.3rem 0 0;
+  font-size: 0.88rem;
+  color: #666666;
+  line-height: 1.45;
+}
+
+/* form */
+.groupmeeting-form {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 0.9rem;
+}
+
+.groupmeeting-form label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333333;
+}
+
+.groupmeeting-form input,
+.groupmeeting-form select {
+  padding: 0.45rem 0.5rem;
+  border: 1px solid #d3d3d3;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 0.88rem;
+  color: #111111;
+  background: #ffffff;
+}
+
+.groupmeeting-form input:focus,
+.groupmeeting-form select:focus {
+  outline: none;
+  border-color: #c40000;
+  box-shadow: 0 0 0 2px rgba(196, 0, 0, 0.15);
+  background: #ffffff;
+}
+
+.groupmeeting-slot-section-label {
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333333;
+}
+
+.groupmeeting-slot-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.groupmeeting-slot-row {
+  background: #f9f9f9;
+  border: 1px solid #e4e4e4;
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.groupmeeting-slot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.15rem;
+}
+
+.groupmeeting-slot-header__label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #888888;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.groupmeeting-slot-row label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333333;
+}
+
+.groupmeeting-slot-row input {
+  padding: 0.45rem 0.5rem;
+  border: 1px solid #d3d3d3;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 0.85rem;
+  background: #ffffff;
+  color: #111111;
+}
+
+.groupmeeting-slot-row input:focus {
+  outline: none;
+  border-color: #c40000;
+  box-shadow: 0 0 0 2px rgba(196, 0, 0, 0.15);
+}
+
+.groupmeeting-slot-time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+/* time inputs */
+.groupmeeting-time-input {
+  width: 100%;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid #d3d3d3;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: #111111;
+  background: #ffffff;
+  box-sizing: border-box;
+  cursor: text;
+}
+
+.groupmeeting-time-input:focus {
+  outline: none;
+  border-color: #c40000;
+  box-shadow: 0 0 0 2px rgba(196, 0, 0, 0.15);
+}
+
+/* Highlight the selected time segment in red instead of the default blue */
+.groupmeeting-time-input::-webkit-datetime-edit-hour-field:focus,
+.groupmeeting-time-input::-webkit-datetime-edit-minute-field:focus,
+.groupmeeting-time-input::-webkit-datetime-edit-ampm-field:focus {
+  background: #c40000;
+  color: #ffffff;
+  border-radius: 3px;
+}
+
+/* Remove the spinner arrow Chrome adds */
+.groupmeeting-time-input::-webkit-calendar-picker-indicator {
+  opacity: 0.4;
+  cursor: pointer;
+}
+
+/* buttons */
+.groupmeeting-btn {
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0.52rem 0.9rem;
+  transition: background 0.15s;
+}
+
+.groupmeeting-btn--primary {
+  background: #c40000;
+  color: #ffffff;
+}
+.groupmeeting-btn--primary:hover:not(:disabled) { background: #990000; }
+
+.groupmeeting-btn--secondary {
+  background: #efefef;
+  color: #333333;
+  border: 1px solid #c4c4c4;
+}
+.groupmeeting-btn--secondary:hover:not(:disabled) { background: #e2e2e2; }
+
+.groupmeeting-btn--ghost {
+  background: transparent;
+  color: #c40000;
+  font-size: 0.82rem;
+  padding: 0.3rem 0.4rem;
+  border: none;
+}
+.groupmeeting-btn--ghost:hover { text-decoration: underline; }
+
+.groupmeeting-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.groupmeeting-btn-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+/* err / success text */
+.groupmeeting-error {
+  background: #ffeaea;
+  color: #8f1a1a;
+  border: 1px solid #f0bcbc;
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.84rem;
+  margin-top: 0.5rem;
+}
+
+.groupmeeting-success {
+  background: #e9f6ed;
+  color: #1f5d2e;
+  border: 1px solid #b9dfc4;
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.84rem;
+  margin-top: 0.5rem;
+}
+
+.groupmeeting-empty {
+  color: #888888;
+  font-size: 0.88rem;
+  margin: 0.5rem 0 0;
+}
+
+/* after you create, copy link */
+.groupmeeting-share {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.groupmeeting-share input {
+  flex: 1;
+  padding: 0.42rem 0.6rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.84rem;
+  background: #f4f4f4;
+  color: #333333;
+}
+
+/* prof side list */
+.groupmeeting-group-list {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.groupmeeting-group-item {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.groupmeeting-group-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-color: #cccccc;
+}
+
+.groupmeeting-group-item.groupmeeting-group-item--selected {
+  border-color: #c40000;
+  background: #fff5f5;
+}
+
+.groupmeeting-group-item.groupmeeting-group-item--confirmed {
+  border-color: #b9dfc4;
+  background: #f3faf5;
+}
+
+.groupmeeting-group-item__name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 0.93rem;
+  color: #111111;
+}
+
+.groupmeeting-group-item__badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #2a7d44;
+  background: #d4edda;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  letter-spacing: 0.02em;
+}
+
+
+.groupmeeting-group-item__meta {
+  font-size: 0.8rem;
+  color: #666666;
+  margin-top: 0.15rem;
+}
+
+/* each time row for voting/confirming */
+.groupmeeting-options {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.6rem;
+}
+
+.groupmeeting-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #f7f7f7;
+  border: 1px solid #e4e4e4;
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.groupmeeting-option--voted {
+  border-color: #c40000;
+  background: #fff5f5;
+}
+
+.groupmeeting-option__check {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex-shrink: 0;
+  accent-color: #c40000;
+  cursor: pointer;
+}
+
+.groupmeeting-option__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.groupmeeting-option__date {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #111111;
+}
+
+.groupmeeting-option__time {
+  font-size: 0.82rem;
+  color: #555555;
+  margin-top: 0.08rem;
+}
+
+.groupmeeting-option__votes {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #888888;
+  background: #eeeeee;
+  border-radius: 999px;
+  padding: 0.18rem 0.55rem;
+}
+
+/* small confirm panel */
+.groupmeeting-divider {
+  border: none;
+  border-top: 1px solid #eeeeee;
+  margin: 0.85rem 0;
+}
+
+.groupmeeting-section-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #111111;
+}
+
+.groupmeeting-confirm-box {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 0.8rem 0.9rem;
+  margin-top: 0.6rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.groupmeeting-confirm-box__slot {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #333333;
+}
+
+.groupmeeting-confirm-box label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: #333333;
+  cursor: pointer;
+}
+
+.groupmeeting-confirm-box input[type='number'] {
+  width: 72px;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 0.85rem;
+  margin-top: 0.2rem;
+}
+
+/* green "done" strip */
+.groupmeeting-confirmed-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: #e9f6ed;
+  border: 1px solid #b9dfc4;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  margin-top: 0.25rem;
+}
+
+.groupmeeting-confirmed-banner__icon {
+  flex-shrink: 0;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: #2a7d44;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.groupmeeting-confirmed-banner__label {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1f5d2e;
+}
+
+.groupmeeting-confirmed-banner__time {
+  margin: 0.2rem 0 0;
+  font-size: 0.84rem;
+  color: #2a5c38;
+}
+
+/* page on owner dash */
+.groupmeeting-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .groupmeeting-layout { grid-template-columns: 1fr; }
+  .groupmeeting-slot-time-row { grid-template-columns: 1fr; }
+}

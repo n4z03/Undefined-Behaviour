@@ -1,6 +1,4 @@
-// Nazifa Ahmed (261112966)
-// 
-// user picks another open slot available with the same prof
+// Nazifa Ahmed (261112966) — reschedule (same prof, different public slot)
 import { useEffect, useState } from 'react'
 import '../styles/RescheduleBookingCard.css'
 
@@ -16,7 +14,7 @@ export default function RescheduleBookingCard({
 
   useEffect(() => {
     setPick('')
-  }, [appointment])
+  }, [appointment?.id])
 
   if (!appointment) return null
 
@@ -73,9 +71,9 @@ export default function RescheduleBookingCard({
               onChange={(e) => setPick(e.target.value)}
             >
               <option value="">Select…</option>
-              {slotOptions.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
+              {slotOptions.map((row) => (
+                <option key={row.id} value={row.id}>
+                  {row.label}
                 </option>
               ))}
             </select>

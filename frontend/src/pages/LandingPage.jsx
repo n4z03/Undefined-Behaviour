@@ -13,6 +13,18 @@ export default function LandingPage() {
   const location = useLocation()
   const navigate = useNavigate()
 
+  // If the user already has a valid session, send them straight to their dashboard
+  //instead of showing the landing page, added by Nazifa
+  useEffect(() => {
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.user?.role === 'owner') navigate('/owner-dashboard', { replace: true })
+        else if (data?.user?.role === 'user') navigate('/user-dashboard', { replace: true })
+      })
+      .catch(() => {})
+  }, [])
+
   function handleFeatureClick(id) {
     setActiveFeature((prev) => (prev === id ? null : id))
   }

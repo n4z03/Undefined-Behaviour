@@ -6,6 +6,7 @@ export const ownerFullName = 'Rupneet Shahriar'
 export const sidebarSections = [
   { id: 'overview', label: 'Overview' },
   { id: 'calendar', label: 'All Bookings' },
+  { id: 'group-meeting', label: 'Group Meeting' },
   { id: 'requests', label: 'Requests' },
   { id: 'export', label: 'Export to Calendar' },
 ]
