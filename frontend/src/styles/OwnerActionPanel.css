@@ -183,6 +183,13 @@
   color: #990000;
 }
 
+/* added by nazifa ahmed (261112966) */
+.owner-action-panel__form--tight {
+  margin-top: 0.5rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid #ededed;
+}
+
 .owner-action-panel__form {
   display: grid;
   gap: 0.48rem;
