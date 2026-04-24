@@ -19,14 +19,12 @@ const calendarRoutes = require('./routes/calendar'); // added by Bonita
 const app = express()
 const port = process.env.PORT || 3000
 
-const DEPLOYED_FRONTEND_ORIGIN =
-  'https://winter2026-comp307-group39.cs.mcgill.ca'
-
 function isAllowedFrontendOrigin(origin) {
-  // Allow local frontend dev servers on any localhost port.
   if (!origin) return true
-  if (origin === DEPLOYED_FRONTEND_ORIGIN) return true
-  return /^http:\/\/localhost:\d+$/.test(origin)
+  return (
+    /^https?:\/\/localhost(?::\d+)?$/.test(origin) ||
+    /^https?:\/\/127\.0\.0\.1(?::\d+)?$/.test(origin)
+  )
 }
 
 app.use(cors({
@@ -37,11 +35,20 @@ app.use(cors({
   credentials: true
 }))
 app.use(express.json())
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'dev-secret',
-  resave: false,
-  saveUninitialized: false
-})) // added by sophia
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'dev-secret',
+    resave: false,
+    saveUninitialized: false,
+    name: 'connect.sid',
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    },
+  }),
+) // added by sophia
 app.use('/api/auth', authenticationRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/owners', ownerRoutes);

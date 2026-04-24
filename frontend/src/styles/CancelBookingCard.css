@@ -1,0 +1,76 @@
+.cancel-booking-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 1rem;
+}
+
+.cancel-booking-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.cancel-booking-card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+}
+
+.cancel-booking-card p {
+  margin: 0.35rem 0;
+  line-height: 1.4;
+  color: #333;
+}
+
+.cancel-booking-card__row {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+.cancel-booking-card__row span:first-child {
+  color: #666;
+  min-width: 5rem;
+}
+
+.cancel-booking-card__hint {
+  font-size: 0.85rem;
+  color: #555;
+  margin-top: 0.75rem;
+}
+
+.cancel-booking-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  justify-content: flex-end;
+}
+
+.cancel-booking-card__actions button {
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+
+.cancel-booking-card__actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancel-booking-card__actions button[type='button'].cancel-booking-card__primary {
+  background: #1a1a1a;
+  color: #fff;
+  border-color: #1a1a1a;
+}

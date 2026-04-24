@@ -89,6 +89,10 @@ export function mapBackendSlotToCalendarSlot(slot) {
   const isRecurring = Boolean(slot.is_recurring)
   const category = bookingStatus === 'Booked' ? 'booked' : status === 'Public' ? 'public' : 'private'
 
+  const dateOnly = String(slot.slot_date).split('T')[0]
+  const startH = String(slot.start_time || '')
+  const endH = String(slot.end_time || '')
+
   return {
     id: `slot-${slot.id}`,
     backendId: slot.id,
@@ -99,6 +103,7 @@ export function mapBackendSlotToCalendarSlot(slot) {
     dateLabel: dateLabelFromDate(slot.slot_date),
     visibility: status,
     bookingStatus,
+    bookingCount: slot.current_bookings != null ? Number(slot.current_bookings) : 0,
     bookedBy: slot.booked_by_name || null,
     bookedEmail: slot.booked_by_email || null,
     category: isRecurring ? 'recurring' : category,
@@ -106,6 +111,9 @@ export function mapBackendSlotToCalendarSlot(slot) {
     inviteLink: slot.invite_link || `https://mcbook.app/invite/slot-${slot.id}`,
     rowSpan: rowSpanFromTimes(slot.start_time, slot.end_time),
     slotDate: slot.slot_date,
+    dateInput: dateOnly,
+    timeInputStart: startH.length >= 5 ? startH.slice(0, 5) : '10:00',
+    timeInputEnd: endH.length >= 5 ? endH.slice(0, 5) : '10:30',
   }
 }
 

@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
-import { apiFetch } from '../api'
+// Rupneet Shahriar (261096653)
+// Code added by Nazifa Ahmed (261112966)
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import DashboardSidebar from '../components/DashboardSidebar'
@@ -8,16 +10,13 @@ import ExportPanel from '../components/ExportPanel'
 import OwnerList from '../components/OwnerList'
 import AvailableSlotCard from '../components/AvailableSlotCard'
 import AppointmentCard from '../components/AppointmentCard'
+import CancelBookingCard from '../components/CancelBookingCard'
+import RescheduleBookingCard from '../components/RescheduleBookingCard'
 import RequestMeetingForm from '../components/RequestMeetingForm'
 import UserRequestCard from '../components/UserRequestCard'
-import {
-  userSidebarSections,
-  owners,
-  availableSlotsSeed,
-  appointmentsSeed,
-  requestSeed,
-} from '../data/userDashboardData'
+import { userSidebarSections } from '../data/userDashboardData'
 import { timeRows, weekDays } from '../data/ownerDashboardData'
+import { formatTime24To12 } from '../utils/ownerSlotAdapters'
 import '../styles/UserDashboardPage.css'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -26,72 +25,271 @@ function firstNameFromName(name) {
   return first || 'User'
 }
 
+function dateLabelFromDb(slotDate) {
+  if (!slotDate) return ''
+  const d = new Date(`${String(slotDate).split('T')[0]}T12:00:00`)
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+}
+
+function mapApiSlotToBrowse(row) {
+  return {
+    id: String(row.id),
+    ownerId: String(row.owner_id),
+    ownerName: row.owner_name,
+    ownerEmail: row.owner_email,
+    title: row.title,
+    dateLabel: dateLabelFromDb(row.slot_date),
+    timeRange: `${formatTime24To12(row.start_time)} - ${formatTime24To12(row.end_time)}`,
+    status: 'Available',
+    visibility: 'Public',
+    recurringLabel: Number(row.is_recurring) === 1 ? 'Recurring' : null,
+  }
+}
+
+function buildBrowseOwnersFromRows(slotRows) {
+  const m = new Map()
+  for (const row of slotRows) {
+    const id = String(row.owner_id)
+    if (!m.has(id)) m.set(id, { id, name: row.owner_name, email: row.owner_email })
+  }
+  return Array.from(m.values())
+}
+
+function mapApiBookingToAppointment(row) {
+  return {
+    id: String(row.booking_id),
+    slotId: String(row.slot_id),
+    ownerId: String(row.owner_id),
+    ownerName: row.owner_name,
+    ownerEmail: row.owner_email,
+    title: row.title,
+    dateLabel: dateLabelFromDb(row.slot_date),
+    timeRange: `${formatTime24To12(row.start_time)} - ${formatTime24To12(row.end_time)}`,
+    status: 'Confirmed',
+    recurringLabel: Number(row.is_recurring) === 1 ? 'Recurring' : null,
+  }
+}
+
+function mapOutgoingRequest(mr) {
+  let proposedDate = ''
+  let proposedStart = '10:00'
+  let proposedEnd = '10:30'
+  let lineSubject = ''
+  const subj = (mr.subject || '').trim()
+  const m = subj.match(/^\[(\d{4}-\d{2}-\d{2})\s+([0-9:]+)\s*-\s*([0-9:]+)\]\s*(.*)$/)
+  if (m) {
+    proposedDate = m[1]
+    proposedStart = m[2].length >= 5 ? m[2].slice(0, 5) : m[2]
+    proposedEnd = m[3].length >= 5 ? m[3].slice(0, 5) : m[3]
+    lineSubject = m[4].trim()
+  }
+  const st = (mr.status || '').toLowerCase()
+  return {
+    id: String(mr.id),
+    ownerName: mr.owner_name,
+    ownerEmail: mr.owner_email,
+    ownerId: String(mr.owner_id),
+    message: mr.message,
+    status: st === 'pending' ? 'Pending' : st === 'accepted' ? 'Accepted' : 'Declined',
+    statusRaw: mr.status,
+    createdAt: mr.created_at
+      ? new Date(mr.created_at).toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        })
+      : '',
+    proposedDate: proposedDate || new Date().toISOString().slice(0, 10),
+    proposedStart,
+    proposedEnd,
+    lineSubject,
+  }
+}
+
+function isServerBookingId(id) {
+  if (id == null || id === '') return false
+  return /^\d+$/.test(String(id).trim())
+}
+
 export default function UserDashboardPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [activeSection, setActiveSection] = useState('overview')
   const [userName, setUserName] = useState('User')
-  const [selectedOwnerId, setSelectedOwnerId] = useState(owners[0]?.id || '')
-  const [availableSlots, setAvailableSlots] = useState(availableSlotsSeed)
-  const [appointments, setAppointments] = useState(appointmentsSeed)
-  const [requests, setRequests] = useState(requestSeed)
+  const [selectedOwnerId, setSelectedOwnerId] = useState('')
+  const [browseOwners, setBrowseOwners] = useState([])
+  const [availableSlots, setAvailableSlots] = useState([])
+  const [browseSlotsLoading, setBrowseSlotsLoading] = useState(true)
+  const [browseSlotsError, setBrowseSlotsError] = useState(null)
+  const [appointments, setAppointments] = useState([])
+  const [requests, setRequests] = useState([])
+  const [meetingOwnerOptions, setMeetingOwnerOptions] = useState([])
   const [selectedCalendarAppointmentId, setSelectedCalendarAppointmentId] = useState(null)
   const [selectedFreeSlotCell, setSelectedFreeSlotCell] = useState(null)
   const [inviteSlots, setInviteSlots] = useState([])
   const [showInviteModal, setShowInviteModal] = useState(false)
+  const [cancelTarget, setCancelTarget] = useState(null)
+  const [cancelLoading, setCancelLoading] = useState(false)
+  const [rescheduleTarget, setRescheduleTarget] = useState(null)
+  const [rescheduleLoading, setRescheduleLoading] = useState(false)
+  const [rescheduleErr, setRescheduleErr] = useState(null)
+
+  const loadMyBookings = useCallback(async () => {
+    try {
+      const response = await fetch('/api/bookings', { credentials: 'include' })
+      if (!response.ok) return
+      const data = await response.json()
+      setAppointments((data.bookings || []).map(mapApiBookingToAppointment))
+    } catch (e) {
+      console.error('Could not load bookings:', e)
+    }
+  }, [])
+
+  const loadOutgoingRequests = useCallback(async () => {
+    try {
+      const res = await fetch('/api/meetingRequests/outgoing', { credentials: 'include' })
+      if (!res.ok) return
+      const data = await res.json()
+      setRequests((data.requests || []).map(mapOutgoingRequest))
+    } catch (e) {
+      console.error('Could not load your requests', e)
+    }
+  }, [])
+
+  const loadMeetingOwnerList = useCallback(async () => {
+    try {
+      const res = await fetch('/api/owners', { credentials: 'include' })
+      if (!res.ok) return
+      const data = await res.json()
+      setMeetingOwnerOptions(
+        (data.owners || []).map((o) => ({
+          id: String(o.id),
+          name: o.name,
+          email: o.email,
+        })),
+      )
+    } catch (e) {
+      console.error('Could not load owners', e)
+    }
+  }, [])
+
+  const loadAvailableSlots = useCallback(async () => {
+    setBrowseSlotsError(null)
+    setBrowseSlotsLoading(true)
+    try {
+      const response = await fetch('/api/bookings/available-slots', { credentials: 'include' })
+      if (response.status === 401) {
+        setAvailableSlots([])
+        setBrowseOwners([])
+        return
+      }
+      if (!response.ok) {
+        setBrowseSlotsError('Could not load available slots.')
+        setAvailableSlots([])
+        setBrowseOwners([])
+        return
+      }
+      const data = await response.json()
+      const rows = data.slots || []
+      setAvailableSlots(rows.map(mapApiSlotToBrowse))
+      const next = buildBrowseOwnersFromRows(rows)
+      setBrowseOwners(next)
+      if (next.length > 0) {
+        setSelectedOwnerId((cur) => (cur && next.some((o) => o.id === cur) ? cur : next[0].id))
+      }
+    } catch (e) {
+      console.error('Could not load available slots:', e)
+      setBrowseSlotsError('Could not load available slots.')
+      setAvailableSlots([])
+      setBrowseOwners([])
+    } finally {
+      setBrowseSlotsLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    async function fetchMe() {
+    let cancel = false
+    async function init() {
       try {
-        const response = await apiFetch('/api/auth/me', {
-          credentials: 'include',
-        })
-        if (!response.ok) return
+        const response = await fetch('/api/auth/me', { credentials: 'include' })
+        if (cancel) return
+        if (response.status === 401) {
+          setBrowseSlotsLoading(false)
+          setAvailableSlots([])
+          setBrowseOwners([])
+          navigate('/auth?mode=login&redirect=/user-dashboard', { replace: true })
+          return
+        }
+        if (!response.ok) {
+          setBrowseSlotsLoading(false)
+          return
+        }
         const data = await response.json()
         const role = data?.user?.role
         if (role === 'owner') {
-          navigate('/owner-dashboard')
+          navigate('/owner-dashboard', { replace: true })
+          setBrowseSlotsLoading(false)
           return
         }
         if (role === 'user') {
           setUserName(firstNameFromName(data?.user?.name))
+          await loadMyBookings()
+          if (cancel) return
+          await loadOutgoingRequests()
+          if (cancel) return
+          await loadMeetingOwnerList()
+          if (cancel) return
+          await loadAvailableSlots()
+        } else {
+          setBrowseSlotsLoading(false)
         }
       } catch {
-        setUserName('User')
+        if (!cancel) {
+          setUserName('User')
+          setBrowseSlotsLoading(false)
+        }
       }
     }
-    fetchMe()
-    }, [navigate])
+    init()
+    return () => {
+      cancel = true
+    }
+  }, [navigate, loadMyBookings, loadAvailableSlots, loadOutgoingRequests, loadMeetingOwnerList])
 
-  useEffect (() => {
+  useEffect(() => {
     const inviteToken = searchParams.get('invite')
-    if (!inviteToken) return 
+    if (!inviteToken) return
     async function fetchInviteSlots() {
       try {
-        const response = await apiFetch(`/api/invites/${inviteToken}`, {
-          credentials: 'include'
+        const response = await fetch(`/api/invites/${inviteToken}`, {
+          credentials: 'include',
         })
         if (response.status === 401) {
-          navigate(`/auth?mode=login&redirect=/user-dashboard?invite=${inviteToken}`)
+          const slotId = searchParams.get('slot')
+          const redirectPath = `/user-dashboard?invite=${inviteToken}${slotId ? `&slot=${slotId}` : ''}`
+          navigate(`/auth?mode=login&redirect=${encodeURIComponent(redirectPath)}`)
           return
         }
         if (!response.ok) return
         const data = await response.json()
-        setInviteSlots(data.slots || [])
+        const slotId = searchParams.get('slot')
+        const filtered = slotId ? data.slots.filter((s) => s.id === Number(slotId)) : data.slots
+        setInviteSlots(filtered || [])
         setShowInviteModal(true)
       } catch (err) {
         console.error('Error fetching invite slots', err)
       }
     }
     fetchInviteSlots()
-  }, [searchParams])
+  }, [searchParams, navigate])
 
   async function handleSidebarSelect(sectionId) {
     if (sectionId === 'logout') {
-      await apiFetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include'
-    })
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      })
       navigate('/auth?mode=login')
       return
     }
@@ -100,72 +298,178 @@ export default function UserDashboardPage() {
     setSelectedFreeSlotCell(null)
   }
 
-  function handleBookSlot(slotId) {
+  async function handleBookSlot(slotId) {
     const slot = availableSlots.find((item) => item.id === slotId)
     if (!slot) return
-    setAvailableSlots((current) => current.filter((item) => item.id !== slotId))
-    setAppointments((current) => [
-      {
-        id: `appt-${Date.now()}`,
-        ownerName: slot.ownerName,
-        ownerEmail: slot.ownerEmail,
-        title: slot.title,
-        dateLabel: slot.dateLabel,
-        timeRange: slot.timeRange,
-        status: 'Confirmed',
-        recurringLabel: slot.recurringLabel,
-      },
-      ...current,
-    ])
+    const numericSlotId = parseInt(String(slotId), 10)
+    if (!Number.isInteger(numericSlotId) || numericSlotId <= 0) {
+      window.alert('This listing is not linked to a server slot. Refresh the page after running the server and seed script.')
+      return
+    }
+    try {
+      const response = await fetch(`/api/bookings/book-slot/${numericSlotId}`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        window.alert(data.error || 'Could not book this slot.')
+        return
+      }
+      await loadMyBookings()
+      await loadAvailableSlots()
+    } catch (e) {
+      console.error(e)
+      window.alert('Could not book this slot.')
+    }
   }
 
-  function handleCancelBooking(appointmentId) {
-    const appointment = appointments.find((item) => item.id === appointmentId)
-    if (!appointment) return
-
-    setAppointments((current) => current.filter((item) => item.id !== appointmentId))
-    setAvailableSlots((current) => [
-      {
-        id: `avail-${Date.now()}`,
-        ownerId: owners.find((owner) => owner.name === appointment.ownerName)?.id || owners[0].id,
-        ownerName: appointment.ownerName,
-        ownerEmail: appointment.ownerEmail,
-        title: appointment.title,
-        dateLabel: appointment.dateLabel,
-        timeRange: appointment.timeRange,
-        status: 'Available',
-        visibility: 'Public',
-        recurringLabel: appointment.recurringLabel || null,
-      },
-      ...current,
-    ])
+  function requestCancel(appointmentOrId) {
+    const appt =
+      typeof appointmentOrId === 'object' && appointmentOrId != null && 'id' in appointmentOrId
+        ? appointmentOrId
+        : appointments.find((item) => item.id === String(appointmentOrId))
+    if (appt) setCancelTarget(appt)
   }
 
-  function handleSubmitRequest(payload) {
-    const owner = owners.find((item) => item.id === payload.ownerId)
-    if (!owner) return
+  async function confirmCancelBooking() {
+    if (!cancelTarget) return
+    setCancelLoading(true)
+    const appointment = cancelTarget
+    const sendMailto = () => {
+      const subj = encodeURIComponent(`Cancelled: ${appointment.title}`)
+      const body = encodeURIComponent(
+        `Hi ${appointment.ownerName},\n\nI have cancelled my booking for "${appointment.title}" on ${appointment.dateLabel} (${appointment.timeRange}).\n\n— ${userName}`,
+      )
+      window.location.href = `mailto:${appointment.ownerEmail}?subject=${subj}&body=${body}`
+    }
+    try {
+      if (!isServerBookingId(appointment.id)) {
+        setAppointments((c) => c.filter((a) => a.id !== appointment.id))
+        setSelectedCalendarAppointmentId(null)
+        setCancelTarget(null)
+        sendMailto()
+        return
+      }
+      const response = await fetch(`/api/bookings/${appointment.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        window.alert(err.error || 'Unable to cancel this booking. Please try again.')
+        return
+      }
+      await loadMyBookings()
+      await loadAvailableSlots()
+      setSelectedCalendarAppointmentId(null)
+      setCancelTarget(null)
+      sendMailto()
+    } catch (e) {
+      console.error(e)
+      window.alert('Unable to complete the cancellation. Please try again.')
+    } finally {
+      setCancelLoading(false)
+    }
+  }
 
-    const fullMessage = payload.preferredTime
-      ? `${payload.message} (Preferred: ${payload.preferredTime})`
-      : payload.message
+  function openReschedule(appointment) {
+    if (!isServerBookingId(appointment.id)) return
+    setRescheduleErr(null)
+    setRescheduleTarget(appointment)
+    loadAvailableSlots()
+  }
 
-    setRequests((current) => [
-      {
-        id: `req-${Date.now()}`,
-        ownerName: owner.name,
-        ownerEmail: owner.email,
-        message: fullMessage,
-        status: 'Pending',
-        createdAt: new Date().toLocaleString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
+  async function confirmReschedule(newSlotId) {
+    if (!rescheduleTarget) return
+    setRescheduleLoading(true)
+    setRescheduleErr(null)
+    try {
+      const res = await fetch(`/api/bookings/${rescheduleTarget.id}/reschedule`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ slot_id: Number(newSlotId) }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setRescheduleErr(
+          data.error || (data.errors && data.errors[0]) || 'Could not move this booking',
+        )
+        return
+      }
+      setRescheduleTarget(null)
+      await loadMyBookings()
+      await loadAvailableSlots()
+    } catch (e) {
+      console.error(e)
+      setRescheduleErr('Request failed')
+    } finally {
+      setRescheduleLoading(false)
+    }
+  }
+
+  async function handleSubmitRequest(payload) {
+    const ownerIdNum = Number(payload.ownerId)
+    if (!Number.isInteger(ownerIdNum) || ownerIdNum < 1) {
+      window.alert('Choose an instructor from the list (load the dashboard with the server running).')
+      return
+    }
+    const addSecs = (t) => (t && t.length === 5 ? `${t}:00` : t)
+    try {
+      const res = await fetch('/api/meetingRequests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          owner_id: ownerIdNum,
+          message: payload.message,
+          subject: payload.subject && payload.subject.trim() ? payload.subject.trim() : null,
+          proposed_date: payload.proposedDate,
+          proposed_start: addSecs(payload.proposedStart),
+          proposed_end: addSecs(payload.proposedEnd),
         }),
-      },
-      ...current,
-    ])
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        window.alert((data.errors && data.errors[0]) || data.error || 'Could not send the request')
+        return
+      }
+      await loadOutgoingRequests()
+    } catch (e) {
+      console.error(e)
+      window.alert('Could not send the request')
+    }
     setSelectedFreeSlotCell(null)
+  }
+
+  async function handleUpdateRequest(requestId, body) {
+    const addSecs = (t) => (t && t.length === 5 ? `${t}:00` : t)
+    try {
+      const res = await fetch(`/api/meetingRequests/${requestId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          message: body.message,
+          subject: body.subject && body.subject.trim() ? body.subject.trim() : null,
+          proposed_date: body.proposedDate,
+          proposed_start: addSecs(body.proposedStart),
+          proposed_end: addSecs(body.proposedEnd),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        window.alert((data.errors && data.errors[0]) || data.error || 'Could not update')
+        return false
+      }
+      await loadOutgoingRequests()
+      return true
+    } catch (e) {
+      console.error(e)
+      window.alert('Could not update')
+      return false
+    }
   }
 
   const visibleOwnerSlots = useMemo(
@@ -173,12 +477,24 @@ export default function UserDashboardPage() {
     [availableSlots, selectedOwnerId],
   )
 
+  const rescheduleSlotOptions = useMemo(() => {
+    if (!rescheduleTarget || !rescheduleTarget.ownerId) return []
+    const oid = String(rescheduleTarget.ownerId)
+    return availableSlots
+      .filter((s) => s.ownerId === oid)
+      .map((s) => ({
+        id: s.id,
+        label: `${s.dateLabel} · ${s.timeRange} — ${s.title}`,
+      }))
+  }, [availableSlots, rescheduleTarget])
+
   const appointmentCalendarSlots = useMemo(() => {
     return appointments.map((appointment, index) => {
       const [dayName, datePart] = appointment.dateLabel.split(',')
       const [startTime, endTime] = appointment.timeRange.split(' - ')
       return {
         id: `appt-cal-${appointment.id}`,
+        bookingId: appointment.id,
         title: appointment.title,
         day: dayName,
         time: startTime,
@@ -204,6 +520,11 @@ export default function UserDashboardPage() {
     () => appointmentCalendarSlots.find((slot) => slot.id === selectedCalendarAppointmentId) || null,
     [appointmentCalendarSlots, selectedCalendarAppointmentId],
   )
+
+  const appointmentForSelectedCalSlot = useMemo(() => {
+    if (!selectedCalendarAppointment) return null
+    return appointments.find((x) => x.id === String(selectedCalendarAppointment.bookingId)) || null
+  }, [selectedCalendarAppointment, appointments])
 
   return (
     <div className="app">
@@ -247,7 +568,7 @@ export default function UserDashboardPage() {
                     {selectedFreeSlotCell ? (
                       <div className="user-side-panel__request-form-wrap">
                         <RequestMeetingForm
-                          owners={owners}
+                          owners={meetingOwnerOptions}
                           onSubmit={handleSubmitRequest}
                           title={`Request for ${selectedFreeSlotCell.day} at ${selectedFreeSlotCell.time}`}
                           initialPreferredTime={`${selectedFreeSlotCell.day} at ${selectedFreeSlotCell.time}`}
@@ -270,14 +591,25 @@ export default function UserDashboardPage() {
                         </p>
                         <div className="user-side-panel__actions">
                           <a href={`mailto:${selectedCalendarAppointment.ownerEmail}`}>Message Owner</a>
+                          {appointmentForSelectedCalSlot && isServerBookingId(appointmentForSelectedCalSlot.id) ? (
+                            <button type="button" onClick={() => openReschedule(appointmentForSelectedCalSlot)}>
+                              Change time
+                            </button>
+                          ) : null}
                           <button
                             type="button"
-                            onClick={() => handleCancelBooking(selectedCalendarAppointment.id.replace('appt-cal-', ''))}
+                            onClick={() => {
+                              if (appointmentForSelectedCalSlot) requestCancel(appointmentForSelectedCalSlot)
+                            }}
                           >
                             Cancel Booking
                           </button>
                         </div>
-                        <button type="button" className="user-side-panel__clear" onClick={() => setSelectedCalendarAppointmentId(null)}>
+                        <button
+                          type="button"
+                          className="user-side-panel__clear"
+                          onClick={() => setSelectedCalendarAppointmentId(null)}
+                        >
                           Clear Selection
                         </button>
                       </div>
@@ -303,7 +635,7 @@ export default function UserDashboardPage() {
                     <h2>Recent Requests</h2>
                     <div className="user-side-panel__request-list">
                       {requests.slice(0, 2).map((request) => (
-                        <UserRequestCard key={request.id} request={request} />
+                        <UserRequestCard key={request.id} request={request} onUpdate={handleUpdateRequest} />
                       ))}
                     </div>
                   </section>
@@ -314,17 +646,33 @@ export default function UserDashboardPage() {
             {activeSection === 'browse-slots' ? (
               <div className="user-dashboard__workspace">
                 <div className="user-dashboard__left-stack">
-                  <OwnerList owners={owners} selectedOwnerId={selectedOwnerId} onSelectOwner={setSelectedOwnerId} />
-                  <section className="user-panel">
-                    <h2>Browse Available Slots</h2>
-                    <div className="user-card-list">
-                      {visibleOwnerSlots.length === 0 ? (
-                        <p className="user-panel__empty">No active slots for this owner yet.</p>
-                      ) : (
-                        visibleOwnerSlots.map((slot) => <AvailableSlotCard key={slot.id} slot={slot} onBook={handleBookSlot} />)
-                      )}
-                    </div>
-                  </section>
+                  {browseSlotsError ? (
+                    <p className="user-panel__empty">{browseSlotsError}</p>
+                  ) : browseSlotsLoading ? (
+                    <p className="user-panel__empty">Loading available slots…</p>
+                  ) : (
+                    <>
+                      <OwnerList
+                        owners={browseOwners}
+                        selectedOwnerId={selectedOwnerId}
+                        onSelectOwner={setSelectedOwnerId}
+                      />
+                      <section className="user-panel">
+                        <h2>Browse Available Slots</h2>
+                        <div className="user-card-list">
+                          {browseOwners.length === 0 ? (
+                            <p className="user-panel__empty">No available slots right now.</p>
+                          ) : visibleOwnerSlots.length === 0 ? (
+                            <p className="user-panel__empty">No slots listed for this instructor (try another one).</p>
+                          ) : (
+                            visibleOwnerSlots.map((slot) => (
+                              <AvailableSlotCard key={slot.id} slot={slot} onBook={handleBookSlot} />
+                            ))
+                          )}
+                        </div>
+                      </section>
+                    </>
+                  )}
                 </div>
 
                 <aside className="user-side-panel">
@@ -348,52 +696,77 @@ export default function UserDashboardPage() {
                     <p className="user-panel__empty">No appointments booked yet.</p>
                   ) : (
                     appointments.map((appointment) => (
-                      <AppointmentCard key={appointment.id} appointment={appointment} onCancel={handleCancelBooking} />
+                      <AppointmentCard
+                        key={appointment.id}
+                        appointment={appointment}
+                        onCancel={requestCancel}
+                        onReschedule={isServerBookingId(appointment.id) ? () => openReschedule(appointment) : undefined}
+                      />
                     ))
                   )}
                 </div>
               </section>
             ) : null}
 
-{showInviteModal && (
-  <div style={{
-    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-    background: 'rgba(0,0,0,0.5)', display: 'flex',
-    alignItems: 'center', justifyContent: 'center', zIndex: 1000
-  }}>
-    <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', maxWidth: '500px', width: '90%' }}>
-      <h2>Available Slots</h2>
-      {inviteSlots.length === 0 ? (
-        <p>No active slots available.</p>
-      ) : (
-        inviteSlots.map(slot => (
-          <div key={slot.id} style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
-            <h3>{slot.title}</h3>
-            <p>
-            {new Date(slot.slot_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} — {slot.start_time} to {slot.end_time}
-            </p>
+            {showInviteModal ? (
+              <div
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'rgba(0,0,0,0.5)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 1000,
+                }}
+              >
+                <div
+                  style={{ background: 'white', padding: '2rem', borderRadius: '8px', maxWidth: '500px', width: '90%' }}
+                >
+                  <h2>Available Slots</h2>
+                  {inviteSlots.length === 0 ? (
+                    <p>No active slots available.</p>
+                  ) : (
+                    inviteSlots.map((slot) => (
+                      <div key={slot.id} style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
+                        <h3>{slot.title}</h3>
+                        <p>
+                          {new Date(String(slot.slot_date).split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            month: 'long',
+                            day: 'numeric',
+                          })}{' '}
+                          - {slot.start_time} to {slot.end_time}
+                        </p>
 
-            <button type="button" 
-              onClick={() => alert(`Slot "${slot.title}" reserved!`)}
-              style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', cursor: 'pointer' }}>
-              Reserve Slot
-            </button>
-          </div>
-        ))
-      )}
-      <button onClick={() => setShowInviteModal(false)}>Close</button>
-    </div>
-  </div>
-)}
+                        <button
+                          type="button"
+                          onClick={() => alert(`Slot "${slot.title}" reserved!`)}
+                          style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', cursor: 'pointer' }}
+                        >
+                          Reserve Slot
+                        </button>
+                      </div>
+                    ))
+                  )}
+                  <button type="button" onClick={() => setShowInviteModal(false)}>
+                    Close
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             {activeSection === 'requests' ? (
               <div className="user-dashboard__workspace">
                 <section className="user-panel">
-                  <RequestMeetingForm owners={owners} onSubmit={handleSubmitRequest} />
+                  <RequestMeetingForm owners={meetingOwnerOptions} onSubmit={handleSubmitRequest} />
                   <h2>My Requests</h2>
                   <div className="user-card-list">
                     {requests.map((request) => (
-                      <UserRequestCard key={request.id} request={request} />
+                      <UserRequestCard key={request.id} request={request} onUpdate={handleUpdateRequest} />
                     ))}
                   </div>
                 </section>
@@ -415,6 +788,31 @@ export default function UserDashboardPage() {
         </div>
       </main>
       <Footer />
+      {cancelTarget ? (
+        <CancelBookingCard
+          appointment={cancelTarget}
+          isLoading={cancelLoading}
+          onClose={() => {
+            if (!cancelLoading) setCancelTarget(null)
+          }}
+          onConfirm={confirmCancelBooking}
+        />
+      ) : null}
+      {rescheduleTarget ? (
+        <RescheduleBookingCard
+          appointment={rescheduleTarget}
+          slotOptions={rescheduleSlotOptions}
+          isLoading={rescheduleLoading}
+          errMsg={rescheduleErr}
+          onClose={() => {
+            if (!rescheduleLoading) {
+              setRescheduleTarget(null)
+              setRescheduleErr(null)
+            }
+          }}
+          onConfirm={confirmReschedule}
+        />
+      ) : null}
     </div>
   )
 }
