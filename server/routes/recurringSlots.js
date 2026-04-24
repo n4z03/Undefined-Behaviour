@@ -99,13 +99,13 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
     try {
         await conn.beginTransaction();
 
-        // 1. Insert the parent slot (is_recurring = true, no parent_slot_id)
+        // 1. Insert the parent slot (is_recurring = 1, no parent_slot_id)
         const [parentResult] = await conn.query(
             `INSERT INTO booking_slots (
                 owner_id, title, description, slot_date, start_time, end_time,
                 location, slot_type, status, max_bookings,
                 is_recurring, recurrence_weeks, parent_slot_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'office_hours', ?, ?, true, ?, NULL)`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'office_hours', ?, ?, 1, ?, NULL)`,
             [
                 owner_id, title.trim(), description, slot_date,
                 start_time, end_time, location, status, max_bookings, weeks,
@@ -124,7 +124,7 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
                     owner_id, parent_slot_id, title, description, slot_date,
                     start_time, end_time, location, slot_type, status, max_bookings,
                     is_recurring, recurrence_weeks
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'office_hours', ?, ?, true, NULL)`,
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'office_hours', ?, ?, 1, NULL)`,
                 [
                     owner_id, parent_id, title.trim(), description, childDate,
                     start_time, end_time, location, status, max_bookings,
@@ -173,7 +173,7 @@ router.get('/', requireLogin, requireOwner, async (req, res) => {
             FROM booking_slots bs
             LEFT JOIN booking_slots children ON children.parent_slot_id = bs.id
             LEFT JOIN bookings b ON b.slot_id = children.id AND b.status = 'confirmed'
-            WHERE bs.owner_id = ? AND bs.is_recurring = true AND bs.parent_slot_id IS NULL
+            WHERE bs.owner_id = ? AND bs.is_recurring = 1 AND bs.parent_slot_id IS NULL
             GROUP BY bs.id
             ORDER BY bs.slot_date ASC`,
             [owner_id]
@@ -202,7 +202,7 @@ router.get('/:id/children', requireLogin, requireOwner, async (req, res) => {
         // Confirm the parent exists and belongs to this owner
         const [parentRows] = await pool.query(
             `SELECT * FROM booking_slots
-             WHERE id = ? AND owner_id = ? AND parent_slot_id IS NULL AND is_recurring = true`,
+             WHERE id = ? AND owner_id = ? AND parent_slot_id IS NULL AND is_recurring = 1`,
             [parent_id, owner_id]
         );
 
@@ -251,7 +251,7 @@ router.patch('/:id/visibility', requireLogin, requireOwner, async (req, res) => 
         // Confirm parent ownership
         const [parentRows] = await pool.query(
             `SELECT id FROM booking_slots
-             WHERE id = ? AND owner_id = ? AND parent_slot_id IS NULL AND is_recurring = true`,
+             WHERE id = ? AND owner_id = ? AND parent_slot_id IS NULL AND is_recurring = 1`,
             [parent_id, owner_id]
         );
 
@@ -297,7 +297,7 @@ router.delete('/:id', requireLogin, requireOwner, async (req, res) => {
         // Confirm ownership
         const [parentRows] = await conn.query(
             `SELECT * FROM booking_slots
-             WHERE id = ? AND owner_id = ? AND parent_slot_id IS NULL AND is_recurring = true`,
+             WHERE id = ? AND owner_id = ? AND parent_slot_id IS NULL AND is_recurring = 1`,
             [parent_id, owner_id]
         );
 
@@ -367,7 +367,7 @@ router.post('/:slotId/book', requireLogin, async (req, res) => {
             `SELECT bs.*, u.name AS owner_name, u.email AS owner_email
              FROM booking_slots bs
              JOIN users u ON bs.owner_id = u.id
-             WHERE bs.id = ? AND bs.status = 'active' AND bs.is_recurring = true`,
+             WHERE bs.id = ? AND bs.status = 'active' AND bs.is_recurring = 1`,
             [slot_id]
         );
 
