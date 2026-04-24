@@ -21,12 +21,34 @@ import {
   requestSeed,
 } from '../data/userDashboardData'
 import { timeRows, weekDays } from '../data/ownerDashboardData'
+import { formatTime24To12 } from '../utils/ownerSlotAdapters'
 import '../styles/UserDashboardPage.css'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 function firstNameFromName(name) {
   const first = String(name || '').trim().split(/\s+/)[0]
   return first || 'User'
+}
+
+// Nazifa Ahmed (261112966)
+function dateLabelFromDb(slotDate) {
+  if (!slotDate) return ''
+  const d = new Date(`${slotDate}T12:00:00`)
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+}
+
+// Nazifa Ahmed (261112966)
+function mapApiBookingToAppointment(row) {
+  return {
+    id: String(row.booking_id),
+    ownerName: row.owner_name,
+    ownerEmail: row.owner_email,
+    title: row.title,
+    dateLabel: dateLabelFromDb(row.slot_date),
+    timeRange: `${formatTime24To12(row.start_time)} - ${formatTime24To12(row.end_time)}`,
+    status: 'Confirmed',
+    recurringLabel: Number(row.is_recurring) === 1 ? 'Recurring' : null,
+  }
 }
 
 export default function UserDashboardPage() {
@@ -36,7 +58,8 @@ export default function UserDashboardPage() {
   const [userName, setUserName] = useState('User')
   const [selectedOwnerId, setSelectedOwnerId] = useState(owners[0]?.id || '')
   const [availableSlots, setAvailableSlots] = useState(availableSlotsSeed)
-  const [appointments, setAppointments] = useState(appointmentsSeed)
+  // Nazifa Ahmed (261112966) — real bookings loaded from API; seed only used as fallback shape reference
+  const [appointments, setAppointments] = useState([])
   const [requests, setRequests] = useState(requestSeed)
   const [selectedCalendarAppointmentId, setSelectedCalendarAppointmentId] = useState(null)
   const [selectedFreeSlotCell, setSelectedFreeSlotCell] = useState(null)
@@ -67,7 +90,23 @@ export default function UserDashboardPage() {
       }
     }
     fetchMe()
-    }, [navigate])
+  }, [navigate])
+
+  // Nazifa Ahmed (261112966)
+  async function loadMyBookings() {
+    try {
+      const response = await fetch('/api/bookings', { credentials: 'include' })
+      if (!response.ok) return
+      const data = await response.json()
+      setAppointments((data.bookings || []).map(mapApiBookingToAppointment))
+    } catch (e) {
+      console.error('Could not load bookings:', e)
+    }
+  }
+
+  useEffect(() => {
+    loadMyBookings()
+  }, [])
 
   useEffect (() => {
     const inviteToken = searchParams.get('invite')
@@ -152,7 +191,7 @@ export default function UserDashboardPage() {
         window.alert(err.error || 'Unable to cancel this booking. Please try again.')
         return
       }
-      setAppointments((c) => c.filter((a) => a.id !== appointment.id))
+      await loadMyBookings()
       setSelectedCalendarAppointmentId(null)
       setCancelTarget(null)
       const subj = encodeURIComponent(`Cancelled: ${appointment.title}`)
