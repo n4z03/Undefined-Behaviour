@@ -259,7 +259,7 @@ export default function OwnerDashboardPage() {
                       onSlotDeleted={handleSlotDeleted}
                     />
                     {activeSection === 'overview' ? (
-                      <RecentRequestsPreview requests={meetingRequests.slice(0, 2)} onViewAll={() => handleSidebarSelect('requests')} />
+                      <RecentRequestsPreview requests={meetingRequestsData.filter(r => r.status === 'pending').slice(0, 2)} onViewAll={() => handleSidebarSelect('requests')} />
                     ) : null}
                   </div>
                 </div>

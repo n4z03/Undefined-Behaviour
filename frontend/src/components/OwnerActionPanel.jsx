@@ -1,5 +1,5 @@
 // code written by Rupneet (ID: 261096653)
-// button functionalities added by sophia
+// Button functionalities added by Sophia (261149930)
 // Nazifa Ahmed (261112966) - owner can change date/time on a slot + cancellation email functionality
 
 import { useEffect, useState } from 'react'

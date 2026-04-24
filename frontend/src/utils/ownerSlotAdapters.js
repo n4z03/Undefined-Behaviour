@@ -16,7 +16,7 @@ function timeForInput(dbTime) {
   return `${pad2(h)}:${pad2(m)}`
 }
 
-// added by Sophia
+// added by Sophia (261149930)
 function parseDateParts(slotDate) {
   const dateOnly = String(slotDate).split('T')[0]
   const [year, month, day] = dateOnly.split('-').map(Number)
