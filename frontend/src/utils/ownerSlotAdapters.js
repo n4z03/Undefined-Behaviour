@@ -16,7 +16,7 @@ function timeForInput(dbTime) {
   return `${pad2(h)}:${pad2(m)}`
 }
 
-// added by Sophia
+// added by Sophia (261149930)
 function parseDateParts(slotDate) {
   const dateOnly = String(slotDate).split('T')[0]
   const [year, month, day] = dateOnly.split('-').map(Number)
@@ -99,6 +99,8 @@ export function mapBackendSlotToCalendarSlot(slot) {
   const isRecurring = Boolean(slot.is_recurring)
   const category = bookingStatus === 'Booked' ? 'booked' : status === 'Public' ? 'public' : 'private'
 
+  const nBooked = slot.current_bookings != null ? Number(slot.current_bookings) : 0
+
   return {
     id: `slot-${slot.id}`,
     backendId: slot.id,
@@ -112,6 +114,7 @@ export function mapBackendSlotToCalendarSlot(slot) {
     timeInputEnd: timeForInput(slot.end_time),
     visibility: status,
     bookingStatus,
+    bookingCount: nBooked,
     bookedBy: slot.booked_by_name || null,
     bookedEmail: slot.booked_by_email || null,
     category: isRecurring ? 'recurring' : category,

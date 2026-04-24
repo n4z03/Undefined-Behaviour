@@ -1,21 +1,36 @@
 // code written by Rupneet (ID: 261096653)
+// code added by Sophia (261149930)
 
 import '../styles/RequestCard.css'
 
-export default function RequestCard({ request }) {
+function parseTimeFromSubject(subject) {
+  if (!subject) return null
+  const match = subject.match(/^\[(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}(?::\d{2})?)\s+-\s+(\d{2}:\d{2}(?::\d{2})?)\]/)
+  if (!match) return null
+  return { date: match[1], start: match[2], end: match[3] }
+}
+
+export default function RequestCard({ request, onAccept, onDecline }) {
+  const proposed = parseTimeFromSubject(request.subject)
   return (
     <article className="request-card">
       <div className="request-card__top">
-        <h3>{request.name}</h3>
+        <h3>{request.user_name}</h3>
         <span className="request-card__status">{request.status}</span>
       </div>
-      <p className="request-card__email">{request.email}</p>
-      <p className="request-card__topic">Message: "{request.topic}"</p>
-      <p className="request-card__time">{request.requestedAt}</p>
+      <p className="request-card__email">{request.user_email}</p>
+      {proposed ? (<p className="request-card__time">Proposed: {proposed.date} — {proposed.start} to {proposed.end}</p>
+      ) : null}
+      <p className="request-card__topic">Message: {request.message}</p>
+      <p className="request-card__time">Request created at: {request.created_at}</p>
       <div className="request-card__actions">
-        <button type="button">Accept</button>
-        <button type="button">Decline</button>
-        <a href={`mailto:${request.email}`}>Message Student</a>
+        {request.status === 'pending' ? (
+          <>
+          <button type="button" onClick={() => onAccept(request.id)}>Accept</button>
+          <button type="button" onClick={() => onDecline(request.id)}>Decline</button>
+          </>
+        ) : null}
+        <a href={`mailto:${request.user_email}`}>Message Student</a>
       </div>
     </article>
   )

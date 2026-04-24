@@ -1,4 +1,5 @@
 /* code written by Rupneet (ID: 261096653) */
+/* Code added by Nazifa Ahmed (261112966) */
 
 .calendar-block {
   box-sizing: border-box;
@@ -44,8 +45,38 @@
   white-space: nowrap;
 }
 
+/* Who reserved this block (from server booking data) */
+.calendar-block__booker {
+  margin: 0.1rem 0 0;
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.95;
+}
+
+.calendar-block--booked .calendar-block__booker {
+  color: #ffffff;
+  opacity: 0.9;
+}
+
+.calendar-block--public .calendar-block__booker {
+  color: #4a0f0f;
+}
+
+.calendar-block--private .calendar-block__booker {
+  color: #222222;
+  opacity: 0.9;
+}
+
+.calendar-block--recurring .calendar-block__booker {
+  color: #5a1818;
+}
+
 .calendar-block__status {
-  margin: 0.18rem 0 0;
+  margin: 0.12rem 0 0;
   font-size: 0.58rem;
   font-weight: 700;
   letter-spacing: 0.05em;
