@@ -1,5 +1,6 @@
 // Comp 307 Project: Owner Features
 // Sophia Casalme, 261149930 
+// Code added by Nazifa Ahmed (261112966)
 
 /* Owner features: 
 Create new booking slots with specific date, time, and details.
@@ -115,8 +116,23 @@ router.get('/', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
 
     try {
+        // Include confirmed booking count and the first booker (for "Booked by" in owner UI)
         const [rows] = await pool.query(
-            `SELECT * FROM booking_slots WHERE owner_id = ? ORDER BY slot_date ASC, start_time ASC`,
+            `SELECT
+                s.*,
+                (SELECT COUNT(*) FROM bookings b
+                 WHERE b.slot_id = s.id AND b.status = 'confirmed') AS current_bookings,
+                (SELECT u.name FROM bookings b
+                 INNER JOIN users u ON b.user_id = u.id
+                 WHERE b.slot_id = s.id AND b.status = 'confirmed'
+                 ORDER BY b.booked_at ASC LIMIT 1) AS booked_by_name,
+                (SELECT u.email FROM bookings b
+                 INNER JOIN users u ON b.user_id = u.id
+                 WHERE b.slot_id = s.id AND b.status = 'confirmed'
+                 ORDER BY b.booked_at ASC LIMIT 1) AS booked_by_email
+             FROM booking_slots s
+             WHERE s.owner_id = ?
+             ORDER BY s.slot_date ASC, s.start_time ASC`,
             [owner_id]
         );
         res.json({ slots: rows });
@@ -335,7 +351,8 @@ router.patch('/:id', requireLogin, requireOwner, async (req, res) => {
 });
 
 // PATCH /api/ownerSlots/slots/:id/visibility
-// Make private to public
+// private <-> active. Deactivating (active -> private) cancels all confirmed
+// bookings so they disappear from student calendars; same idea as delete + mailto.
 router.patch('/:id/visibility', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
     const slot_id = Number(req.params.id);
@@ -356,7 +373,47 @@ router.patch('/:id/visibility', requireLogin, requireOwner, async (req, res) => 
             return res.status(404).json({ error: "Slot not found." });
         }
 
-        // Apply the visibility change
+        let affectedUsers = [];
+
+        if (status === "private" && slot.status === "active") {
+            const [bookedUsers] = await pool.query(
+                `SELECT DISTINCT u.id, u.name, u.email, b.booked_at
+                 FROM bookings b
+                 JOIN users u ON b.user_id = u.id
+                 WHERE b.slot_id = ? AND b.status = 'confirmed'
+                 ORDER BY b.booked_at ASC`,
+                [slot_id]
+            );
+            affectedUsers = bookedUsers;
+            if (bookedUsers.length > 0) {
+                const conn = await pool.getConnection();
+                try {
+                    await conn.beginTransaction();
+                    await conn.query(
+                        `UPDATE bookings SET status = 'cancelled', updated_at = datetime('now')
+                         WHERE slot_id = ? AND status = 'confirmed'`,
+                        [slot_id]
+                    );
+                    await conn.query(
+                        `UPDATE booking_slots SET status = ? WHERE id = ? AND owner_id = ?`,
+                        [status, slot_id, owner_id]
+                    );
+                    await conn.commit();
+                } catch (e) {
+                    await conn.rollback();
+                    throw e;
+                } finally {
+                    conn.release();
+                }
+                const updatedSlot = await getOwnedSlot(slot_id, owner_id);
+                return res.json({
+                    message: "Slot deactivated; student bookings were cancelled.",
+                    slot: updatedSlot,
+                    affectedUsers: bookedUsers,
+                });
+            }
+        }
+
         await pool.query(
             `UPDATE booking_slots SET status = ? WHERE id = ? AND owner_id = ?`,
             [status, slot_id, owner_id]
@@ -366,6 +423,7 @@ router.patch('/:id/visibility', requireLogin, requireOwner, async (req, res) => 
 
         res.json({
             message: `Slot visibility changed to '${status}'.`, slot: updatedSlot,
+            affectedUsers,
         });
     } catch (err) {
         console.error("Error updating slot visibility:", err);
