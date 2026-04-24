@@ -1,10 +1,10 @@
 // Code written by Rupneet (ID: 261096653)
 // code added by Sophia Casalme (261149930), Nazifa Ahmed (261112966)
-// Bonita Baladi (261097353) - wired meetingRequestsData to /api/meetingRequests/incoming,
-//   removed hardcoded meetingRequests import, fixed RecentRequestsPreview and RequestCard renders
+// Bonita Baladi (261097353) - wired meetingRequestsData to /api/meetingRequests/incoming,removed hardcoded meetingRequests import, fixed RecentRequestsPreview and RequestCard renders
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { apiFetch } from '../api'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import DashboardSidebar from '../components/DashboardSidebar'
@@ -86,7 +86,7 @@ export default function OwnerDashboardPage() {
     setLoadingSlots(true)
     setLoadError('')
     try {
-      const response = await fetch('/api/ownerSlots', {
+      const response = await apiFetch('/api/ownerSlots', {
         credentials: 'include',
       })
 
@@ -114,22 +114,18 @@ export default function OwnerDashboardPage() {
   useEffect(() => {
     async function fetchOwnerName() {
       try {
-        const response = await fetch('/api/auth/me', {
+        const response = await apiFetch('/api/auth/me', {
           credentials: 'include',
         })
 
-        if (response.status === 401 || response.status === 403) {
-          navigate('/auth?mode=login', { replace: true })
-          return
-        }
         if (!response.ok) return
-        const me = await response.json()
+        const data = await response.json()
         // If somehow a user accesses here, redirect them
-        if (me?.user?.role !== 'owner') {
+        if (data?.user?.role !== 'owner') {
           navigate('/user-dashboard', { replace: true })
           return
         }
-        const nextName = firstNameOrAdmin(me?.user?.name)
+        const nextName = firstNameOrAdmin(data?.user?.name)
         setOwnerName(nextName)
       } catch {
         setOwnerName('Admin')
@@ -141,7 +137,7 @@ export default function OwnerDashboardPage() {
 
   async function handleSidebarSelect(sectionId) {
     if (sectionId === 'logout') {
-      await fetch('/api/auth/logout', {
+      await apiFetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include'
       })
@@ -214,7 +210,7 @@ export default function OwnerDashboardPage() {
   }
 
   async function handleLogout() {
-    await fetch('/api/auth/logout', {
+    await apiFetch('/api/auth/logout', {
       method: 'POST',
       credentials: 'include'
     })
