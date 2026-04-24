@@ -53,3 +53,78 @@
 .user-request-card__time {
   font-size: 0.82rem;
 }
+
+.user-request-card__proposed {
+  font-size: 0.82rem;
+  color: #333;
+}
+
+.user-request-card__proposed span {
+  font-weight: 600;
+  color: #111;
+}
+
+.user-request-card__row-actions {
+  margin-top: 0.4rem;
+}
+
+.user-request-card__edit-btn {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid #c9c9c9;
+  background: #f4f4f4;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.user-request-card__edit {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+}
+
+.user-request-card__edit label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.8rem;
+  color: #333;
+}
+
+.user-request-card__edit input,
+.user-request-card__edit textarea {
+  font: inherit;
+  padding: 0.4rem 0.45rem;
+  border: 1px solid #c9c9c9;
+  border-radius: 8px;
+}
+
+.user-request-card__time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.user-request-card__edit-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+}
+
+.user-request-card__save {
+  background: #1a5f7a;
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.user-request-card__edit-cancel {
+  background: #eee;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+}

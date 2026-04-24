@@ -1,6 +1,8 @@
+// Rupneet Shahriar (261096653)
+// Code added by Nazifa Ahmed (261112966)
 import '../styles/AppointmentCard.css'
 
-export default function AppointmentCard({ appointment, onCancel }) {
+export default function AppointmentCard({ appointment, onCancel, onReschedule }) {
   return (
     <article className="appointment-card">
       <div className="appointment-card__top">
@@ -12,8 +14,13 @@ export default function AppointmentCard({ appointment, onCancel }) {
       <p>{appointment.timeRange}</p>
       {appointment.recurringLabel ? <p className="appointment-card__recurring">{appointment.recurringLabel}</p> : null}
       <div className="appointment-card__actions">
-        <a href={`mailto:${appointment.ownerEmail}`}>Message Owner</a>
-        <button type="button" onClick={() => onCancel(appointment.id)}>
+        <a href={`mailto:${appointment.ownerEmail}`}>Message Instructor</a>
+        {onReschedule ? (
+          <button type="button" onClick={onReschedule}>
+            Change time
+          </button>
+        ) : null}
+        <button type="button" onClick={() => onCancel(appointment)}>
           Cancel Booking
         </button>
         <button type="button">Export</button>

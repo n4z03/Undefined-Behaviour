@@ -1,4 +1,4 @@
-// Frontend adapters for owner slot API data
+// Frontend helpers for owner slot data
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -6,7 +6,17 @@ function pad2(value) {
   return String(value).padStart(2, '0')
 }
 
-// added by Sophia
+// db gives "10:00:00" or "10:00" -> html time input wants "10:00"
+function timeForInput(dbTime) {
+  if (!dbTime) return '10:00'
+  const parts = String(dbTime).split(':')
+  const h = parts[0] != null ? Number(parts[0]) : 0
+  const m = parts[1] != null ? Number(parts[1]) : 0
+  if (Number.isNaN(h) || Number.isNaN(m)) return '10:00'
+  return `${pad2(h)}:${pad2(m)}`
+}
+
+// added by Sophia (261149930)
 function parseDateParts(slotDate) {
   const dateOnly = String(slotDate).split('T')[0]
   const [year, month, day] = dateOnly.split('-').map(Number)
@@ -89,9 +99,7 @@ export function mapBackendSlotToCalendarSlot(slot) {
   const isRecurring = Boolean(slot.is_recurring)
   const category = bookingStatus === 'Booked' ? 'booked' : status === 'Public' ? 'public' : 'private'
 
-  const dateOnly = String(slot.slot_date).split('T')[0]
-  const startH = String(slot.start_time || '')
-  const endH = String(slot.end_time || '')
+  const nBooked = slot.current_bookings != null ? Number(slot.current_bookings) : 0
 
   return {
     id: `slot-${slot.id}`,
@@ -101,9 +109,12 @@ export function mapBackendSlotToCalendarSlot(slot) {
     time: formatTime24To12(slot.start_time),
     endTime: formatTime24To12(slot.end_time),
     dateLabel: dateLabelFromDate(slot.slot_date),
+    dateInput: String(slot.slot_date || '').split('T')[0],
+    timeInputStart: timeForInput(slot.start_time),
+    timeInputEnd: timeForInput(slot.end_time),
     visibility: status,
     bookingStatus,
-    bookingCount: slot.current_bookings != null ? Number(slot.current_bookings) : 0,
+    bookingCount: nBooked,
     bookedBy: slot.booked_by_name || null,
     bookedEmail: slot.booked_by_email || null,
     category: isRecurring ? 'recurring' : category,
@@ -111,9 +122,6 @@ export function mapBackendSlotToCalendarSlot(slot) {
     inviteLink: slot.invite_link || `https://mcbook.app/invite/slot-${slot.id}`,
     rowSpan: rowSpanFromTimes(slot.start_time, slot.end_time),
     slotDate: slot.slot_date,
-    dateInput: dateOnly,
-    timeInputStart: startH.length >= 5 ? startH.slice(0, 5) : '10:00',
-    timeInputEnd: endH.length >= 5 ? endH.slice(0, 5) : '10:30',
   }
 }
 

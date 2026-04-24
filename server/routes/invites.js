@@ -45,7 +45,7 @@ router.post('/generate', requireLogin, requireOwner, async (req, res) => {
 
         res.status(201).json({
             message: 'Invite generated successfully.',
-            invite_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/user-dashboard?invite=${token}`,
+            invite_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/user-dashboard?invite=${token}&slot=${req.body.slot_id || ''}`,
             token
         });
     } catch (err) {

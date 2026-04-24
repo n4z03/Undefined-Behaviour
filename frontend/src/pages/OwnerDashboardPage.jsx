@@ -1,4 +1,6 @@
 // code written by Rupneet (ID: 261096653)
+// code added by Nazifa Ahmed (261112966)
+// code added by Sophia Casalme (261149930)
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -17,7 +19,11 @@ import {
   timeRows,
   meetingRequests,
 } from '../data/ownerDashboardData'
-import { getNextDateForWeekday, mapBackendSlotsToCalendarSlots } from '../utils/ownerSlotAdapters'
+import {
+  getNextDateForWeekday,
+  mapBackendSlotToCalendarSlot,
+  mapBackendSlotsToCalendarSlots,
+} from '../utils/ownerSlotAdapters'
 
 function firstNameOrAdmin(fullName) {
   const part = String(fullName || '').trim().split(/\s+/)[0]
@@ -63,6 +69,24 @@ export default function OwnerDashboardPage() {
 
   useEffect(() => {
     fetchOwnerSlots()
+  }, [])
+
+  const [meetingRequestsData, setMeetingRequestsData] = useState([])
+
+  useEffect(() => {
+    async function fetchRequests() {
+      try {
+        const response = await fetch('/api/meetingRequests/incoming', {
+          credentials: 'include'
+        })
+        if (!response.ok) return
+        const data = await response.json()
+        setMeetingRequestsData(data.requests || [])
+      } catch (err) {
+        console.error('Error fetching requests:', err)
+      }
+    }
+    fetchRequests()
   }, [])
 
   useEffect(() => {
@@ -133,12 +157,68 @@ export default function OwnerDashboardPage() {
     setTimeout(() => setActionMessage(''), 3500)
   }
 
+  async function handleSlotPatched(row) {
+    if (row) setSelectedSlot(mapBackendSlotToCalendarSlot(row))
+    await fetchOwnerSlots()
+    setActionMessage('Date/time saved')
+    setTimeout(() => setActionMessage(''), 3200)
+  }
+
+  async function handleSlotDeleted({ affectedCount, reason = 'delete' }) {
+    await fetchOwnerSlots()
+    if (affectedCount > 0) {
+      if (reason === 'deactivate') {
+        setActionMessage(
+          `Slot deactivated. Student bookings were cancelled, and a draft email was opened to notify ${affectedCount} student${affectedCount === 1 ? '' : 's'}.`,
+        )
+      } else {
+        setActionMessage(
+          `Slot removed. A draft email was opened to notify ${affectedCount} student${affectedCount === 1 ? '' : 's'}.`,
+        )
+      }
+    } else {
+      setActionMessage(reason === 'deactivate' ? 'Slot deactivated.' : 'Slot removed.')
+    }
+    setTimeout(() => setActionMessage(''), 5000)
+  }
+
   async function handleLogout() {
     await apiFetch('/api/auth/logout', {
       method: 'POST',
       credentials: 'include'
     })
     navigate('/auth?mode=login')
+  }
+
+  async function handleAccept(requestId) {
+    try {
+      const response = await fetch(`/api/meetingRequests/${requestId}/accept`, {
+        method: 'PATCH',
+        credentials: 'include'
+      })
+      if (!response.ok) return
+      setMeetingRequestsData(prev => prev.map(r => 
+        r.id === requestId ? { ...r, status: 'accepted' } : r
+      ))
+      await fetchOwnerSlots() // refresh calendar
+    } catch (err) {
+      console.error('Error accepting request:', err)
+    }
+  }
+  
+  async function handleDecline(requestId) {
+    try {
+      const response = await fetch(`/api/meetingRequests/${requestId}/decline`, {
+        method: 'PATCH',
+        credentials: 'include'
+      })
+      if (!response.ok) return
+      setMeetingRequestsData(prev => prev.map(r => 
+        r.id === requestId ? { ...r, status: 'declined' } : r
+      ))
+    } catch (err) {
+      console.error('Error declining request:', err)
+    }
   }
 
   return (
@@ -176,9 +256,11 @@ export default function OwnerDashboardPage() {
                       selectedCell={selectedCell}
                       onModeChange={handlePanelModeChange}
                       onSlotCreated={handleSlotCreated}
+                      onSlotPatched={handleSlotPatched}
+                      onSlotDeleted={handleSlotDeleted}
                     />
                     {activeSection === 'overview' ? (
-                      <RecentRequestsPreview requests={meetingRequests.slice(0, 2)} onViewAll={() => handleSidebarSelect('requests')} />
+                      <RecentRequestsPreview requests={meetingRequestsData.filter(r => r.status === 'pending').slice(0, 2)} onViewAll={() => handleSidebarSelect('requests')} />
                     ) : null}
                   </div>
                 </div>
@@ -223,6 +305,8 @@ export default function OwnerDashboardPage() {
                       selectedCell={selectedCell}
                       onModeChange={handlePanelModeChange}
                       onSlotCreated={handleSlotCreated}
+                      onSlotPatched={handleSlotPatched}
+                      onSlotDeleted={handleSlotDeleted}
                     />
                   </div>
                 </div>
@@ -232,9 +316,13 @@ export default function OwnerDashboardPage() {
             {activeSection === 'requests' ? (
               <section className="owner-section">
                 <h2>Meeting Requests</h2>
+                <p className="owner-section__subtitle">
+                  Students asking you to set up a new time. If someone <strong>reserved a slot you published</strong>, that
+                  shows on the calendar when you open that block — not here.
+                </p>
                 <div className="owner-request-list">
-                  {meetingRequests.map((request) => (
-                    <RequestCard key={request.id} request={request} />
+                  {meetingRequestsData.map((request) => (
+                    <RequestCard key={request.id} request={request} onAccept={handleAccept} onDecline={handleDecline} />
                   ))}
                 </div>
               </section>
@@ -243,7 +331,7 @@ export default function OwnerDashboardPage() {
             {activeSection === 'export' ? (
               <section className="owner-section">
                 <h2>Export to Calendar</h2>
-                <ExportPanel showHeading={false} />
+                <ExportPanel showHeading={false} isOwner={true}/>  {/* Bonita added isOwner = true --> don't we need this? */}
               </section>
             ) : null}
           </section>

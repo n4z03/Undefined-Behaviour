@@ -1,0 +1,142 @@
+/* Nazifa Ahmed (261112966)*/
+.reschedulebook-card-bg {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.reschedulebook-card {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  max-width: 420px;
+  width: 100%;
+  padding: 1.2rem 1.4rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.reschedulebook-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.reschedulebook-card__top h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.reschedulebook-card__close {
+  border: 0;
+  background: #eee;
+  width: 2rem;
+  height: 2rem;
+  line-height: 1;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+.reschedulebook-card__close:disabled { opacity: 0.5; }
+
+.reschedulebook-card__blurb {
+  font-size: 0.9rem;
+  color: #444;
+  margin: 0 0 0.8rem 0;
+  line-height: 1.45;
+}
+
+.reschedulebook-card__info {
+  list-style: none;
+  padding: 0.6rem 0.7rem;
+  margin: 0 0 0.75rem 0;
+  background: #f4f4f4;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.reschedulebook-card__info li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+.reschedulebook-card__info li:last-child { border: 0; }
+.reschedulebook-card__info span {
+  color: #666;
+  font-size: 0.8rem;
+}
+.reschedulebook-card__info b { font-weight: 600; }
+
+.reschedulebook-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0 0 0.5rem 0;
+}
+.reschedulebook-card__field > span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #444;
+}
+.reschedulebook-card__select {
+  padding: 0.5rem 0.55rem;
+  border: 1px solid #c8c8c8;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: #fff;
+}
+.reschedulebook-card__select:focus {
+  outline: 2px solid #1a5f7a;
+  outline-offset: 0;
+  border-color: #1a5f7a;
+}
+
+.reschedulebook-card__empty {
+  font-size: 0.88rem;
+  color: #555;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.4;
+}
+.reschedulebook-card__err {
+  color: #a00;
+  font-size: 0.85rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.reschedulebook-card__btns {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+.reschedulebook-card__btn {
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  font-weight: 600;
+}
+.reschedulebook-card__btn--secondary {
+  background: #e8e8e8;
+  color: #333;
+}
+.reschedulebook-card__btn--primary {
+  background: #1a5f7a;
+  color: #fff;
+}
+.reschedulebook-card__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

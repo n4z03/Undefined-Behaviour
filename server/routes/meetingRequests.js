@@ -1,4 +1,5 @@
 // Bonita Baladi, 261097353
+// Code added by Nazifa Ahmed (261112966)
 
 // Booking type 1: request a meeting
 
@@ -48,7 +49,6 @@ router.post('/', requireLogin, requireUser, async (req, res) => {
         proposed_end,    // HH:MM or HH:MM:SS
     } = req.body;
 
-    // Validate required fields
     const errors = [];
     if (!owner_id || !Number.isInteger(Number(owner_id))) {
         errors.push('owner_id is required and must be an integer.');
@@ -68,32 +68,24 @@ router.post('/', requireLogin, requireUser, async (req, res) => {
     if (proposed_start && proposed_end && proposed_start >= proposed_end) {
         errors.push('proposed_start must be earlier than proposed_end.');
     }
-    if (errors.length > 0) {
-        return res.status(400).json({ errors });
-    }
+    if (errors.length > 0) return res.status(400).json({ errors });
 
     try {
-        // Confirm the owner exists and is actually an owner
         const [ownerRows] = await pool.query(
             `SELECT id, name, email FROM users WHERE id = ? AND role = 'owner'`,
             [Number(owner_id)]
         );
-        if (ownerRows.length === 0) {
-            return res.status(404).json({ error: 'Owner not found.' });
-        }
+        if (ownerRows.length === 0) return res.status(404).json({ error: 'Owner not found.' });
 
-        // Prevent a user from requesting a meeting with themselves
         if (Number(owner_id) === user_id) {
             return res.status(400).json({ error: 'You cannot send a meeting request to yourself.' });
         }
 
-        // Store proposed time in the subject field as a prefix for now,
-        // since the schema has no dedicated proposed_date columns.
+        // Store proposed time as a prefix in the subject field.
         // Format: "[YYYY-MM-DD HH:MM - HH:MM] subject"
+        // This is used later when the owner accepts, to create the booking slot.
         const timePrefix = `[${proposed_date} ${proposed_start} - ${proposed_end}]`;
-        const fullSubject = subject
-            ? `${timePrefix} ${subject.trim()}`
-            : timePrefix;
+        const fullSubject = subject ? `${timePrefix} ${subject.trim()}` : timePrefix;
 
         const [result] = await pool.query(
             `INSERT INTO meeting_requests (owner_id, user_id, subject, message, status)
@@ -102,7 +94,7 @@ router.post('/', requireLogin, requireUser, async (req, res) => {
         );
 
         const [newRequest] = await pool.query(
-            `SELECT mr.*, 
+            `SELECT mr.*,
                 u.name AS user_name, u.email AS user_email,
                 o.name AS owner_name, o.email AS owner_email
              FROM meeting_requests mr
@@ -129,14 +121,12 @@ router.post('/', requireLogin, requireUser, async (req, res) => {
 // ─────────────────────────────────────────────
 router.get('/incoming', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
-    const { status } = req.query; // optional filter: ?status=pending
-
+    const { status } = req.query;
     const allowed = ['pending', 'accepted', 'declined'];
 
     try {
         let query = `
-            SELECT mr.*,
-                u.name AS user_name, u.email AS user_email
+            SELECT mr.*, u.name AS user_name, u.email AS user_email
             FROM meeting_requests mr
             JOIN users u ON mr.user_id = u.id
             WHERE mr.owner_id = ?`;
@@ -146,7 +136,6 @@ router.get('/incoming', requireLogin, requireOwner, async (req, res) => {
             query += ` AND mr.status = ?`;
             params.push(status);
         }
-
         query += ` ORDER BY mr.created_at DESC`;
 
         const [requests] = await pool.query(query, params);
@@ -164,14 +153,12 @@ router.get('/incoming', requireLogin, requireOwner, async (req, res) => {
 // ─────────────────────────────────────────────
 router.get('/outgoing', requireLogin, requireUser, async (req, res) => {
     const user_id = req.user.id;
-    const { status } = req.query; // optional filter: ?status=pending
-
+    const { status } = req.query;
     const allowed = ['pending', 'accepted', 'declined'];
 
     try {
         let query = `
-            SELECT mr.*,
-                o.name AS owner_name, o.email AS owner_email
+            SELECT mr.*, o.name AS owner_name, o.email AS owner_email
             FROM meeting_requests mr
             JOIN users o ON mr.owner_id = o.id
             WHERE mr.user_id = ?`;
@@ -181,7 +168,6 @@ router.get('/outgoing', requireLogin, requireUser, async (req, res) => {
             query += ` AND mr.status = ?`;
             params.push(status);
         }
-
         query += ` ORDER BY mr.created_at DESC`;
 
         const [requests] = await pool.query(query, params);
@@ -196,23 +182,19 @@ router.get('/outgoing', requireLogin, requireUser, async (req, res) => {
 // ─────────────────────────────────────────────
 // PATCH /api/meetingRequests/:id/accept
 // Owner accepts a request.
-// Parses the proposed time from the subject field,
+// Parses the proposed time from the subject prefix,
 // creates a booking slot, links it via created_slot_id,
-// and returns the affected user's email for mailto notification.
+// and returns the user's email for mailto notification.
 // ─────────────────────────────────────────────
 router.patch('/:id/accept', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
     const request_id = Number(req.params.id);
-
-    if (!Number.isInteger(request_id)) {
-        return res.status(400).json({ error: 'Invalid request id.' });
-    }
+    if (!Number.isInteger(request_id)) return res.status(400).json({ error: 'Invalid request id.' });
 
     const conn = await pool.getConnection();
     try {
         await conn.beginTransaction();
 
-        // Fetch the request and confirm it belongs to this owner
         const [rows] = await conn.query(
             `SELECT mr.*, u.name AS user_name, u.email AS user_email
              FROM meeting_requests mr
@@ -250,11 +232,12 @@ router.patch('/:id/accept', requireLogin, requireOwner, async (req, res) => {
         const [, slot_date, start_time, end_time] = timeMatch;
 
         // Create the booking slot from the proposed time
+        // is_recurring = 0 (SQLite boolean)
         const [slotResult] = await conn.query(
             `INSERT INTO booking_slots (
                 owner_id, title, description, slot_date, start_time, end_time,
                 slot_type, status, max_bookings, is_recurring
-            ) VALUES (?, ?, ?, ?, ?, ?, 'requested', 'active', 1, false)`,
+            ) VALUES (?, ?, ?, ?, ?, ?, 'requested', 'active', 1, 0)`,
             [
                 owner_id,
                 `Meeting with ${request.user_name}`,
@@ -269,16 +252,13 @@ router.patch('/:id/accept', requireLogin, requireOwner, async (req, res) => {
 
         // Auto-book the slot for the user
         await conn.query(
-            `INSERT INTO bookings (slot_id, user_id, status)
-             VALUES (?, ?, 'confirmed')`,
+            `INSERT INTO bookings (slot_id, user_id, status) VALUES (?, ?, 'confirmed')`,
             [slot_id, request.user_id]
         );
 
-        // Update the request: accepted + link to the created slot
+        // Mark request accepted and link to the created slot
         await conn.query(
-            `UPDATE meeting_requests
-             SET status = 'accepted', created_slot_id = ?
-             WHERE id = ?`,
+            `UPDATE meeting_requests SET status = 'accepted', created_slot_id = ? WHERE id = ?`,
             [slot_id, request_id]
         );
 
@@ -290,7 +270,6 @@ router.patch('/:id/accept', requireLogin, requireOwner, async (req, res) => {
             slot_date,
             start_time,
             end_time,
-            // Frontend uses these to build the mailto: notification to the user
             notify: {
                 to: request.user_email,
                 subject: `Your meeting request has been accepted`,
@@ -315,10 +294,7 @@ router.patch('/:id/accept', requireLogin, requireOwner, async (req, res) => {
 router.patch('/:id/decline', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
     const request_id = Number(req.params.id);
-
-    if (!Number.isInteger(request_id)) {
-        return res.status(400).json({ error: 'Invalid request id.' });
-    }
+    if (!Number.isInteger(request_id)) return res.status(400).json({ error: 'Invalid request id.' });
 
     try {
         const [rows] = await pool.query(
@@ -329,9 +305,7 @@ router.patch('/:id/decline', requireLogin, requireOwner, async (req, res) => {
             [request_id, owner_id]
         );
 
-        if (rows.length === 0) {
-            return res.status(404).json({ error: 'Request not found.' });
-        }
+        if (rows.length === 0) return res.status(404).json({ error: 'Request not found.' });
 
         const request = rows[0];
 
@@ -348,7 +322,6 @@ router.patch('/:id/decline', requireLogin, requireOwner, async (req, res) => {
 
         res.json({
             message: 'Request declined.',
-            // Frontend uses these to build the mailto: notification to the user
             notify: {
                 to: request.user_email,
                 subject: `Your meeting request has been declined`,
@@ -362,16 +335,40 @@ router.patch('/:id/decline', requireLogin, requireOwner, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
-// DELETE /api/meetingRequests/:id
-// User cancels their own pending request
-// ─────────────────────────────────────────────
-router.delete('/:id', requireLogin, requireUser, async (req, res) => {
+// edit pending requests done by Nazifa Ahmed (261112966)
+router.patch('/:id', requireLogin, requireUser, async (req, res) => {
     const user_id = req.user.id;
     const request_id = Number(req.params.id);
-
     if (!Number.isInteger(request_id)) {
         return res.status(400).json({ error: 'Invalid request id.' });
+    }
+
+    const {
+        message,
+        subject = null,
+        proposed_date,
+        proposed_start,
+        proposed_end,
+    } = req.body;
+
+    const errors = [];
+    if (!message || typeof message !== 'string' || !message.trim()) {
+        errors.push('message is required.');
+    }
+    if (!proposed_date || !/^\d{4}-\d{2}-\d{2}$/.test(proposed_date)) {
+        errors.push('proposed_date must be in YYYY-MM-DD format.');
+    }
+    if (!proposed_start || !/^\d{2}:\d{2}(:\d{2})?$/.test(proposed_start)) {
+        errors.push('proposed_start must be in HH:MM or HH:MM:SS format.');
+    }
+    if (!proposed_end || !/^\d{2}:\d{2}(:\d{2})?$/.test(proposed_end)) {
+        errors.push('proposed_end must be in HH:MM or HH:MM:SS format.');
+    }
+    if (proposed_start && proposed_end && proposed_start >= proposed_end) {
+        errors.push('proposed_start must be earlier than proposed_end.');
+    }
+    if (errors.length > 0) {
+        return res.status(400).json({ errors });
     }
 
     try {
@@ -383,6 +380,58 @@ router.delete('/:id', requireLogin, requireUser, async (req, res) => {
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Request not found.' });
         }
+        if (rows[0].status !== 'pending') {
+            return res.status(400).json({ error: 'You can only edit a pending request.' });
+        }
+
+        const timePrefix = `[${proposed_date} ${proposed_start} - ${proposed_end}]`;
+        const fullSubject = subject && String(subject).trim()
+            ? `${timePrefix} ${String(subject).trim()}`
+            : timePrefix;
+
+        await pool.query(
+            `UPDATE meeting_requests
+             SET message = ?,
+                 subject = ?,
+                 updated_at = datetime('now')
+             WHERE id = ? AND user_id = ?`,
+            [message.trim(), fullSubject, request_id, user_id]
+        );
+
+        const [out] = await pool.query(
+            `SELECT mr.*, o.name AS owner_name, o.email AS owner_email
+             FROM meeting_requests mr
+             JOIN users o ON mr.owner_id = o.id
+             WHERE mr.id = ?`,
+            [request_id]
+        );
+
+        res.json({
+            message: 'Request updated.',
+            request: out[0] || null,
+        });
+    } catch (err) {
+        console.error('Error updating meeting request:', err);
+        res.status(500).json({ error: 'Failed to update request.' });
+    }
+});
+
+// ─────────────────────────────────────────────
+// DELETE /api/meetingRequests/:id
+// User cancels their own pending request
+// ─────────────────────────────────────────────
+router.delete('/:id', requireLogin, requireUser, async (req, res) => {
+    const user_id = req.user.id;
+    const request_id = Number(req.params.id);
+    if (!Number.isInteger(request_id)) return res.status(400).json({ error: 'Invalid request id.' });
+
+    try {
+        const [rows] = await pool.query(
+            `SELECT * FROM meeting_requests WHERE id = ? AND user_id = ?`,
+            [request_id, user_id]
+        );
+
+        if (rows.length === 0) return res.status(404).json({ error: 'Request not found.' });
 
         if (rows[0].status !== 'pending') {
             return res.status(400).json({

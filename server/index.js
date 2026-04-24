@@ -39,11 +39,20 @@ app.use(cors({
   credentials: true
 }))
 app.use(express.json())
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'dev-secret',
-  resave: false,
-  saveUninitialized: false
-})) // added by sophia
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'dev-secret',
+    resave: false,
+    saveUninitialized: false,
+    name: 'connect.sid',
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    },
+  }),
+) // added by sophia
 app.use('/api/auth', authenticationRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/owners', ownerRoutes);
