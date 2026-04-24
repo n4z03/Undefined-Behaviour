@@ -19,8 +19,13 @@ const calendarRoutes = require('./routes/calendar'); // added by Bonita
 const app = express()
 const port = process.env.PORT || 3000
 
+// Production UI (e.g. CS course host). Override with FRONTEND_ORIGIN in .env if different.
+const DEPLOYED_FRONTEND_ORIGIN =
+  process.env.FRONTEND_ORIGIN || 'https://winter2026-comp307-group39.cs.mcgill.ca'
+
 function isAllowedFrontendOrigin(origin) {
   if (!origin) return true
+  if (origin === DEPLOYED_FRONTEND_ORIGIN) return true
   return (
     /^https?:\/\/localhost(?::\d+)?$/.test(origin) ||
     /^https?:\/\/127\.0\.0\.1(?::\d+)?$/.test(origin)
