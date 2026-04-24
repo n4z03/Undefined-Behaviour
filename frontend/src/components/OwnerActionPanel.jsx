@@ -47,7 +47,7 @@ function openSlotCancelledMailto(affectedUsers, slot) {
   const to = emails.join(',')
   const subject = encodeURIComponent('Your booking was cancelled')
   const body = encodeURIComponent(
-    "Hi, your booking for this time was cancelled (the slot was removed or unpublished).\n\n" +
+    'Hi, your booking for this time was cancelled (the slot was removed or unpublished).\n\n' +
       `${slot.title}\n` +
       `${slot.dateLabel}, ${slot.time}–${slot.endTime}\n\n` +
       'Please book another time on McBook if you still need a meeting.\n',
@@ -100,15 +100,15 @@ function ownerSlotCancelDialogProps(action, s) {
 }
 
 function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, onSlotDeleted }) {
-  const [inviteUrl, setInviteUrl] = useState('');
-  const [copyMessage, setCopyMessage] = useState('');
-  const [editingWhen, setEditingWhen] = useState(false);
-  const [dateStr, setDateStr] = useState('');
-  const [startStr, setStartStr] = useState('');
-  const [endStr, setEndStr] = useState('');
-  const [saveErr, setSaveErr] = useState('');
-  const [deleteErr, setDeleteErr] = useState('');
-  const [visibilityErr, setVisibilityErr] = useState('');
+  const [inviteUrl, setInviteUrl] = useState('')
+  const [copyMessage, setCopyMessage] = useState('')
+  const [editingWhen, setEditingWhen] = useState(false)
+  const [dateStr, setDateStr] = useState('')
+  const [startStr, setStartStr] = useState('')
+  const [endStr, setEndStr] = useState('')
+  const [saveErr, setSaveErr] = useState('')
+  const [deleteErr, setDeleteErr] = useState('')
+  const [visibilityErr, setVisibilityErr] = useState('')
   const [ownerCancelDialog, setOwnerCancelDialog] = useState(null)
   const [ownerCancelLoading, setOwnerCancelLoading] = useState(false)
 
@@ -214,7 +214,7 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
       setOwnerCancelDialog(null)
     } catch (e) {
       console.error(e)
-      setDeleteErr("Something went wrong, try again.")
+      setDeleteErr('Something went wrong, try again.')
     } finally {
       setOwnerCancelLoading(false)
     }
@@ -238,7 +238,6 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
       setSaveErr('Pick a date first')
       return
     }
-    // server also validates
     const a = (startStr || '0:0').split(':').map((x) => parseInt(x, 10) || 0)
     const b = (endStr || '0:0').split(':').map((x) => parseInt(x, 10) || 0)
     const startMins = a[0] * 60 + a[1]
@@ -247,7 +246,6 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
       setSaveErr('End has to be after start')
       return
     }
-    // backend wanted HH:MM:SS for tests
     const withSecs = (t) => (t && t.length === 5 ? `${t}:00` : t)
     try {
       const res = await fetch(`/api/ownerSlots/${slot.backendId}`, {
@@ -263,9 +261,7 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
       let data = {}
       try {
         data = await res.json()
-      } catch (_) {
-        // non-json error page or empty
-      }
+      } catch (_) {}
       if (!res.ok) {
         const msg = data.error || (data.errors && data.errors[0]) || 'Something went wrong'
         setSaveErr(msg)
@@ -289,7 +285,7 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ label: slot.title, slot_id: slot.backendId })
+        body: JSON.stringify({ label: slot.title, slot_id: slot.backendId }),
       })
       const data = await response.json()
       setInviteUrl(data.invite_url)
@@ -301,7 +297,7 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
       setCopyMessage('Failed to generate invite link.')
     }
   }
-  
+
   return (
     <>
       <h2>{slot.title}</h2>
@@ -389,11 +385,15 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
               {slot.visibility === 'Private' ? 'Activate Slot' : 'Deactivate Slot'}
             </ActionButton>
             <div className="owner-action-panel__secondary-row">
-              <ActionButton kind="secondary" onClick={() => setEditingWhen(true)}>Edit date & time</ActionButton>
+              <ActionButton kind="secondary" onClick={() => setEditingWhen(true)}>
+                Edit date & time
+              </ActionButton>
               <ActionButton kind="secondary" onClick={openRemoveSlotDialog}>
                 Cancel
               </ActionButton>
-              <ActionButton kind="secondary" onClick={handleCopyInviteLink}>{copyMessage || 'Copy Invite Link'}</ActionButton>
+              <ActionButton kind="secondary" onClick={handleCopyInviteLink}>
+                {copyMessage || 'Copy Invite Link'}
+              </ActionButton>
               {slot.bookedEmail ? (
                 <ActionButton kind="secondary" onClick={() => window.open(`mailto:${slot.bookedEmail}`, '_blank')}>
                   Email Student
@@ -533,7 +533,9 @@ function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
     <>
       <h2>Create Slot</h2>
       <p className="owner-action-panel__muted">
-        {selectedCell ? `Creating slot for ${selectedCell.day} at ${selectedCell.time}.` : 'Choose a day and time from the calendar, then fill details.'}
+        {selectedCell
+          ? `Creating slot for ${selectedCell.day} at ${selectedCell.time}.`
+          : 'Choose a day and time from the calendar, then fill details.'}
       </p>
       <div className="owner-action-panel__form">
         <label>
