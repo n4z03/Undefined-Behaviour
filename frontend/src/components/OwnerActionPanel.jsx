@@ -1,6 +1,7 @@
 // code written by Rupneet (ID: 261096653)
 // Button functionalities added by Sophia (261149930)
 // Nazifa Ahmed (261112966) - owner can change date/time on a slot + cancellation email functionality
+// Bonita Baladi (261097353) - wired RecurringForm to POST /api/recurringSlots with controlled inputs, validation, and error/success feedback
 
 import { useEffect, useState } from 'react'
 import '../styles/OwnerActionPanel.css'
@@ -418,7 +419,58 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
   )
 }
 
-function RecurringForm({ onModeChange }) {
+// RecurringForm wired to POST /api/recurringSlots — Bonita Baladi, 261097353
+function RecurringForm({ onModeChange, onSlotCreated }) {
+  const [title, setTitle] = useState('Weekly Office Hours')
+  const [slotDate, setSlotDate] = useState('')
+  const [startTime, setStartTime] = useState('10:00')
+  const [endTime, setEndTime] = useState('11:00')
+  const [weeks, setWeeks] = useState(6)
+  const [status, setStatus] = useState('private')
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  async function handleSave() {
+    setError('')
+    setSuccess('')
+    if (!title.trim()) { setError('Title is required.'); return }
+    if (!slotDate) { setError('Start date is required.'); return }
+    if (!startTime || !endTime) { setError('Start and end time are required.'); return }
+    if (startTime >= endTime) { setError('Start time must be before end time.'); return }
+    if (!weeks || weeks < 1 || weeks > 52) { setError('Number of weeks must be between 1 and 52.'); return }
+
+    setLoading(true)
+    try {
+      const res = await fetch('/api/recurringSlots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          title: title.trim(),
+          slot_date: slotDate,
+          start_time: startTime,
+          end_time: endTime,
+          recurrence_weeks: Number(weeks),
+          status,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(data.error || (data.errors && data.errors[0]) || 'Failed to create recurring slot.')
+        return
+      }
+      setSuccess(`Created! ${data.children_created} occurrence(s) added to your calendar.`)
+      if (onSlotCreated) await onSlotCreated()
+      setTimeout(() => onModeChange('default'), 1500)
+    } catch (e) {
+      console.error(e)
+      setError('Could not reach the server. Is the backend running?')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <>
       <h2>Recurring Office Hours</h2>
@@ -426,30 +478,36 @@ function RecurringForm({ onModeChange }) {
       <div className="owner-action-panel__form">
         <label>
           Title
-          <input type="text" defaultValue="Weekly Office Hours" />
+          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
         </label>
         <label>
-          Day(s)
-          <input type="text" defaultValue="Monday, Wednesday" />
+          Start date (first occurrence)
+          <input type="date" value={slotDate} onChange={(e) => setSlotDate(e.target.value)} />
         </label>
         <label>
-          Time
-          <input type="text" defaultValue="3:00 PM - 4:00 PM" />
+          Start time
+          <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+        </label>
+        <label>
+          End time
+          <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
         </label>
         <label>
           Number of weeks
-          <input type="number" defaultValue={6} />
+          <input type="number" min={1} max={52} value={weeks} onChange={(e) => setWeeks(e.target.value)} />
         </label>
         <label>
           Visibility
-          <select defaultValue="Private">
-            <option>Private</option>
-            <option>Public</option>
+          <select value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="private">Private</option>
+            <option value="active">Public</option>
           </select>
         </label>
       </div>
+      {error ? <p className="owner-action-panel__feedback owner-action-panel__feedback--error">{error}</p> : null}
+      {success ? <p className="owner-action-panel__feedback owner-action-panel__feedback--success">{success}</p> : null}
       <div className="owner-action-panel__row">
-        <ActionButton>Save Recurring Schedule</ActionButton>
+        <ActionButton onClick={handleSave}>{loading ? 'Saving…' : 'Save Recurring Schedule'}</ActionButton>
         <ActionButton kind="ghost" onClick={() => onModeChange('default')}>
           Cancel
         </ActionButton>
@@ -583,7 +641,7 @@ export default function OwnerActionPanel({ panelMode, selectedSlot, selectedCell
         />
       ) : null}
       {panelMode === 'create' ? <CreateSlotForm selectedCell={selectedCell} onModeChange={onModeChange} onSlotCreated={onSlotCreated} /> : null}
-      {panelMode === 'recurring' ? <RecurringForm onModeChange={onModeChange} /> : null}
+      {panelMode === 'recurring' ? <RecurringForm onModeChange={onModeChange} onSlotCreated={onSlotCreated} /> : null}
       {panelMode === 'group' ? <GroupForm onModeChange={onModeChange} /> : null}
       {panelMode === 'default' ? <DefaultPanel onModeChange={onModeChange} /> : null}
     </aside>
