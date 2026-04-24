@@ -1,5 +1,6 @@
 // code written by Rupneet (ID: 261096653)
 // code added by Nazifa Ahmed (261112966)
+// code added by Sophia Casalme (261149930)
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -67,6 +68,24 @@ export default function OwnerDashboardPage() {
 
   useEffect(() => {
     fetchOwnerSlots()
+  }, [])
+
+  const [meetingRequestsData, setMeetingRequestsData] = useState([])
+
+  useEffect(() => {
+    async function fetchRequests() {
+      try {
+        const response = await fetch('/api/meetingRequests/incoming', {
+          credentials: 'include'
+        })
+        if (!response.ok) return
+        const data = await response.json()
+        setMeetingRequestsData(data.requests || [])
+      } catch (err) {
+        console.error('Error fetching requests:', err)
+      }
+    }
+    fetchRequests()
   }, [])
 
   useEffect(() => {
@@ -170,6 +189,37 @@ export default function OwnerDashboardPage() {
     navigate('/auth?mode=login')
   }
 
+  async function handleAccept(requestId) {
+    try {
+      const response = await fetch(`/api/meetingRequests/${requestId}/accept`, {
+        method: 'PATCH',
+        credentials: 'include'
+      })
+      if (!response.ok) return
+      setMeetingRequestsData(prev => prev.map(r => 
+        r.id === requestId ? { ...r, status: 'accepted' } : r
+      ))
+      await fetchOwnerSlots() // refresh calendar
+    } catch (err) {
+      console.error('Error accepting request:', err)
+    }
+  }
+  
+  async function handleDecline(requestId) {
+    try {
+      const response = await fetch(`/api/meetingRequests/${requestId}/decline`, {
+        method: 'PATCH',
+        credentials: 'include'
+      })
+      if (!response.ok) return
+      setMeetingRequestsData(prev => prev.map(r => 
+        r.id === requestId ? { ...r, status: 'declined' } : r
+      ))
+    } catch (err) {
+      console.error('Error declining request:', err)
+    }
+  }
+
   return (
     <div className="app">
       <Navbar variant="owner" />
@@ -270,8 +320,8 @@ export default function OwnerDashboardPage() {
                   shows on the calendar when you open that block — not here.
                 </p>
                 <div className="owner-request-list">
-                  {meetingRequests.map((request) => (
-                    <RequestCard key={request.id} request={request} />
+                  {meetingRequestsData.map((request) => (
+                    <RequestCard key={request.id} request={request} onAccept={handleAccept} onDecline={handleDecline} />
                   ))}
                 </div>
               </section>
