@@ -177,7 +177,7 @@
 }
 
 .owner-action-panel__text-link {
-  align-self: flex-start;
+  align-self: center;
   margin-top: 0.05rem;
   border: none;
   background: none;

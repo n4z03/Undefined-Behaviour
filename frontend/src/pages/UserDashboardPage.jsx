@@ -14,7 +14,18 @@ import CancelBookingCard from '../components/CancelBookingCard'
 import RescheduleBookingCard from '../components/RescheduleBookingCard'
 import RequestMeetingForm from '../components/RequestMeetingForm'
 import UserRequestCard from '../components/UserRequestCard'
-import { formatTime24To12 } from '../utils/ownerSlotAdapters'
+import {
+  addDaysToYmd,
+  buildWeekColumnsFromMonday,
+  filterSlotsByWeek,
+  formatTime24To12,
+  formatWeekRangeLabel,
+  getMondayOfWeekContaining,
+  ownerCalendarEndTimeLabel,
+  ownerCalendarTimeRowLabels,
+  timeForInput,
+  timeToMinutesFromMidnight,
+} from '../utils/ownerSlotAdapters'
 import '../styles/UserDashboardPage.css'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -27,31 +38,13 @@ const userSidebarSections = [
   { id: 'export', label: 'Export to Calendar' },
 ]
 
-const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-
-const timeRows = [
-  '9:00 AM',
-  '9:30 AM',
-  '10:00 AM',
-  '10:30 AM',
-  '11:00 AM',
-  '11:30 AM',
-  '12:00 PM',
-  '12:30 PM',
-  '1:00 PM',
-  '1:30 PM',
-  '2:00 PM',
-  '2:30 PM',
-  '3:00 PM',
-  '3:30 PM',
-  '4:00 PM',
-  '4:30 PM',
-  '5:00 PM',
-]
+const userCalendarTimeRows = ownerCalendarTimeRowLabels()
+const userCalendarTimeEnd = ownerCalendarEndTimeLabel()
 
 function firstNameFromName(name) {
   const first = String(name || '').trim().split(/\s+/)[0]
-  return first || 'User'
+  if (!first) return 'User'
+  return first.charAt(0).toUpperCase() + first.slice(1)
 }
 
 // Nazifa Ahmed (261112966)
@@ -88,6 +81,9 @@ function buildBrowseOwnersFromRows(slotRows) {
 
 // Nazifa Ahmed (261112966)
 function mapApiBookingToAppointment(row) {
+  const slotDate = String(row.slot_date || '').split('T')[0]
+  const startTime24 = timeForInput(row.start_time)
+  const endTime24 = timeForInput(row.end_time)
   return {
     id: String(row.booking_id),
     slotId: String(row.slot_id),
@@ -95,8 +91,13 @@ function mapApiBookingToAppointment(row) {
     ownerName: row.owner_name,
     ownerEmail: row.owner_email,
     title: row.title,
-    dateLabel: dateLabelFromDb(row.slot_date),
+    dateLabel: dateLabelFromDb(slotDate),
     timeRange: `${formatTime24To12(row.start_time)} - ${formatTime24To12(row.end_time)}`,
+    slotDate,
+    startTime24,
+    endTime24,
+    startMinutes: timeToMinutesFromMidnight(row.start_time),
+    endMinutes: timeToMinutesFromMidnight(row.end_time),
     status: 'Confirmed',
     recurringLabel: Number(row.is_recurring) === 1 ? 'Recurring' : null,
   }
@@ -163,6 +164,7 @@ export default function UserDashboardPage() {
   const [meetingOwnerOptions, setMeetingOwnerOptions] = useState([])
   const [selectedCalendarAppointmentId, setSelectedCalendarAppointmentId] = useState(null)
   const [selectedFreeSlotCell, setSelectedFreeSlotCell] = useState(null)
+  const [weekMonday, setWeekMonday] = useState(() => getMondayOfWeekContaining())
   // Sophia Casalme (261149930) - invite link popup
   const [inviteSlots, setInviteSlots] = useState([])
   const [showInviteModal, setShowInviteModal] = useState(false)
@@ -548,18 +550,25 @@ if (data.notify) {
       }))
   }, [availableSlots, rescheduleTarget])
 
+  const weekColumns = useMemo(() => buildWeekColumnsFromMonday(weekMonday), [weekMonday])
+  const weekRangeLabel = useMemo(() => formatWeekRangeLabel(weekMonday), [weekMonday])
+
   const appointmentCalendarSlots = useMemo(() => {
     return appointments.map((appointment, index) => {
-      const [dayName, datePart] = appointment.dateLabel.split(',')
       const [startTime, endTime] = appointment.timeRange.split(' - ')
       return {
         id: `appt-cal-${appointment.id}`,
         bookingId: appointment.id,
         title: appointment.title,
-        day: dayName,
+        day: appointment.dateLabel.split(',')[0],
+        fullDate: appointment.slotDate,
         time: startTime,
         endTime,
         dateLabel: appointment.dateLabel,
+        timeInputStart: appointment.startTime24,
+        timeInputEnd: appointment.endTime24,
+        startMinutes: appointment.startMinutes,
+        endMinutes: appointment.endMinutes,
         visibility: 'Public',
         bookingStatus: 'Booked',
         bookedBy: userName,
@@ -571,10 +580,14 @@ if (data.notify) {
         ownerEmail: appointment.ownerEmail,
         rowSpan: 1,
         sortOrder: index,
-        datePart: datePart?.trim() || '',
       }
     })
   }, [appointments, userName])
+
+  const calendarSlotsForWeek = useMemo(
+    () => filterSlotsByWeek(appointmentCalendarSlots, weekMonday),
+    [appointmentCalendarSlots, weekMonday],
+  )
 
   const selectedCalendarAppointment = useMemo(
     () => appointmentCalendarSlots.find((slot) => slot.id === selectedCalendarAppointmentId) || null,
@@ -585,6 +598,14 @@ if (data.notify) {
     if (!selectedCalendarAppointment) return null
     return appointments.find((x) => x.id === String(selectedCalendarAppointment.bookingId)) || null
   }, [selectedCalendarAppointment, appointments])
+
+  function handlePrevWeek() {
+    setWeekMonday((m) => addDaysToYmd(m, -7))
+  }
+
+  function handleNextWeek() {
+    setWeekMonday((m) => addDaysToYmd(m, 7))
+  }
 
   return (
     <div className="app">
@@ -600,43 +621,60 @@ if (data.notify) {
 
           <section className="user-dashboard__main">
             <header className="user-dashboard__header">
-              <h1>Hi, {userName}</h1>
+              <h1>Hi, {userName} 👋</h1>
               <p>Manage your appointments, booking requests, and schedule.</p>
               <p className="user-dashboard__helper">Browse active office hours and reserve available slots.</p>
+              <p className="user-dashboard__timezone"><em>All timings are in EST.</em></p>
             </header>
 
             {activeSection === 'overview' ? (
-              <div className="user-dashboard__workspace">
-                <WeeklyCalendar
-                  days={weekDays}
-                  timeRows={timeRows}
-                  slots={appointmentCalendarSlots}
-                  selectedSlotId={selectedCalendarAppointmentId}
-                  onSelectSlot={(slot) => {
-                    setSelectedCalendarAppointmentId(slot.id)
-                    setSelectedFreeSlotCell(null)
-                  }}
-                  onSelectEmptyCell={(cell) => {
-                    setSelectedFreeSlotCell(cell)
-                    setSelectedCalendarAppointmentId(null)
-                  }}
-                />
+              <div>
+                <div className="user-dashboard__week-toolbar" role="group" aria-label="Week navigation">
+                  <div className="user-dashboard__week-calendar-controls">
+                    <button type="button" className="user-dashboard__week-nav-btn" onClick={handlePrevWeek}>
+                      Previous Week
+                    </button>
+                    <span className="user-dashboard__week-range" aria-live="polite">
+                      {weekRangeLabel}
+                    </span>
+                    <button type="button" className="user-dashboard__week-nav-btn" onClick={handleNextWeek}>
+                      Next Week
+                    </button>
+                  </div>
+                </div>
 
-                <div className="user-dashboard__right-stack">
-                  <section className="user-side-panel user-side-panel--appointments">
-                    {!selectedFreeSlotCell ? <h2>Upcoming Meetings</h2> : null}
-                    {selectedFreeSlotCell ? (
-                      <div className="user-side-panel__request-form-wrap">
-                        <RequestMeetingForm
-                          owners={meetingOwnerOptions}
-                          onSubmit={handleSubmitRequest}
-                          title={`Request for ${selectedFreeSlotCell.day} at ${selectedFreeSlotCell.time}`}
-                          initialPreferredTime={`${selectedFreeSlotCell.day} at ${selectedFreeSlotCell.time}`}
-                          onCancel={() => setSelectedFreeSlotCell(null)}
-                        />
-                      </div>
-                    ) : selectedCalendarAppointment ? (
-                      <div className="user-side-panel__details">
+                <div className="user-dashboard__workspace">
+                  <WeeklyCalendar
+                    weekColumns={weekColumns}
+                    timeRows={userCalendarTimeRows}
+                    timeEndLabel={userCalendarTimeEnd}
+                    slots={calendarSlotsForWeek}
+                    selectedSlotId={selectedCalendarAppointmentId}
+                    onSelectSlot={(slot) => {
+                      setSelectedCalendarAppointmentId(slot.id)
+                      setSelectedFreeSlotCell(null)
+                    }}
+                    onSelectEmptyCell={(cell) => {
+                      setSelectedFreeSlotCell(cell)
+                      setSelectedCalendarAppointmentId(null)
+                    }}
+                  />
+
+                  <div className="user-dashboard__right-stack">
+                    <section className="user-side-panel user-side-panel--appointments">
+                      {!selectedFreeSlotCell ? <h2>Upcoming Meetings</h2> : null}
+                      {selectedFreeSlotCell ? (
+                        <div className="user-side-panel__request-form-wrap">
+                          <RequestMeetingForm
+                            owners={meetingOwnerOptions}
+                            onSubmit={handleSubmitRequest}
+                            title={`Request for ${selectedFreeSlotCell.day} at ${selectedFreeSlotCell.time}`}
+                            initialPreferredTime={`${selectedFreeSlotCell.day} at ${selectedFreeSlotCell.time}`}
+                            onCancel={() => setSelectedFreeSlotCell(null)}
+                          />
+                        </div>
+                      ) : selectedCalendarAppointment ? (
+                        <div className="user-side-panel__details">
                         <p>
                           <strong>Title:</strong> {selectedCalendarAppointment.title}
                         </p>
@@ -668,9 +706,9 @@ if (data.notify) {
                         <button type="button" className="user-side-panel__clear" onClick={() => setSelectedCalendarAppointmentId(null)}>
                           Clear Selection
                         </button>
-                      </div>
-                    ) : (
-                      <div className="user-side-panel__list">
+                        </div>
+                      ) : (
+                        <div className="user-side-panel__list">
                         {appointments.slice(0, 3).map((appointment) => (
                           <button
                             key={appointment.id}
@@ -683,22 +721,24 @@ if (data.notify) {
                             <span>{appointment.timeRange}</span>
                           </button>
                         ))}
-                      </div>
-                    )}
-                  </section>
+                        </div>
+                      )}
+                    </section>
 
-                  <section className="user-side-panel">
-                    <h2>Recent Requests</h2>
-                    <div className="user-side-panel__request-list">
-                      {requests.slice(0, 2).map((request) => (
-                        <UserRequestCard
-                          key={request.id}
-                          request={request}
-                          onUpdate={handleUpdateRequest}
-                        />
-                      ))}
-                    </div>
-                  </section>
+                    <section className="user-side-panel">
+                      <h2>Recent Requests</h2>
+                      <div className="user-side-panel__request-list">
+                        {requests.slice(0, 2).map((request) => (
+                          <UserRequestCard
+                            key={request.id}
+                            request={request}
+                            summaryOnly
+                            onOpenRequests={() => setActiveSection('requests')}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  </div>
                 </div>
               </div>
             ) : null}
@@ -877,3 +917,5 @@ if (data.notify) {
     </div>
   )
 }
+
+

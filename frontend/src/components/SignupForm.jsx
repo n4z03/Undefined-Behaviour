@@ -45,7 +45,10 @@ export default function SignupForm({ onSwitchToLogin }) {
 
   return (
     <form className="auth-form" onSubmit={handleSubmit}>
-      <h2 className="auth-form__title">Create an Account</h2>
+      <h2 className="auth-form__title">
+        <span className="auth-form__title-accent">Sign</span>{' '}
+        <span className="auth-form__title-main">Up.</span>
+      </h2>
       <p className="auth-form__helper">Only McGill email addresses can register.</p>
 
       <label className="auth-form__label" htmlFor="signup-name">Full Name</label>

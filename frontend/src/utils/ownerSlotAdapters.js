@@ -1,4 +1,4 @@
-// Frontend helpers for owner slot data
+//code written by Rupneet (ID: 261096653)
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -7,7 +7,7 @@ function pad2(value) {
 }
 
 // db gives "10:00:00" or "10:00" -> html time input wants "10:00"
-function timeForInput(dbTime) {
+export function timeForInput(dbTime) {
   if (!dbTime) return '10:00'
   const parts = String(dbTime).split(':')
   const h = parts[0] != null ? Number(parts[0]) : 0
@@ -79,6 +79,85 @@ export function rowSpanFromTimes(startTime, endTime) {
   return Math.max(1, Math.round(diff / 30))
 }
 
+/** Owner weekly calendar: first row starts at 9:00 AM; body covers until 7:00 PM (600 minutes). */
+export const OWNER_CALENDAR_START_MIN = 9 * 60
+export const OWNER_CALENDAR_END_MIN = 19 * 60
+
+function toYmdFromDate(d) {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+}
+
+function parseYmdLocal(ymd) {
+  const dateOnly = String(ymd).split('T')[0]
+  const [year, month, day] = dateOnly.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+export function timeToMinutesFromMidnight(dbTime) {
+  const { hour, minute } = parseTimeParts(dbTime)
+  return hour * 60 + minute
+}
+
+/** Monday (YYYY-MM-DD) of the week that contains `anchorYmd` (defaults to today). */
+export function getMondayOfWeekContaining(anchorYmd) {
+  const fallback = `${new Date().getFullYear()}-${pad2(new Date().getMonth() + 1)}-${pad2(new Date().getDate())}`
+  const ymd = anchorYmd && String(anchorYmd).trim() ? String(anchorYmd).split('T')[0] : fallback
+  const d = parseYmdLocal(ymd)
+  const dow = d.getDay()
+  const offset = dow === 0 ? -6 : 1 - dow
+  d.setDate(d.getDate() + offset)
+  return toYmdFromDate(d)
+}
+
+export function addDaysToYmd(ymd, deltaDays) {
+  const d = parseYmdLocal(ymd)
+  d.setDate(d.getDate() + deltaDays)
+  return toYmdFromDate(d)
+}
+
+/** Left-hand time labels for each 30-minute row (9:00 … 6:30); grid ends at 7:00 PM. */
+export function ownerCalendarTimeRowLabels() {
+  const labels = []
+  for (let m = OWNER_CALENDAR_START_MIN; m < OWNER_CALENDAR_END_MIN; m += 30) {
+    const hh = Math.floor(m / 60)
+    const mm = m % 60
+    labels.push(formatTime24To12(`${pad2(hh)}:${pad2(mm)}:00`))
+  }
+  return labels
+}
+
+export function ownerCalendarEndTimeLabel() {
+  return formatTime24To12('19:00:00')
+}
+
+/**
+ * Seven columns Mon–Sun from a Monday YYYY-MM-DD.
+ * @returns {{ dateStr: string, headerLabel: string, weekdayShort: string }[]}
+ */
+export function buildWeekColumnsFromMonday(mondayYmd) {
+  return Array.from({ length: 7 }, (_, i) => {
+    const dateStr = addDaysToYmd(mondayYmd, i)
+    const d = parseYmdLocal(dateStr)
+    const weekdayShort = d.toLocaleDateString('en-US', { weekday: 'short' })
+    const monthDay = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    return {
+      dateStr,
+      weekdayShort,
+      monthDay,
+      headerLabel: `${weekdayShort} ${monthDay}`,
+    }
+  })
+}
+
+export function formatWeekRangeLabel(mondayYmd) {
+  const sun = addDaysToYmd(mondayYmd, 6)
+  const d0 = parseYmdLocal(mondayYmd)
+  const d1 = parseYmdLocal(sun)
+  const left = d0.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const right = d1.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return `${left} – ${right}`
+}
+
 export function getNextDateForWeekday(dayName) {
   const target = DAY_NAMES.indexOf(dayName)
   if (target < 0) return null
@@ -100,6 +179,10 @@ export function mapBackendSlotToCalendarSlot(slot) {
   const category = bookingStatus === 'Booked' ? 'booked' : status === 'Public' ? 'public' : 'private'
 
   const nBooked = slot.current_bookings != null ? Number(slot.current_bookings) : 0
+  const dateInput = String(slot.slot_date || '').split('T')[0]
+  let startMin = timeToMinutesFromMidnight(slot.start_time)
+  let endMin = timeToMinutesFromMidnight(slot.end_time)
+  if (endMin <= startMin) endMin = startMin + 30
 
   return {
     id: `slot-${slot.id}`,
@@ -109,9 +192,12 @@ export function mapBackendSlotToCalendarSlot(slot) {
     time: formatTime24To12(slot.start_time),
     endTime: formatTime24To12(slot.end_time),
     dateLabel: dateLabelFromDate(slot.slot_date),
-    dateInput: String(slot.slot_date || '').split('T')[0],
+    dateInput,
+    fullDate: dateInput,
     timeInputStart: timeForInput(slot.start_time),
     timeInputEnd: timeForInput(slot.end_time),
+    startMinutes: startMin,
+    endMinutes: endMin,
     visibility: status,
     bookingStatus,
     bookingCount: nBooked,
@@ -126,18 +212,32 @@ export function mapBackendSlotToCalendarSlot(slot) {
 }
 
 export function mapBackendSlotsToCalendarSlots(slots) {
-  return slots
-    .map(mapBackendSlotToCalendarSlot)
-    .filter((slot) => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].includes(slot.day))
+  return (slots || []).map(mapBackendSlotToCalendarSlot)
+}
+
+/** Keep a slot in the owner calendar only if its real calendar date falls in [mondayYmd, sundayYmd]. */
+export function filterSlotsByWeek(slots, mondayYmd) {
+  const endYmd = addDaysToYmd(mondayYmd, 6)
+  return (slots || []).filter((s) => {
+    const d = s.fullDate || s.dateInput
+    if (!d) return false
+    return d >= mondayYmd && d <= endYmd
+  })
 }
 
 export function buildCreateSlotPayload({ title, visibility, selectedCell }) {
-  const startTime = to24Hour(selectedCell?.time || '10:00 AM')
-  const endTime = addMinutes(startTime, 30)
+  const slotDate =
+    selectedCell?.slotDate || selectedCell?.fullDate || getNextDateForWeekday('Tuesday')
+
+  let startTime = selectedCell?.startTime24
+  if (!startTime && selectedCell?.time) startTime = to24Hour(selectedCell.time)
+  if (!startTime) startTime = '10:00'
+
+  let endTime = selectedCell?.endTime24 || addMinutes(startTime, 30)
 
   return {
     title: (title || 'Office Hours').trim(),
-    slot_date: selectedCell?.slotDate || getNextDateForWeekday(selectedCell?.day || 'Tuesday'),
+    slot_date: slotDate,
     start_time: startTime,
     end_time: endTime,
     status: visibility === 'Public' ? 'active' : 'private',

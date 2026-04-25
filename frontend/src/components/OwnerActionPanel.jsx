@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react'
 import '../styles/OwnerActionPanel.css'
-import { addMinutes, buildCreateSlotPayload, formatTime24To12, to24Hour } from '../utils/ownerSlotAdapters'
+import { addMinutes, formatTime24To12, timeForInput, to24Hour } from '../utils/ownerSlotAdapters'
 import CancelBookingCard from './CancelBookingCard'
 
 function ActionButton({ children, onClick, kind = 'primary' }) {
@@ -556,10 +556,20 @@ function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
   const [title, setTitle] = useState('')
   const [submitError, setSubmitError] = useState('')
   const [submitSuccess, setSubmitSuccess] = useState('')
-  const [manualDate, setManualDate] = useState(selectedCell?.slotDate || '')
-  const [manualStart, setManualStart] = useState(selectedCell ? to24Hour(selectedCell.time) : '10:00')
-  const [manualEnd, setManualEnd] = useState(
-    selectedCell ? addMinutes(to24Hour(selectedCell.time), 30) : '10:30')
+  const [manualDate, setManualDate] = useState(selectedCell?.slotDate || selectedCell?.fullDate || '')
+  const [manualStart, setManualStart] = useState('10:00')
+  const [manualEnd, setManualEnd] = useState('10:30')
+
+  useEffect(() => {
+    if (!selectedCell) return
+    const dateStr = selectedCell.slotDate || selectedCell.fullDate || ''
+    setManualDate(dateStr)
+    const start24 =
+      selectedCell.startTime24 || (selectedCell.time ? to24Hour(selectedCell.time) : '10:00')
+    const end24 = selectedCell.endTime24 || addMinutes(start24, 30)
+    setManualStart(timeForInput(`${start24}:00`))
+    setManualEnd(timeForInput(`${end24}:00`))
+  }, [selectedCell])
   
   async function handleCreate() {
     setSubmitError('')
@@ -612,11 +622,11 @@ function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
         </label>
         <label>
           Start Time
-          <input type="time" value={manualStart} onChange={(e) => setManualStart(e.target.value)}/>
+          <input type="time" step={60} value={manualStart} onChange={(e) => setManualStart(e.target.value)} />
         </label>
         <label>
           End Time
-          <input type="time" value={manualEnd} onChange={(e) => setManualEnd(e.target.value)}/>
+          <input type="time" step={60} value={manualEnd} onChange={(e) => setManualEnd(e.target.value)} />
         </label>
         <label>
           Visibility

@@ -7,7 +7,18 @@
 
 .auth-form__title {
   margin: 0 0 0.25rem;
-  color: #990000;
+  color: #111111;
+  font-size: clamp(1.65rem, 4.25vw, 2.55rem);
+  font-weight: 800;
+  line-height: 1.18;
+}
+
+.auth-form__title-accent {
+  color: #c40000;
+}
+
+.auth-form__title-main {
+  color: #111111;
 }
 
 .auth-form__helper {

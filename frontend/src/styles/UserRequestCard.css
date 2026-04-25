@@ -1,8 +1,19 @@
 .user-request-card {
   background: #ffffff;
-  border: 1px solid #dfdfdf;
-  border-radius: 12px;
-  padding: 0.75rem 0.8rem;
+  border: 1px solid #e4e4e4;
+  border-radius: 10px;
+  padding: 0.55rem 0.62rem;
+  min-height: 136px;
+  box-shadow: none;
+}
+
+.user-request-card--clickable {
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.user-request-card--clickable:hover {
+  border-color: #d4b4b4;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
@@ -16,7 +27,7 @@
 .user-request-card__top h3 {
   margin: 0;
   color: #111111;
-  font-size: 0.98rem;
+  font-size: 0.86rem;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -24,8 +35,8 @@
 .user-request-card__status {
   color: #ffffff;
   border-radius: 999px;
-  padding: 0.14rem 0.45rem;
-  font-size: 0.72rem;
+  padding: 0.1rem 0.38rem;
+  font-size: 0.64rem;
   letter-spacing: 0.02em;
   font-weight: 700;
 }
@@ -43,20 +54,23 @@
 }
 
 .user-request-card p {
-  margin: 0.32rem 0 0;
-  font-size: 0.85rem;
-  line-height: 1.4;
+  margin: 0.1rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.24;
   color: #555555;
   font-weight: 400;
 }
 
 .user-request-card__time {
-  font-size: 0.82rem;
+  margin-top: 0.28rem;
+  font-size: 0.72rem;
+  color: #666666;
 }
 
 .user-request-card__proposed {
-  font-size: 0.82rem;
-  color: #333;
+  font-size: 0.8rem;
+  color: #333333;
+  margin-top: 0.04rem;
 }
 
 .user-request-card__proposed span {
@@ -64,18 +78,66 @@
   color: #111;
 }
 
+.user-request-card__section {
+  margin-top: 0.18rem;
+}
+
+.user-request-card__section + .user-request-card__section {
+  margin-top: 0.1rem;
+}
+
+.user-request-card__label {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: #7a7a7a;
+}
+
+.user-request-card__label-inline {
+  font-weight: 700;
+  color: #555555;
+}
+
+.user-request-card__body {
+  margin-top: 0.03rem;
+  color: #222222;
+}
+
+.user-request-card__topic {
+  margin-top: 0.06rem;
+  font-size: 0.72rem;
+  color: #555555;
+}
+
+.user-request-card__topic span {
+  font-weight: 600;
+  color: #222222;
+}
+
 .user-request-card__row-actions {
-  margin-top: 0.4rem;
+  margin-top: 0.34rem;
 }
 
 .user-request-card__edit-btn {
-  font-size: 0.8rem;
-  padding: 0.35rem 0.6rem;
+  font-size: 0.72rem;
+  padding: 0.26rem 0.5rem;
   border-radius: 8px;
   border: 1px solid #c9c9c9;
   background: #f4f4f4;
   cursor: pointer;
   font-weight: 600;
+}
+
+/* Override broad side-panel button styles for compact request cards */
+.user-side-panel .user-request-card__edit-btn {
+  width: auto;
+  display: inline-block;
+  margin-top: 0;
+  background: #f4f4f4;
+  color: #222222;
+  border: 1px solid #c9c9c9;
 }
 
 .user-request-card__edit {

@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import AuthTabs from '../components/AuthTabs'
 import LoginForm from '../components/LoginForm'
 import SignupForm from '../components/SignupForm'
 import '../styles/AuthPage.css'
@@ -52,7 +51,6 @@ export default function AuthPage() {
           <div className="auth-page__side auth-page__side--left" />
           <div className="auth-page__center">
             <div className="auth-card">
-              <AuthTabs activeMode={activeMode} onModeChange={changeMode} />
               {activeMode === 'login' ? (
                 <LoginForm // added by sophia
                   onSwitchToSignup={() => changeMode('signup')} 

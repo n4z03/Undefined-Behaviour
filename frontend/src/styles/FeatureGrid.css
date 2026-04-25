@@ -38,6 +38,7 @@
 }
 
 .feature-tile:hover {
+  background: #111111;
   transform: scale(1.03);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
 }
