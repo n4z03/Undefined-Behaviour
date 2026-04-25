@@ -421,7 +421,7 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
 
 // RecurringForm wired to POST /api/recurringSlots — Bonita Baladi, 261097353
 function RecurringForm({ onModeChange, onSlotCreated }) {
-  const [title, setTitle] = useState('Weekly Office Hours')
+  const [title, setTitle] = useState('')
   const [slotDate, setSlotDate] = useState('')
   const [startTime, setStartTime] = useState('10:00')
   const [endTime, setEndTime] = useState('11:00')
@@ -478,7 +478,12 @@ function RecurringForm({ onModeChange, onSlotCreated }) {
       <div className="owner-action-panel__form">
         <label>
           Title
-          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <input
+            type="text"
+            placeholder="Weekly Office Hours"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
         </label>
         <label>
           Start date (first occurrence)
@@ -524,21 +529,21 @@ function GroupForm({ onModeChange }) {
       <div className="owner-action-panel__form">
         <label>
           Meeting title
-          <input type="text" defaultValue="COMP 307 Project Review" />
+          <input type="text" placeholder="COMP 307 Project Review" />
         </label>
         <label>
           Invited users
-          <input type="text" defaultValue="4 invited" />
+          <input type="text" placeholder="4 invited" />
         </label>
         <label>
           Candidate time note
-          <textarea rows="3" defaultValue="Select two candidate blocks from Thursday and Friday afternoons." />
+          <textarea rows="3" placeholder="Select two candidate blocks from Thursday and Friday afternoons." />
         </label>
       </div>
       <div className="owner-action-panel__row">
-        <ActionButton>Save Draft</ActionButton>
+        <ActionButton>Create Group Meeting</ActionButton>
         <ActionButton kind="ghost" onClick={() => onModeChange('default')}>
-          Finalize Later
+          Cancel
         </ActionButton>
       </div>
     </>
@@ -548,7 +553,7 @@ function GroupForm({ onModeChange }) {
 // Functionality edited by Sophia
 function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
   const [visibility, setVisibility] = useState('Private')
-  const [title, setTitle] = useState('Office Hours')
+  const [title, setTitle] = useState('')
   const [submitError, setSubmitError] = useState('')
   const [submitSuccess, setSubmitSuccess] = useState('')
   const [manualDate, setManualDate] = useState(selectedCell?.slotDate || '')
@@ -594,7 +599,12 @@ function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
       <div className="owner-action-panel__form">
         <label>
           Title
-          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <input
+            type="text"
+            placeholder="Office Hours"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
         </label>
         <label>
           Date
