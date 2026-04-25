@@ -14,6 +14,7 @@ import CancelBookingCard from '../components/CancelBookingCard'
 import RescheduleBookingCard from '../components/RescheduleBookingCard'
 import RequestMeetingForm from '../components/RequestMeetingForm'
 import UserRequestCard from '../components/UserRequestCard'
+import GroupMeetingVote from '../components/GroupMeetingVote' // added by Bonita
 import {
   addDaysToYmd,
   buildWeekColumnsFromMonday,
@@ -174,6 +175,8 @@ export default function UserDashboardPage() {
   const [rescheduleTarget, setRescheduleTarget] = useState(null)
   const [rescheduleLoading, setRescheduleLoading] = useState(false)
   const [rescheduleErr, setRescheduleErr] = useState(null)
+  // added by Bonita - group meeting id from ?group= URL param
+  const [groupId, setGroupId] = useState(null)
 
   // Load only after we know a student is logged in.
   // avoids any issues with 401 errors when there is no session
@@ -301,7 +304,7 @@ export default function UserDashboardPage() {
 
   useEffect (() => {
     const inviteToken = searchParams.get('invite')
-    if (!inviteToken) return 
+    if (!inviteToken) return
     async function fetchInviteSlots() {
       try {
         const response = await fetch(`/api/invites/${inviteToken}`, {
@@ -323,6 +326,15 @@ export default function UserDashboardPage() {
       }
     }
     fetchInviteSlots()
+  }, [searchParams])
+
+  // added by Bonita - read ?group= param and switch to group-meetings section
+  useEffect(() => {
+    const gid = searchParams.get('group')
+    if (gid) {
+      setGroupId(Number(gid))
+      setActiveSection('group-meetings')
+    }
   }, [searchParams])
 
   async function handleSidebarSelect(sectionId) {
@@ -360,14 +372,6 @@ export default function UserDashboardPage() {
       }
       await loadMyBookings()
       await loadAvailableSlots()
-
-// Bonita:  Open mailto to notify the owner
-if (data.notify) {
-  const subj = encodeURIComponent(data.notify.subject)
-  const body = encodeURIComponent(data.notify.body)
-  window.open(`mailto:${data.notify.to}?subject=${subj}&body=${body}`, '_blank')
-}
-
       // added by Bonita - notify owner via mailto when student books a slot
       if (data.notify) {
         window.open(
@@ -497,6 +501,14 @@ if (data.notify) {
         return
       }
       await loadOutgoingRequests()
+      // added by Bonita - notify owner via mailto when user sends a meeting request
+      if (data.notify) {
+        window.open(
+          `mailto:${data.notify.to}?subject=${encodeURIComponent(data.notify.subject)}&body=${encodeURIComponent(data.notify.body)}`,
+          '_blank',
+          'noopener,noreferrer'
+        )
+      }
     } catch (e) {
       console.error(e)
       window.alert('Could not send the request')
@@ -810,6 +822,13 @@ if (data.notify) {
               </section>
             ) : null}
 
+            {/* added by Bonita - group meeting voting section, triggered by ?group= URL param */}
+            {activeSection === 'group-meetings' ? (
+              <section className="user-panel">
+                <GroupMeetingVote meetingId={groupId} />
+              </section>
+            ) : null}
+
             {/* Added by Sophia */}
             {showInviteModal && (
               <div style={{
@@ -847,7 +866,7 @@ if (data.notify) {
                         } catch (err) {
                           console.error('Error reserving slot', err)
                           alert('Could not reserve slot.')
-                        }         
+                        }
                       }}
                         style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', cursor: 'pointer' }}>
                           Reserve Slot
@@ -917,5 +936,3 @@ if (data.notify) {
     </div>
   )
 }
-
-

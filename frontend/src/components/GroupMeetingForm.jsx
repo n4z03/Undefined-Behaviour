@@ -132,7 +132,7 @@ export default function GroupMeetingForm({ onCreated }) {
             {timeOptions.map((slot, i) => (
               <div key={i} className="groupmeeting-slot-row">
                 <div className="groupmeeting-slot-header">
-                  <span className="groupmeeting-slot-header__label">Option {i + 1}</span>
+                  <span className="groupmeeting-slot-header__label">Time Option {i + 1}</span>
                   {timeOptions.length > 1 ? (
                     <button
                       type="button"

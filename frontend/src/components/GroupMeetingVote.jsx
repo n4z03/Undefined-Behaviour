@@ -76,19 +76,29 @@ export default function GroupMeetingVote({ meetingId }) {
         })
       }
 
-      if (newIds.length > 0) {
-        const response = await fetch(`/api/groupMeeting/${meetingId}/vote`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ slot_ids: newIds }),
-        })
-        if (!response.ok) {
-          const oops = await response.json()
-          setError(oops.error || 'Could not save votes.')
-          return
-        }
-      }
+	    if (newIds.length > 0) {
+  const response = await fetch(`/api/groupMeeting/${meetingId}/vote`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ slot_ids: newIds }),
+  })
+  if (!response.ok) {
+    const oops = await response.json()
+    setError(oops.error || 'Could not save votes.')
+    return
+  }
+  // Open mailto to notify the owner of the new vote
+  const voteData = await response.json().catch(() => ({}))
+  if (voteData.notify) {
+    const subj = encodeURIComponent(voteData.notify.subject)
+    const body = encodeURIComponent(voteData.notify.body)
+    window.open(`mailto:${voteData.notify.to}?subject=${subj}&body=${body}`, '_blank')
+  }
+}
+
+
+
 
       setSuccess('Your availability has been saved.')
       await loadGroup()

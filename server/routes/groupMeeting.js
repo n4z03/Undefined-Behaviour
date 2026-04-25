@@ -64,7 +64,6 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
     const { name, description = null, slots } = req.body;
 
-    // Validate group fields
     const errors = [];
     if (!name || typeof name !== 'string' || !name.trim()) {
         errors.push('name is required.');
@@ -85,7 +84,6 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
     try {
         await conn.beginTransaction();
 
-        // 1. Create the slot group
         const [groupResult] = await conn.query(
             `INSERT INTO slot_groups (owner_id, name, description)
              VALUES (?, ?, ?)`,
@@ -93,7 +91,6 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
         );
         const group_id = groupResult.insertId;
 
-        // 2. Insert all slot options (private by default, type group_meeting)
         const slotIds = [];
         for (const slot of slots) {
             const [slotResult] = await conn.query(
@@ -101,8 +98,9 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
                     owner_id, group_id, title, description, slot_date,
                     start_time, end_time, slot_type, status,
                     max_bookings, is_recurring
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, 'group_meeting', 'private', 999, false)`,
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, 'group_meeting', 'private', 999, 0)`,
                 // max_bookings=999 because any number of users can vote
+                // is_recurring=0 (SQLite boolean)
                 [owner_id, group_id, name.trim(), description,
                  slot.slot_date, slot.start_time, slot.end_time]
             );
@@ -116,7 +114,6 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
         // pool.query() tries to acquire the same lock and self-deadlocks.
         conn.release();
 
-        // Return group + all slot options
         const [groupRows] = await pool.query(
             `SELECT * FROM slot_groups WHERE id = ?`, [group_id]
         );
@@ -155,7 +152,6 @@ router.get('/:groupId', requireLogin, async (req, res) => {
     }
 
     try {
-        // Get the group
         const [groupRows] = await pool.query(
             `SELECT sg.*, u.name AS owner_name, u.email AS owner_email
              FROM slot_groups sg
@@ -167,10 +163,10 @@ router.get('/:groupId', requireLogin, async (req, res) => {
             return res.status(404).json({ error: 'Group not found.' });
         }
 
-        // Get all slot options with vote counts
-        // Also flag which ones the current user has voted for
+        // Get all slot options with vote counts.
+        // Also flag which ones the current user has voted for.
         const [slots] = await pool.query(
-            `SELECT 
+            `SELECT
                 bs.*,
                 COUNT(b.id) AS vote_count,
                 MAX(CASE WHEN b.user_id = ? THEN 1 ELSE 0 END) AS i_voted
@@ -226,6 +222,8 @@ router.get('/', requireLogin, requireOwner, async (req, res) => {
 // POST /api/groupMeeting/:groupId/vote
 // User votes for one or more slots in a group.
 // Body: { slot_ids: [1, 2, 3] }
+// Returns a notify object so the frontend can open a mailto
+// to the owner after each new vote.
 // ─────────────────────────────────────────────
 router.post('/:groupId/vote', requireLogin, async (req, res) => {
     const user_id = req.user.id;
@@ -240,7 +238,6 @@ router.post('/:groupId/vote', requireLogin, async (req, res) => {
     }
 
     try {
-        // Confirm the group exists
         const [groupRows] = await pool.query(
             `SELECT id, owner_id FROM slot_groups WHERE id = ?`, [group_id]
         );
@@ -276,9 +273,47 @@ router.post('/:groupId/vote', requireLogin, async (req, res) => {
             inserted += result.affectedRows;
         }
 
+        // Count total unique voters across all slots in this group.
+        // Used to notify the owner after each new vote.
+        const [voterCountRows] = await pool.query(
+            `SELECT COUNT(DISTINCT b.user_id) AS voter_count
+             FROM bookings b
+             JOIN booking_slots bs ON b.slot_id = bs.id
+             WHERE bs.group_id = ? AND b.status = 'confirmed'`,
+            [group_id]
+        );
+
+        // Get owner info for the notify mailto
+        const [ownerRows] = await pool.query(
+            `SELECT u.name, u.email
+             FROM slot_groups sg
+             JOIN users u ON sg.owner_id = u.id
+             WHERE sg.id = ?`,
+            [group_id]
+        );
+
+        // Get the voting user's name for the email body
+        const [voterRows] = await pool.query(
+            `SELECT name FROM users WHERE id = ?`, [user_id]
+        );
+
+        const voterCount = voterCountRows[0].voter_count;
+        const owner = ownerRows[0];
+        const voterName = voterRows[0] ? voterRows[0].name : 'A student';
+
+        // Build notify object — frontend opens a mailto to the owner after each vote.
+        // This keeps the owner informed of new interest as votes come in.
+        const notify = {
+            to: owner.email,
+            subject: `New vote on your group meeting (ID: ${group_id})`,
+            body: `Hi ${owner.name},\n\n${voterName} has just voted on your group meeting.\n\nTotal unique voters so far: ${voterCount}.\n\nLog in to McBook to review the results and confirm a time when you're ready.`,
+        };
+
         res.json({
             message: `Voted for ${inserted} slot(s).`,
             skipped: slot_ids.length - inserted, // already voted for these
+            voter_count: voterCount,
+            notify, // frontend opens mailto to owner after each vote
         });
 
     } catch (err) {
@@ -301,7 +336,6 @@ router.delete('/:groupId/vote/:slotId', requireLogin, async (req, res) => {
     }
 
     try {
-        // Confirm the slot belongs to this group
         const [slotRows] = await pool.query(
             `SELECT id FROM booking_slots WHERE id = ? AND group_id = ?`,
             [slot_id, group_id]
@@ -357,7 +391,6 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
     try {
         await conn.beginTransaction();
 
-        // Confirm the group belongs to this owner
         const [groupRows] = await conn.query(
             `SELECT * FROM slot_groups WHERE id = ? AND owner_id = ?`,
             [group_id, owner_id]
@@ -368,7 +401,6 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
             return res.status(404).json({ error: 'Group not found.' });
         }
 
-        // Confirm the slot belongs to this group
         const [slotRows] = await conn.query(
             `SELECT * FROM booking_slots WHERE id = ? AND group_id = ?`,
             [slot_id, group_id]
@@ -393,11 +425,12 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
         const weeks = is_recurring ? Number(recurrence_weeks) : 0;
 
         // Activate the confirmed slot (make it public/official)
+        // is_recurring uses 1/0 for SQLite booleans
         await conn.query(
             `UPDATE booking_slots
              SET status = 'active', is_recurring = ?, recurrence_weeks = ?
              WHERE id = ?`,
-            [is_recurring, is_recurring ? weeks : null, slot_id]
+            [is_recurring ? 1 : 0, is_recurring ? weeks : null, slot_id]
         );
 
         // If recurring, generate child slots and book all voters for each
@@ -410,7 +443,7 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
                         owner_id, group_id, parent_slot_id, title, description,
                         slot_date, start_time, end_time, location,
                         slot_type, status, max_bookings, is_recurring
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'group_meeting', 'active', 999, true)`,
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'group_meeting', 'active', 999, 1)`,
                     [
                         owner_id, group_id, slot_id,
                         confirmedSlot.title, confirmedSlot.description,
@@ -443,7 +476,7 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
             is_recurring,
             recurrence_weeks: is_recurring ? weeks : null,
             booked_users: voters,
-            // Frontend uses this to build mailto: notifications
+            // Frontend uses this to build mailto: notifications for all voters
             notify: voters.map(v => ({
                 to: v.email,
                 subject: `Your meeting has been confirmed`,
