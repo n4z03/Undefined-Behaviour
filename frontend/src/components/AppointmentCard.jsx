@@ -1,6 +1,33 @@
 // Rupneet Shahriar (261096653)
 // Code added by Nazifa Ahmed (261112966)
+// Bonita Baladi (261097353) - wired Export button to GET /api/calendar/export/:bookingId
+
 import '../styles/AppointmentCard.css'
+
+async function exportAppointment(appointment) {
+  try {
+    const res = await fetch(`/api/calendar/export/${appointment.id}`, {
+      credentials: 'include',
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      window.alert(data.error || 'Could not export this appointment.')
+      return
+    }
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${appointment.title.replace(/\s+/g, '-')}.ics`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error('Export error:', e)
+    window.alert('Could not export this appointment.')
+  }
+}
 
 export default function AppointmentCard({ appointment, onCancel, onReschedule }) {
   return (
@@ -23,7 +50,9 @@ export default function AppointmentCard({ appointment, onCancel, onReschedule })
         <button type="button" onClick={() => onCancel(appointment)}>
           Cancel Booking
         </button>
-        <button type="button">Export</button>
+        <button type="button" onClick={() => exportAppointment(appointment)}>
+          Export
+        </button>
       </div>
     </article>
   )
