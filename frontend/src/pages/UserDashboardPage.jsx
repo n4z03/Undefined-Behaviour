@@ -1,5 +1,5 @@
 // Rupneet Shahriar (261096653)
-//code added by Nazifa 261112966
+//code added by Nazifa 261112966, Bonita Baladi 261097353
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Navbar from '../components/Navbar'
@@ -335,6 +335,14 @@ export default function UserDashboardPage() {
       }
       await loadMyBookings()
       await loadAvailableSlots()
+
+// Bonita:  Open mailto to notify the owner
+if (data.notify) {
+  const subj = encodeURIComponent(data.notify.subject)
+  const body = encodeURIComponent(data.notify.body)
+  window.open(`mailto:${data.notify.to}?subject=${subj}&body=${body}`, '_blank')
+}
+
     } catch (e) {
       console.error(e)
       window.alert('Could not book this slot.')

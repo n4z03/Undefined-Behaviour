@@ -66,21 +66,49 @@ export default function OwnerDashboardPage() {
 
   // added by Bonita - accept/decline handlers wired to backend
   async function handleAccept(requestId) {
-    try {
-      const res = await fetch(`/api/meetingRequests/${requestId}/accept`, { method: 'PATCH', credentials: 'include' })
-      if (!res.ok) return
-      setMeetingRequestsData(prev => prev.map(r => r.id === requestId ? { ...r, status: 'accepted' } : r))
-      await fetchOwnerSlots() // refresh calendar with new slot
-    } catch (e) { console.error('Error accepting request:', e) }
-  }
+   try {
+     const response = await fetch(`/api/meetingRequests/${requestId}/accept`, {
+       method: 'PATCH',
+       credentials: 'include'
+     })
+     if (!response.ok) return
+     const data = await response.json().catch(() => ({}))
+     setMeetingRequestsData(prev => prev.map(r =>
+       r.id === requestId ? { ...r, status: 'accepted' } : r
+     ))
+     await fetchOwnerSlots()
+     // Open mailto to notify the student
+     if (data.notify) {
+       const subj = encodeURIComponent(data.notify.subject)
+       const body = encodeURIComponent(data.notify.body)
+       window.open(`mailto:${data.notify.to}?subject=${subj}&body=${body}`, '_blank')
+     }
+   } catch (err) {
+     console.error('Error accepting request:', err)
+   }
+ }
 
-  async function handleDecline(requestId) {
-    try {
-      const res = await fetch(`/api/meetingRequests/${requestId}/decline`, { method: 'PATCH', credentials: 'include' })
-      if (!res.ok) return
-      setMeetingRequestsData(prev => prev.map(r => r.id === requestId ? { ...r, status: 'declined' } : r))
-    } catch (e) { console.error('Error declining request:', e) }
+ async function handleDecline(requestId) {
+  try {
+    const response = await fetch(`/api/meetingRequests/${requestId}/decline`, {
+      method: 'PATCH',
+      credentials: 'include'
+    })
+    if (!response.ok) return
+    const data = await response.json().catch(() => ({}))
+    setMeetingRequestsData(prev => prev.map(r =>
+      r.id === requestId ? { ...r, status: 'declined' } : r
+    ))
+    // Open mailto to notify the student
+    if (data.notify) {
+      const subj = encodeURIComponent(data.notify.subject)
+      const body = encodeURIComponent(data.notify.body)
+      window.open(`mailto:${data.notify.to}?subject=${subj}&body=${body}`, '_blank')
+    }
+  } catch (err) {
+    console.error('Error declining request:', err)
   }
+}
 
   async function fetchOwnerSlots() {
     setLoadingSlots(true)
