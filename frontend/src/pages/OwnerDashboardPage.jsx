@@ -14,12 +14,6 @@ import RequestCard from '../components/RequestCard'
 import ExportPanel from '../components/ExportPanel'
 import RecentRequestsPreview from '../components/RecentRequestsPreview'
 import {
-  sidebarSections,
-  weekDays,
-  timeRows,
-  // meetingRequests removed by Bonita - now fetched from backend
-} from '../data/ownerDashboardData'
-import {
   getNextDateForWeekday,
   mapBackendSlotToCalendarSlot,
   mapBackendSlotsToCalendarSlots,
@@ -27,6 +21,36 @@ import {
 import GroupMeetingForm from '../components/GroupMeetingForm'
 import GroupMeetingManager from '../components/GroupMeetingManager'
 import '../styles/OwnerDashboardPage.css'
+
+const sidebarSections = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'calendar', label: 'All Bookings' },
+  { id: 'group-meeting', label: 'Group Meeting' },
+  { id: 'requests', label: 'Requests' },
+  { id: 'export', label: 'Export to Calendar' },
+]
+
+const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+
+const timeRows = [
+  '9:00 AM',
+  '9:30 AM',
+  '10:00 AM',
+  '10:30 AM',
+  '11:00 AM',
+  '11:30 AM',
+  '12:00 PM',
+  '12:30 PM',
+  '1:00 PM',
+  '1:30 PM',
+  '2:00 PM',
+  '2:30 PM',
+  '3:00 PM',
+  '3:30 PM',
+  '4:00 PM',
+  '4:30 PM',
+  '5:00 PM',
+]
 
 function firstNameOrAdmin(fullName) {
   const part = String(fullName || '').trim().split(/\s+/)[0]

@@ -14,11 +14,40 @@ import CancelBookingCard from '../components/CancelBookingCard'
 import RescheduleBookingCard from '../components/RescheduleBookingCard'
 import RequestMeetingForm from '../components/RequestMeetingForm'
 import UserRequestCard from '../components/UserRequestCard'
-import { userSidebarSections } from '../data/userDashboardData'
-import { timeRows, weekDays } from '../data/ownerDashboardData'
 import { formatTime24To12 } from '../utils/ownerSlotAdapters'
 import '../styles/UserDashboardPage.css'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+
+const userSidebarSections = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'browse-slots', label: 'Browse Slots' },
+  { id: 'my-appointments', label: 'My Appointments' },
+  { id: 'group-meetings', label: 'Group Meetings' },
+  { id: 'requests', label: 'Requests' },
+  { id: 'export', label: 'Export to Calendar' },
+]
+
+const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+
+const timeRows = [
+  '9:00 AM',
+  '9:30 AM',
+  '10:00 AM',
+  '10:30 AM',
+  '11:00 AM',
+  '11:30 AM',
+  '12:00 PM',
+  '12:30 PM',
+  '1:00 PM',
+  '1:30 PM',
+  '2:00 PM',
+  '2:30 PM',
+  '3:00 PM',
+  '3:30 PM',
+  '4:00 PM',
+  '4:30 PM',
+  '5:00 PM',
+]
 
 function firstNameFromName(name) {
   const first = String(name || '').trim().split(/\s+/)[0]
