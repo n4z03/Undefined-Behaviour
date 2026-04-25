@@ -570,10 +570,30 @@ function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
     setManualStart(timeForInput(`${start24}:00`))
     setManualEnd(timeForInput(`${end24}:00`))
   }, [selectedCell])
+
+  function missingFieldMessage() {
+    if (!title.trim()) return 'Title is required and cannot be submitted empty.'
+    if (!manualDate) return 'Date is required and cannot be submitted empty.'
+    if (!manualStart) return 'Start time is required and cannot be submitted empty.'
+    if (!manualEnd) return 'End time is required and cannot be submitted empty.'
+    return ''
+  }
   
   async function handleCreate() {
     setSubmitError('')
     setSubmitSuccess('')
+
+    const missing = missingFieldMessage()
+    if (missing) {
+      setSubmitError(missing)
+      return
+    }
+
+    if (manualStart >= manualEnd) {
+      setSubmitError('End time must be later than start time.')
+      return
+    }
+
     try {
     const response = await fetch('/api/ownerSlots', {
         method: 'POST',
@@ -585,10 +605,17 @@ function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
       })
 
       if (!response.ok) {
+        let data = null
+        try {
+          data = await response.json()
+        } catch (_) {
+          // ignore non-json responses
+        }
         if (response.status === 401 || response.status === 403) {
           throw new Error('Could not create slot. You may not be signed in as an owner.')
         }
-        throw new Error('Request failed. Check backend status and allowed frontend port.')
+        const serverMsg = data?.error || (Array.isArray(data?.errors) ? data.errors[0] : '')
+        throw new Error(serverMsg || 'Could not create slot. Please check required fields and try again.')
       }
 
       const json = await response.json()
