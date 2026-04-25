@@ -1,4 +1,5 @@
 // Nazifa Ahmed (261112966)
+// code added by Rupneet (ID: 261096653)
 
 const express = require('express');
 const router = express.Router();
@@ -25,6 +26,41 @@ async function tryRollback(conn) {
     try {
         await conn.rollback();
     } catch (e) {}
+}
+
+//helper funntion to make sure that tines dont overlap
+
+function normalizeTimeForSql(timeValue) {
+    if (!timeValue) return null;
+    const txt = String(timeValue).trim();
+    if (/^\d{2}:\d{2}$/.test(txt)) return `${txt}:00`;
+    return txt;
+}
+
+async function userHasOverlap(conn, user_id, slotDate, startTime, endTime, bookingToIgnore = null) {
+    const start = normalizeTimeForSql(startTime);
+    const end = normalizeTimeForSql(endTime);
+    const params = [user_id, slotDate, end, start];
+    let ignoreSql = '';
+    if (bookingToIgnore != null) {
+        ignoreSql = ' AND b.id != ?';
+        params.push(bookingToIgnore);
+    }
+
+    const [rows] = await conn.query(
+        `SELECT b.id
+         FROM bookings b
+         JOIN booking_slots bs ON bs.id = b.slot_id
+         WHERE b.user_id = ?
+           AND b.status = 'confirmed'
+           AND bs.slot_date = ?
+           AND time(bs.start_time) < time(?)
+           AND time(bs.end_time) > time(?)
+           ${ignoreSql}
+         LIMIT 1`,
+        params
+    );
+    return rows.length > 0;
 }
 
 // GET /api/bookings/available-slots
@@ -61,10 +97,20 @@ router.get('/available-slots', requireLogin, async (req, res) => {
                     AND b2.user_id = ?
                     AND b2.status = 'confirmed'
               )
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM bookings b3
+                  JOIN booking_slots bs2 ON bs2.id = b3.slot_id
+                  WHERE b3.user_id = ?
+                    AND b3.status = 'confirmed'
+                    AND bs2.slot_date = bs.slot_date
+                    AND time(bs2.start_time) < time(bs.end_time)
+                    AND time(bs2.end_time) > time(bs.start_time)
+              )
             GROUP BY bs.id
             HAVING COUNT(b.id) < bs.max_bookings
             ORDER BY bs.slot_date ASC, bs.start_time ASC`,
-            [user_id, user_id]
+            [user_id, user_id, user_id]
         );
 
         res.json({ slots: rows });
@@ -168,6 +214,20 @@ router.post('/book-slot/:slotId', requireLogin, requireUser, async (req, res) =>
         if (countRows[0].count >= slot.max_bookings) {
             await tryRollback(conn);
             return res.status(400).json({ error: 'This slot is fully booked.' });
+        }
+
+        const hasOverlap = await userHasOverlap(
+            conn,
+            user_id,
+            slot.slot_date,
+            slot.start_time,
+            slot.end_time
+        );
+        if (hasOverlap) {
+            await tryRollback(conn);
+            return res.status(400).json({
+                error: 'This booking overlaps with one of your existing confirmed bookings.',
+            });
         }
 
         const [userRows] = await conn.query(
@@ -312,6 +372,21 @@ router.patch('/:bookingId/reschedule', requireLogin, requireUser, async (req, re
         if (countRows[0].count >= newSlot.max_bookings) {
             await tryRollback(conn);
             return res.status(400).json({ error: 'That slot is full.' });
+        }
+
+        const hasOverlap = await userHasOverlap(
+            conn,
+            user_id,
+            newSlot.slot_date,
+            newSlot.start_time,
+            newSlot.end_time,
+            booking_id
+        );
+        if (hasOverlap) {
+            await tryRollback(conn);
+            return res.status(400).json({
+                error: 'That new slot overlaps with one of your other confirmed bookings.',
+            });
         }
 
         await conn.query(

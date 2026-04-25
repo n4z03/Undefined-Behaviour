@@ -110,6 +110,38 @@ async function getOwnedSlot(slot_id, owner_id) {
     return rows[0] || null;
 }
 
+function normalizeTimeForSql(timeValue) {
+    if (!timeValue) return null;
+    const txt = String(timeValue).trim();
+    if (/^\d{2}:\d{2}$/.test(txt)) return `${txt}:00`;
+    return txt;
+}
+
+async function ownerHasOverlap(owner_id, slot_date, start_time, end_time, exclude_slot_id = null) {
+    const start = normalizeTimeForSql(start_time);
+    const end = normalizeTimeForSql(end_time);
+
+    const params = [owner_id, slot_date, end, start];
+    let excludeSql = '';
+    if (exclude_slot_id != null) {
+        excludeSql = ' AND id != ?';
+        params.push(exclude_slot_id);
+    }
+
+    const [rows] = await pool.query(
+        `SELECT id
+         FROM booking_slots
+         WHERE owner_id = ?
+           AND slot_date = ?
+           AND time(start_time) < time(?)
+           AND time(end_time) > time(?)
+           ${excludeSql}
+         LIMIT 1`,
+        params
+    );
+    return rows.length > 0;
+}
+
 // GET /api/ownerSlots/slots
 // Returns all slots owned by the the logged-in owner 
 router.get('/', requireLogin, requireOwner, async (req, res) => {
@@ -196,6 +228,13 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
     
         if(validationErrors.length > 0) {
             return res.status(400).json({ errors: validationErrors });
+        }
+
+        const hasOverlap = await ownerHasOverlap(owner_id, slot_date, start_time, end_time);
+        if (hasOverlap) {
+            return res.status(400).json({
+                error: "This slot overlaps with one of your existing slots on that date.",
+            });
         }
     
         if (group_id != null) {
@@ -289,6 +328,19 @@ router.patch('/:id', requireLogin, requireOwner, async (req, res) => {
       
           if (validationErrors.length > 0) {
             return res.status(400).json({ errors: validationErrors });
+          }
+
+          const hasOverlap = await ownerHasOverlap(
+            owner_id,
+            merged.slot_date,
+            merged.start_time,
+            merged.end_time,
+            slot_id
+          );
+          if (hasOverlap) {
+            return res.status(400).json({
+              error: "This update would overlap with one of your existing slots on that date.",
+            });
           }
       
           if (updates.group_id !== undefined && updates.group_id !== null) {

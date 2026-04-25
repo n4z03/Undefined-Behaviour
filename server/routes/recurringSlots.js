@@ -68,6 +68,29 @@ function validateInput(body) {
     return errors;
 }
 
+function normalizeTimeForSql(timeValue) {
+    if (!timeValue) return null;
+    const txt = String(timeValue).trim();
+    if (/^\d{2}:\d{2}$/.test(txt)) return `${txt}:00`;
+    return txt;
+}
+
+async function ownerHasOverlapOnDate(conn, owner_id, slot_date, start_time, end_time) {
+    const start = normalizeTimeForSql(start_time);
+    const end = normalizeTimeForSql(end_time);
+    const [rows] = await conn.query(
+        `SELECT id
+         FROM booking_slots
+         WHERE owner_id = ?
+           AND slot_date = ?
+           AND time(start_time) < time(?)
+           AND time(end_time) > time(?)
+         LIMIT 1`,
+        [owner_id, slot_date, end, start]
+    );
+    return rows.length > 0;
+}
+
 // ─────────────────────────────────────────────
 // POST /api/recurringSlots
 // Owner creates a recurring office hours slot.
@@ -98,6 +121,20 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
     const conn = await pool.getConnection();
     try {
         await conn.beginTransaction();
+
+        // Validate all occurrences before writing any rows.
+        const allDates = [slot_date];
+        for (let w = 1; w <= weeks; w++) allDates.push(addWeeks(slot_date, w));
+        for (const d of allDates) {
+            const hasOverlap = await ownerHasOverlapOnDate(conn, owner_id, d, start_time, end_time);
+            if (hasOverlap) {
+                await conn.rollback();
+                conn.release();
+                return res.status(400).json({
+                    error: `Recurring slot overlaps with an existing slot on ${d}.`,
+                });
+            }
+        }
 
         // 1. Insert the parent slot (is_recurring = 1, no parent_slot_id)
         const [parentResult] = await conn.query(
