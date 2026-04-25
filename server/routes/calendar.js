@@ -131,6 +131,54 @@ router.get('/export', requireLogin, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────
+// GET /api/calendar/export/owner
+// ─────────────────────────────────────────────
+router.get('/export/owner', requireLogin, async (req, res) => {
+    const owner_id = req.user.id;
+
+    if (req.user.role !== 'owner') {
+        return res.status(403).json({ error: 'Owner access only.' });
+    }
+
+    try {
+        const [slots] = await pool.query(
+            `SELECT DISTINCT
+                bs.id AS slot_id,
+                bs.title,
+                bs.description,
+                bs.slot_date,
+                bs.start_time,
+                bs.end_time,
+                bs.location,
+                bs.slot_type
+             FROM booking_slots bs
+             JOIN bookings b ON b.slot_id = bs.id AND b.status = 'confirmed'
+             WHERE bs.owner_id = ?
+             ORDER BY bs.slot_date ASC, bs.start_time ASC`,
+            [owner_id]
+        );
+
+        if (slots.length === 0) {
+            return res.status(404).json({ error: 'No booked slots found to export.' });
+        }
+
+        const vevents = slots.map((slot) =>
+            buildVEvent(slot, `slot-${slot.slot_id}`)
+        );
+
+        const icsContent = buildICS(vevents, 'My MCBook Schedule');
+
+        res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename="mcbook-schedule.ics"');
+        res.send(icsContent);
+
+    } catch (err) {
+        console.error('Error exporting owner calendar:', err);
+        res.status(500).json({ error: 'Failed to export calendar.' });
+    }
+});
+
+// ─────────────────────────────────────────────
 // GET /api/calendar/export/:bookingId
 // Returns a .ics file for a single confirmed booking.
 // Only accessible by the user who made the booking.
@@ -178,56 +226,6 @@ router.get('/export/:bookingId', requireLogin, async (req, res) => {
     } catch (err) {
         console.error('Error exporting single booking:', err);
         res.status(500).json({ error: 'Failed to export booking.' });
-    }
-});
-
-// ─────────────────────────────────────────────
-// GET /api/calendar/export/owner
-// Same as above but for owners —
-// exports all slots the owner created that have bookings.
-// ─────────────────────────────────────────────
-router.get('/export/owner', requireLogin, async (req, res) => {
-    const owner_id = req.user.id;
-
-    if (req.user.role !== 'owner') {
-        return res.status(403).json({ error: 'Owner access only.' });
-    }
-
-    try {
-        const [slots] = await pool.query(
-            `SELECT DISTINCT
-                bs.id AS slot_id,
-                bs.title,
-                bs.description,
-                bs.slot_date,
-                bs.start_time,
-                bs.end_time,
-                bs.location,
-                bs.slot_type
-             FROM booking_slots bs
-             JOIN bookings b ON b.slot_id = bs.id AND b.status = 'confirmed'
-             WHERE bs.owner_id = ?
-             ORDER BY bs.slot_date ASC, bs.start_time ASC`,
-            [owner_id]
-        );
-
-        if (slots.length === 0) {
-            return res.status(404).json({ error: 'No booked slots found to export.' });
-        }
-
-        const vevents = slots.map((slot) =>
-            buildVEvent(slot, `slot-${slot.slot_id}`)
-        );
-
-        const icsContent = buildICS(vevents, 'My MCBook Schedule');
-
-        res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
-        res.setHeader('Content-Disposition', 'attachment; filename="mcbook-schedule.ics"');
-        res.send(icsContent);
-
-    } catch (err) {
-        console.error('Error exporting owner calendar:', err);
-        res.status(500).json({ error: 'Failed to export calendar.' });
     }
 });
 
