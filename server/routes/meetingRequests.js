@@ -105,9 +105,16 @@ router.post('/', requireLogin, requireUser, async (req, res) => {
         );
 
         res.status(201).json({
-            message: 'Meeting request sent.',
-            request: newRequest[0],
-        });
+	  message: 'Meeting request sent.',
+	  request: newRequest[0],
+	  // Frontend uses this to open a mailto to notify the owner
+	  notify: {
+		to: newRequest[0].owner_email,
+		subject: `New meeting request from ${newRequest[0].user_name}`,
+		body: `Hi ${newRequest[0].owner_name},\n\n${newRequest[0].user_name} has requested a meeting with you.\n\nProposed time: ${proposed_date} from ${proposed_start} to ${proposed_end}.\n\nMessage: ${message.trim()}\n\nPlease log in to McBook to accept or decline.`,
+	  },
+	});
+
 
     } catch (err) {
         console.error('Error creating meeting request:', err);

@@ -497,6 +497,12 @@ if (data.notify) {
         return
       }
       await loadOutgoingRequests()
+	    // Open mailto to notify the owner
+if (data.notify) {
+  const subj = encodeURIComponent(data.notify.subject)
+  const body = encodeURIComponent(data.notify.body)
+  window.open(`mailto:${data.notify.to}?subject=${subj}&body=${body}`, '_blank')
+}
     } catch (e) {
       console.error(e)
       window.alert('Could not send the request')
