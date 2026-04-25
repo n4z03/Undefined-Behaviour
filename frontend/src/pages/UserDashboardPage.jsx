@@ -135,6 +135,7 @@ export default function UserDashboardPage() {
   const [meetingOwnerOptions, setMeetingOwnerOptions] = useState([])
   const [selectedCalendarAppointmentId, setSelectedCalendarAppointmentId] = useState(null)
   const [selectedFreeSlotCell, setSelectedFreeSlotCell] = useState(null)
+  // Sophia Casalme (261149930) - invite link popup
   const [inviteSlots, setInviteSlots] = useState([])
   const [showInviteModal, setShowInviteModal] = useState(false)
   // Nazifa Ahmed (261112966)
@@ -277,6 +278,7 @@ export default function UserDashboardPage() {
     setActiveSection('group-meetings')
   }, [searchParams])
 
+  // Code added by Sophia (invite link pop-up)
   useEffect(() => {
     const inviteToken = searchParams.get('invite')
     if (!inviteToken) return
@@ -731,36 +733,55 @@ export default function UserDashboardPage() {
               </section>
             ) : null}
 
-{showInviteModal && (
-  <div style={{
-    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-    background: 'rgba(0,0,0,0.5)', display: 'flex',
-    alignItems: 'center', justifyContent: 'center', zIndex: 1000
-  }}>
-    <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', maxWidth: '500px', width: '90%' }}>
-      <h2>Available Slots</h2>
-      {inviteSlots.length === 0 ? (
-        <p>No active slots available.</p>
-      ) : (
-        inviteSlots.map(slot => (
-          <div key={slot.id} style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
-            <h3>{slot.title}</h3>
-            <p>
-            {new Date((slot.slot_date).split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} - {slot.start_time} to {slot.end_time}
-            </p>
+            {/* Added by Sophia */}
+            {showInviteModal && (
+              <div style={{
+                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                background: 'rgba(0,0,0,0.5)', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', zIndex: 1000
+              }}>
+                <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', maxWidth: '500px', width: '90%' }}>
+                  <h2>Available Slots</h2>
+                  {inviteSlots.length === 0 ? (
+                  <p>No active slots available.</p>
+                ) : (
+                  inviteSlots.map(slot => (
+                    <div key={slot.id} style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
+                      <h3>{slot.title}</h3>
+                      <p> {new Date((slot.slot_date)
+                            .split('T')[0] + 'T12:00:00')
+                            .toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} - {slot.start_time} to {slot.end_time}
+                      </p>
 
-            <button type="button" 
-              onClick={() => alert(`Slot "${slot.title}" reserved!`)}
-              style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', cursor: 'pointer' }}>
-              Reserve Slot
-            </button>
-          </div>
-        ))
-      )}
-      <button onClick={() => setShowInviteModal(false)}>Close</button>
-    </div>
-  </div>
-)}
+                      <button type="button" onClick={async () => {
+                        try {
+                          const response = await fetch(`/api/bookings/book-slot/${slot.id}`, {
+                            method: 'POST',
+                            credentials: 'include'
+                          })
+                          const data = await response.json()
+                          if (!response.ok) {
+                            alert(data.error || 'Could not reserve slot.')
+                            return
+                          }
+                          await loadMyBookings()
+                          await loadAvailableSlots()
+                          setShowInviteModal(false)
+                        } catch (err) {
+                          console.error('Error reserving slot', err)
+                          alert('Could not reserve slot.')
+                        }         
+                      }}
+                        style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', cursor: 'pointer' }}>
+                          Reserve Slot
+                      </button>
+                    </div>
+                  ))
+                )}
+                <button onClick={() => setShowInviteModal(false)}>Close</button>
+              </div>
+              </div>
+            )}
 
             {activeSection === 'requests' ? (
               <div className="user-dashboard__workspace">
