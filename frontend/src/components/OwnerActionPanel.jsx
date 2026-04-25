@@ -551,22 +551,22 @@ function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
   const [title, setTitle] = useState('Office Hours')
   const [submitError, setSubmitError] = useState('')
   const [submitSuccess, setSubmitSuccess] = useState('')
-
+  const [manualDate, setManualDate] = useState(selectedCell?.slotDate || '')
+  const [manualStart, setManualStart] = useState(selectedCell ? to24Hour(selectedCell.time) : '10:00')
+  const [manualEnd, setManualEnd] = useState(
+    selectedCell ? addMinutes(to24Hour(selectedCell.time), 30) : '10:30')
+  
   async function handleCreate() {
     setSubmitError('')
     setSubmitSuccess('')
     try {
-      const payload = buildCreateSlotPayload({
-        title,
-        visibility,
-        selectedCell,
-      })
-
-      const response = await fetch('/api/ownerSlots', {
+    const response = await fetch('/api/ownerSlots', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(payload),
+        body: JSON.stringify({title, slot_date: manualDate, start_time: manualStart, end_time: manualEnd, 
+            status: visibility === 'Public' ? 'active' : 'private',
+          }),
       })
 
       if (!response.ok) {
@@ -585,8 +585,6 @@ function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
     }
   }
 
-  const endTime = selectedCell?.time ? formatTime24To12(addMinutes(to24Hour(selectedCell.time), 30)) : ''
-
   return (
     <>
       <h2>Create Slot</h2>
@@ -600,11 +598,15 @@ function CreateSlotForm({ selectedCell, onModeChange, onSlotCreated }) {
         </label>
         <label>
           Date
-          <input type="text" value={selectedCell ? `${selectedCell.day}` : ''} readOnly />
+          <input type="date" value={manualDate} onChange={(e) => setManualDate(e.target.value)}/>
         </label>
         <label>
-          Time Range
-          <input type="text" value={selectedCell ? `${selectedCell.time} - ${endTime}` : ''} readOnly />
+          Start Time
+          <input type="time" value={manualStart} onChange={(e) => setManualStart(e.target.value)}/>
+        </label>
+        <label>
+          End Time
+          <input type="time" value={manualEnd} onChange={(e) => setManualEnd(e.target.value)}/>
         </label>
         <label>
           Visibility
