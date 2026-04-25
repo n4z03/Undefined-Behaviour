@@ -101,7 +101,7 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
                     owner_id, group_id, title, description, slot_date,
                     start_time, end_time, slot_type, status,
                     max_bookings, is_recurring
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, 'group_meeting', 'private', 999, false)`,
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, 'group_meeting', 'private', 999, 0)`,
                 // max_bookings=999 because any number of users can vote
                 [owner_id, group_id, name.trim(), description,
                  slot.slot_date, slot.start_time, slot.end_time]
@@ -410,7 +410,7 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
                         owner_id, group_id, parent_slot_id, title, description,
                         slot_date, start_time, end_time, location,
                         slot_type, status, max_bookings, is_recurring
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'group_meeting', 'active', 999, true)`,
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'group_meeting', 'active', 999, 1)`,
                     [
                         owner_id, group_id, slot_id,
                         confirmedSlot.title, confirmedSlot.description,
