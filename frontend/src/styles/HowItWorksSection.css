@@ -14,9 +14,18 @@
 .feature-accordion__title {
   margin: 0 0 1.25rem;
   text-align: center;
-  font-size: 1.65rem;
-  font-weight: 700;
-  color: #990000;
+  font-size: clamp(1.5rem, 3.8vw, 2.35rem);
+  font-weight: 800;
+  line-height: 1.18;
+  color: #111111;
+}
+
+.feature-accordion__title-accent {
+  color: #c40000;
+}
+
+.feature-accordion__title-main {
+  color: #111111;
 }
 
 .feature-accordion__columns {

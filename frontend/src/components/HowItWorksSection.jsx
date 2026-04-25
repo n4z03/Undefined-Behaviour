@@ -5,6 +5,8 @@ import '../styles/HowItWorksSection.css'
 const featureContent = {
   'how-it-works': {
     title: 'How it Works',
+    titleAccent: 'How it',
+    titleMain: 'Works.',
     bullets: [
       'Sign up using your McGill email',
       'Browse available office hours and appointment slots',
@@ -15,6 +17,8 @@ const featureContent = {
   },
   'request-meeting': {
     title: 'Request a Meeting',
+    titleAccent: 'Request a',
+    titleMain: 'Meeting.',
     bullets: [
       'Students can send a meeting request to a professor or TA',
       'The admin can review the request from their dashboard',
@@ -24,6 +28,8 @@ const featureContent = {
   },
   'export-calendar': {
     title: 'Export to Calendar',
+    titleAccent: 'Export to',
+    titleMain: 'Calendar.',
     bullets: [
       'Students can export appointments to Google Calendar or Outlook',
       'This helps keep office hours and meetings organized',
@@ -33,6 +39,8 @@ const featureContent = {
   },
   'group-scheduling': {
     title: 'Group Scheduling',
+    titleAccent: 'Group',
+    titleMain: 'Scheduling.',
     bullets: [
       'Admins can define possible meeting times',
       'Invited students can indicate which times work for them',
@@ -48,7 +56,10 @@ export default function HowItWorksSection({ activeFeature }) {
   return (
     <section className="feature-accordion" id="feature-accordion" aria-label={panel.title}>
       <div className="feature-accordion__inner">
-        <h2 className="feature-accordion__title">{panel.title}</h2>
+        <h2 className="feature-accordion__title">
+          <span className="feature-accordion__title-accent">{panel.titleAccent || panel.title}</span>{' '}
+          {panel.titleMain ? <span className="feature-accordion__title-main">{panel.titleMain}</span> : null}
+        </h2>
         <div className="feature-accordion__columns">
           <div className="feature-accordion__text">
             <ul className="feature-accordion__list">

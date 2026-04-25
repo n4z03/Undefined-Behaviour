@@ -45,7 +45,10 @@ try {
 
   return (
     <form className="auth-form" onSubmit={handleSubmit}>
-      <h2 className="auth-form__title">Log In</h2>
+      <h2 className="auth-form__title">
+        <span className="auth-form__title-accent">Log</span>{' '}
+        <span className="auth-form__title-main">In.</span>
+      </h2>
       <p className="auth-form__helper">Use your McGill email to access your dashboard.</p>
 
       <label className="auth-form__label" htmlFor="login-email">McGill Email</label>

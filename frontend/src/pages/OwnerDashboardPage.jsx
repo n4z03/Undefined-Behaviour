@@ -2,7 +2,7 @@
 // code added by Sophia Casalme (261149930), Nazifa Ahmed (261112966)
 // Bonita Baladi (261097353) - wired meetingRequestsData to /api/meetingRequests/incoming,removed hardcoded meetingRequests import, fixed RecentRequestsPreview and RequestCard renders
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../api'
 import Navbar from '../components/Navbar'
@@ -13,10 +13,17 @@ import OwnerActionPanel from '../components/OwnerActionPanel'
 import RequestCard from '../components/RequestCard'
 import ExportPanel from '../components/ExportPanel'
 import RecentRequestsPreview from '../components/RecentRequestsPreview'
+import OwnerUpcomingMeetingsPreview from '../components/OwnerUpcomingMeetingsPreview'
 import {
-  getNextDateForWeekday,
+  addDaysToYmd,
+  buildWeekColumnsFromMonday,
+  filterSlotsByWeek,
+  formatWeekRangeLabel,
+  getMondayOfWeekContaining,
   mapBackendSlotToCalendarSlot,
   mapBackendSlotsToCalendarSlots,
+  ownerCalendarEndTimeLabel,
+  ownerCalendarTimeRowLabels,
 } from '../utils/ownerSlotAdapters'
 import GroupMeetingForm from '../components/GroupMeetingForm'
 import GroupMeetingManager from '../components/GroupMeetingManager'
@@ -30,31 +37,13 @@ const sidebarSections = [
   { id: 'export', label: 'Export to Calendar' },
 ]
 
-const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-
-const timeRows = [
-  '9:00 AM',
-  '9:30 AM',
-  '10:00 AM',
-  '10:30 AM',
-  '11:00 AM',
-  '11:30 AM',
-  '12:00 PM',
-  '12:30 PM',
-  '1:00 PM',
-  '1:30 PM',
-  '2:00 PM',
-  '2:30 PM',
-  '3:00 PM',
-  '3:30 PM',
-  '4:00 PM',
-  '4:30 PM',
-  '5:00 PM',
-]
+const ownerCalendarTimeRows = ownerCalendarTimeRowLabels()
+const ownerCalendarTimeEnd = ownerCalendarEndTimeLabel()
 
 function firstNameOrAdmin(fullName) {
   const part = String(fullName || '').trim().split(/\s+/)[0]
-  return part || 'Admin'
+  if (!part) return 'Admin'
+  return part.charAt(0).toUpperCase() + part.slice(1)
 }
 
 export default function OwnerDashboardPage() {
@@ -70,6 +59,24 @@ export default function OwnerDashboardPage() {
   const [panelMode, setPanelMode] = useState('default')
   // so group meeting list reloads when i make a new one
   const [groupRefreshKey, setGroupRefreshKey] = useState(0)
+
+  /** Monday YYYY-MM-DD of the visible week on the owner overview calendar */
+  const [weekMonday, setWeekMonday] = useState(() => getMondayOfWeekContaining())
+
+  const weekColumns = useMemo(() => buildWeekColumnsFromMonday(weekMonday), [weekMonday])
+  const weekRangeLabel = useMemo(() => formatWeekRangeLabel(weekMonday), [weekMonday])
+  const calendarSlotsForWeek = useMemo(() => filterSlotsByWeek(slots, weekMonday), [slots, weekMonday])
+  const upcomingMeetings = useMemo(() => {
+    const now = Date.now()
+    return slots
+      .map((slot) => {
+        const dt = new Date(`${slot.fullDate}T${slot.timeInputStart || '00:00'}:00`)
+        return { ...slot, startsAtMs: dt.getTime() }
+      })
+      .filter((slot) => Number.isFinite(slot.startsAtMs) && slot.startsAtMs >= now)
+      .sort((a, b) => a.startsAtMs - b.startsAtMs)
+      .slice(0, 3)
+  }, [slots])
 
   // added by Bonita - fetch real requests from backend instead of hardcoded data
   const [meetingRequestsData, setMeetingRequestsData] = useState([])
@@ -209,12 +216,17 @@ export default function OwnerDashboardPage() {
   }
 
   function handleEmptyCellSelect(cell) {
-    setSelectedCell({
-      ...cell,
-      slotDate: getNextDateForWeekday(cell.day),
-    })
+    setSelectedCell(cell)
     setSelectedSlot(null)
     setPanelMode('create')
+  }
+
+  function handlePrevWeek() {
+    setWeekMonday((m) => addDaysToYmd(m, -7))
+  }
+
+  function handleNextWeek() {
+    setWeekMonday((m) => addDaysToYmd(m, 7))
   }
 
   function handlePanelModeChange(mode) {
@@ -278,9 +290,10 @@ export default function OwnerDashboardPage() {
 
           <section className="owner-dashboard__main">
             <header className="owner-dashboard__header">
-              <h1>Hi, {ownerName}</h1>
+              <h1>Hi, {ownerName} 👋</h1>
               <p>Manage office hours, booking slots, and meeting requests.</p>
               <p className="owner-dashboard__helper">New slots remain private until activated.</p>
+              <p className="owner-dashboard__timezone"><em>All timings are in EST.</em></p>
               {loadingSlots ? <p className="owner-dashboard__notice">Loading slots...</p> : null}
               {loadError ? <p className="owner-dashboard__notice owner-dashboard__notice--error">{loadError}</p> : null}
               {actionMessage ? <p className="owner-dashboard__notice owner-dashboard__notice--success">{actionMessage}</p> : null}
@@ -288,11 +301,25 @@ export default function OwnerDashboardPage() {
 
             {activeSection === 'overview' ? (
               <>
-                <div className="owner-dashboard__workspace">
+                <div className="owner-dashboard__week-toolbar" role="group" aria-label="Week navigation">
+                  <div className="owner-dashboard__week-calendar-controls">
+                    <button type="button" className="owner-dashboard__week-nav-btn" onClick={handlePrevWeek}>
+                      Previous Week
+                    </button>
+                    <span className="owner-dashboard__week-range" aria-live="polite">
+                      {weekRangeLabel}
+                    </span>
+                    <button type="button" className="owner-dashboard__week-nav-btn" onClick={handleNextWeek}>
+                      Next Week
+                    </button>
+                  </div>
+                </div>
+                <div className="owner-dashboard__workspace owner-dashboard__workspace--overview">
                   <WeeklyCalendar
-                    days={weekDays}
-                    timeRows={timeRows}
-                    slots={slots}
+                    weekColumns={weekColumns}
+                    timeRows={ownerCalendarTimeRows}
+                    timeEndLabel={ownerCalendarTimeEnd}
+                    slots={calendarSlotsForWeek}
                     selectedSlotId={selectedSlot ? selectedSlot.id : null}
                     onSelectSlot={handleSlotSelect}
                     onSelectEmptyCell={handleEmptyCellSelect}
@@ -306,6 +333,14 @@ export default function OwnerDashboardPage() {
                       onSlotCreated={handleSlotCreated}
                       onSlotPatched={handleSlotPatched}
                       onSlotDeleted={handleSlotDeleted}
+                    />
+                    <OwnerUpcomingMeetingsPreview
+                      meetings={upcomingMeetings}
+                      onViewAll={() => handleSidebarSelect('calendar')}
+                      onSelectMeeting={(slot) => {
+                        setActiveSection('calendar')
+                        handleSlotSelect(slot)
+                      }}
                     />
                     {/* added by Bonita - show live pending requests preview */}
                     <RecentRequestsPreview
@@ -401,3 +436,5 @@ export default function OwnerDashboardPage() {
     </div>
   )
 }
+
+

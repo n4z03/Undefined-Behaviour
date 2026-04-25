@@ -20,7 +20,7 @@
 
 /* Auth page: logo only */
 .navbar--auth .navbar__inner {
-  justify-content: flex-start;
+  justify-content: space-between;
 }
 
 .navbar__brand {
@@ -33,6 +33,14 @@
 
 .navbar__brand-book {
   color: #111111;
+}
+
+.navbar__brand:hover {
+  color: #111111;
+}
+
+.navbar__brand:hover .navbar__brand-book {
+  color: #ffffff;
 }
 
 .navbar__right {

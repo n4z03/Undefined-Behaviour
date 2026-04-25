@@ -7,7 +7,7 @@ function isServerRequestId(id) {
   return /^\d+$/.test(String(id).trim())
 }
 
-export default function UserRequestCard({ request, onUpdate }) {
+export default function UserRequestCard({ request, onUpdate, summaryOnly = false, onOpenRequests }) {
   const [editing, setEditing] = useState(false)
   const [message, setMessage] = useState(request.message)
   const [proposedDate, setProposedDate] = useState(request.proposedDate)
@@ -26,14 +26,32 @@ export default function UserRequestCard({ request, onUpdate }) {
   const isPending = request.status === 'Pending'
   const canEdit = isPending && isServerRequestId(request.id) && typeof onUpdate === 'function'
   const showTime = request.proposedDate
+  const clickableSummary = summaryOnly && typeof onOpenRequests === 'function'
 
   return (
-    <article className="user-request-card">
+    <article
+      className={`user-request-card${clickableSummary ? ' user-request-card--clickable' : ''}`}
+      onClick={clickableSummary ? onOpenRequests : undefined}
+      role={clickableSummary ? 'button' : undefined}
+      tabIndex={clickableSummary ? 0 : undefined}
+      onKeyDown={
+        clickableSummary
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onOpenRequests()
+              }
+            }
+          : undefined
+      }
+    >
       <div className="user-request-card__top">
         <h3>{request.ownerName}</h3>
-        <span className={`user-request-card__status user-request-card__status--${request.status.toLowerCase()}`}>
-          {request.status}
-        </span>
+        {!summaryOnly ? (
+          <span className={`user-request-card__status user-request-card__status--${request.status.toLowerCase()}`}>
+            {request.status}
+          </span>
+        ) : null}
       </div>
       {canEdit && editing ? (
         <div className="user-request-card__edit">
@@ -94,17 +112,29 @@ export default function UserRequestCard({ request, onUpdate }) {
         </div>
       ) : (
         <>
-          <p>{request.message}</p>
           {showTime ? (
-            <p className="user-request-card__proposed">
-              {request.proposedDate} · {request.proposedStart} – {request.proposedEnd}
-              {request.lineSubject ? <span> — {request.lineSubject}</span> : null}
-            </p>
+            <div className="user-request-card__section">
+              <p className="user-request-card__label">
+                <strong>Proposed time</strong>
+              </p>
+              <p className="user-request-card__proposed">
+                {request.proposedDate} · {request.proposedStart} – {request.proposedEnd}
+              </p>
+            </div>
           ) : null}
+          <div className="user-request-card__section">
+            <p className="user-request-card__body">
+              <strong>Message:</strong> {request.message}
+            </p>
+          </div>
         </>
       )}
-      <p className="user-request-card__time">{request.createdAt}</p>
-      {canEdit && !editing ? (
+      {!summaryOnly ? (
+        <p className="user-request-card__time">
+          <span className="user-request-card__label-inline">Submission date</span>: {request.createdAt}
+        </p>
+      ) : null}
+      {!summaryOnly && canEdit && !editing ? (
         <div className="user-request-card__row-actions">
           <button type="button" className="user-request-card__edit-btn" onClick={() => setEditing(true)}>
             Edit request

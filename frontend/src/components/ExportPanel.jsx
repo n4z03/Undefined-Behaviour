@@ -78,8 +78,9 @@ export default function ExportPanel({ compact = false, showHeading = true, isOwn
       </div>
       {error ? <p className="export-panel__error">{error}</p> : null}
       <p className="export-panel__note">
-        Downloads a .ics file compatible with Google Calendar, Outlook, and Apple Calendar.
+        Downloads a .ics file compatible with Google Calendar and Outlook.
       </p>
     </section>
   )
 }
+
