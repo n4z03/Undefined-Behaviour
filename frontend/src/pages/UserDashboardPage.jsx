@@ -1,5 +1,5 @@
 // Rupneet Shahriar (261096653)
-//code added by Nazifa 261112966
+// Code added by Nazifa Ahmed (261112966), Bonita Baladi (261097353)
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Navbar from '../components/Navbar'
@@ -12,7 +12,6 @@ import AvailableSlotCard from '../components/AvailableSlotCard'
 import AppointmentCard from '../components/AppointmentCard'
 import CancelBookingCard from '../components/CancelBookingCard'
 import RescheduleBookingCard from '../components/RescheduleBookingCard'
-import GroupMeetingVote from '../components/GroupMeetingVote'
 import RequestMeetingForm from '../components/RequestMeetingForm'
 import UserRequestCard from '../components/UserRequestCard'
 import { userSidebarSections } from '../data/userDashboardData'
@@ -76,30 +75,30 @@ function mapApiBookingToAppointment(row) {
 
 // Nazifa (261112966)
 // /api/meetingRequests/outgoing row for pending requests
-function mapOutgoingRequest(row) {
+function mapOutgoingRequest(mr) {
   let proposedDate = ''
   let proposedStart = '10:00'
   let proposedEnd = '10:30'
   let lineSubject = ''
-  const subjectLine = (row.subject || '').trim()
-  const pieces = subjectLine.match(/^\[(\d{4}-\d{2}-\d{2})\s+([0-9:]+)\s*-\s*([0-9:]+)\]\s*(.*)$/)
-  if (pieces) {
-    proposedDate = pieces[1]
-    proposedStart = pieces[2].length >= 5 ? pieces[2].slice(0, 5) : pieces[2]
-    proposedEnd = pieces[3].length >= 5 ? pieces[3].slice(0, 5) : pieces[3]
-    lineSubject = pieces[4].trim()
+  const subj = (mr.subject || '').trim()
+  const m = subj.match(/^\[(\d{4}-\d{2}-\d{2})\s+([0-9:]+)\s*-\s*([0-9:]+)\]\s*(.*)$/)
+  if (m) {
+    proposedDate = m[1]
+    proposedStart = m[2].length >= 5 ? m[2].slice(0, 5) : m[2]
+    proposedEnd = m[3].length >= 5 ? m[3].slice(0, 5) : m[3]
+    lineSubject = m[4].trim()
   }
-  const statusLower = (row.status || '').toLowerCase()
+  const st = (mr.status || '').toLowerCase()
   return {
-    id: String(row.id),
-    ownerName: row.owner_name,
-    ownerEmail: row.owner_email,
-    ownerId: String(row.owner_id),
-    message: row.message,
-    status: statusLower === 'pending' ? 'Pending' : statusLower === 'accepted' ? 'Accepted' : 'Declined',
-    statusRaw: row.status,
-    createdAt: row.created_at
-      ? new Date(row.created_at).toLocaleString('en-US', {
+    id: String(mr.id),
+    ownerName: mr.owner_name,
+    ownerEmail: mr.owner_email,
+    ownerId: String(mr.owner_id),
+    message: mr.message,
+    status: st === 'pending' ? 'Pending' : st === 'accepted' ? 'Accepted' : 'Declined',
+    statusRaw: mr.status,
+    createdAt: mr.created_at
+      ? new Date(mr.created_at).toLocaleString('en-US', {
           month: 'short',
           day: 'numeric',
           hour: 'numeric',
@@ -140,7 +139,6 @@ export default function UserDashboardPage() {
   // Nazifa Ahmed (261112966)
   const [cancelTarget, setCancelTarget] = useState(null)
   const [cancelLoading, setCancelLoading] = useState(false)
-  const [meetingIdToVote, setMeetingIdToVote] = useState(null)
   const [rescheduleTarget, setRescheduleTarget] = useState(null)
   const [rescheduleLoading, setRescheduleLoading] = useState(false)
   const [rescheduleErr, setRescheduleErr] = useState(null)
@@ -269,17 +267,9 @@ export default function UserDashboardPage() {
     }
   }, [navigate, loadMyBookings, loadAvailableSlots, loadOutgoingRequests, loadMeetingOwnerList])
 
-  // Code added by Nazifa
-  useEffect(() => {
-    const fromLink = searchParams.get('group')
-    if (!fromLink) return
-    setMeetingIdToVote(fromLink)
-    setActiveSection('group-meetings')
-  }, [searchParams])
-
-  useEffect(() => {
+  useEffect (() => {
     const inviteToken = searchParams.get('invite')
-    if (!inviteToken) return
+    if (!inviteToken) return 
     async function fetchInviteSlots() {
       try {
         const response = await fetch(`/api/invites/${inviteToken}`, {
@@ -301,11 +291,14 @@ export default function UserDashboardPage() {
       }
     }
     fetchInviteSlots()
-  }, [searchParams, navigate])
+  }, [searchParams])
 
   async function handleSidebarSelect(sectionId) {
     if (sectionId === 'logout') {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+      await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include'
+    })
       navigate('/auth?mode=login')
       return
     }
@@ -335,6 +328,14 @@ export default function UserDashboardPage() {
       }
       await loadMyBookings()
       await loadAvailableSlots()
+      // added by Bonita - notify owner via mailto when student books a slot
+      if (data.notify) {
+        window.open(
+          `mailto:${data.notify.to}?subject=${encodeURIComponent(data.notify.subject)}&body=${encodeURIComponent(data.notify.body)}`,
+          '_blank',
+          'noopener,noreferrer'
+        )
+      }
     } catch (e) {
       console.error(e)
       window.alert('Could not book this slot.')
@@ -779,40 +780,6 @@ export default function UserDashboardPage() {
                   <p>Accepted requests should be treated as upcoming appointments.</p>
                 </aside>
               </div>
-            ) : null}
-
-            {/* Code added by Nazifa */}
-            {activeSection === 'group-meetings' ? (
-              <section className="user-panel">
-                <h2>Group Meetings</h2>
-                <p style={{ margin: '0.3rem 0 0.9rem', fontSize: '0.88rem', color: '#666' }}>
-                  Vote for times that work for you. Your instructor will confirm the final time.
-                </p>
-                {meetingIdToVote ? (
-                  <GroupMeetingVote meetingId={meetingIdToVote} />
-                ) : (
-                  <div style={{ display: 'grid', gap: '0.6rem', maxWidth: '360px' }}>
-                    <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#333', display: 'grid', gap: '0.25rem' }}>
-                      Enter a group meeting ID
-                      <input
-                        type="number"
-                        min={1}
-                        placeholder="e.g. 3"
-                        style={{ padding: '0.45rem 0.6rem', borderRadius: '8px', border: '1px solid #d0d0d0', font: 'inherit', fontSize: '0.88rem' }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && e.target.value) setMeetingIdToVote(e.target.value)
-                        }}
-                        onBlur={(e) => {
-                          if (e.target.value) setMeetingIdToVote(e.target.value)
-                        }}
-                      />
-                    </label>
-                    <p style={{ margin: 0, fontSize: '0.82rem', color: '#888' }}>
-                      Your instructor will share the link or ID with you directly.
-                    </p>
-                  </div>
-                )}
-              </section>
             ) : null}
 
             {activeSection === 'export' ? (
