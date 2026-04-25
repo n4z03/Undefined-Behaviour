@@ -131,6 +131,57 @@ router.get('/export', requireLogin, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────
+// GET /api/calendar/export/:bookingId
+// Returns a .ics file for a single confirmed booking.
+// Only accessible by the user who made the booking.
+// ─────────────────────────────────────────────
+router.get('/export/:bookingId', requireLogin, async (req, res) => {
+    const user_id = req.user.id;
+    const booking_id = Number(req.params.bookingId);
+
+    if (!Number.isInteger(booking_id) || booking_id < 1) {
+        return res.status(400).json({ error: 'Invalid booking id.' });
+    }
+
+    try {
+        const [rows] = await pool.query(
+            `SELECT
+                b.id AS booking_id,
+                bs.title,
+                bs.description,
+                bs.slot_date,
+                bs.start_time,
+                bs.end_time,
+                bs.location,
+                bs.slot_type,
+                u.name  AS owner_name,
+                u.email AS owner_email
+             FROM bookings b
+             JOIN booking_slots bs ON b.slot_id = bs.id
+             JOIN users u ON bs.owner_id = u.id
+             WHERE b.id = ? AND b.user_id = ? AND b.status = 'confirmed'`,
+            [booking_id, user_id]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Booking not found.' });
+        }
+
+        const booking = rows[0];
+        const vevent = buildVEvent(booking, `booking-${booking.booking_id}`);
+        const icsContent = buildICS([vevent], booking.title);
+
+        res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${booking.title.replace(/\s+/g, '-')}.ics"`);
+        res.send(icsContent);
+
+    } catch (err) {
+        console.error('Error exporting single booking:', err);
+        res.status(500).json({ error: 'Failed to export booking.' });
+    }
+});
+
+// ─────────────────────────────────────────────
 // GET /api/calendar/export/owner
 // Same as above but for owners —
 // exports all slots the owner created that have bookings.
