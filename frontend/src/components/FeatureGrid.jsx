@@ -1,7 +1,13 @@
 // code written by Rupneet (ID: 261096653)
 
-import { featureTiles } from '../data/featureContent'
 import '../styles/FeatureGrid.css'
+
+const featureTiles = [
+  { id: 'how-it-works', label: 'How it Works', variant: 'gray' },
+  { id: 'request-meeting', label: 'Request a Meeting', variant: 'red' },
+  { id: 'export-calendar', label: 'Export to Calendar', variant: 'red' },
+  { id: 'group-scheduling', label: 'Group Scheduling', variant: 'gray' },
+]
 
 export default function FeatureGrid({ activeFeature, onFeatureClick }) {
   return (
