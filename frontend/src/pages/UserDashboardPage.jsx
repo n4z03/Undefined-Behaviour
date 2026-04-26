@@ -1,5 +1,5 @@
 // Rupneet Shahriar (261096653)
-//code added by Nazifa 261112966, Bonita Baladi 261097353, Sophia Casalme 261149930 (invite url modal)
+//code added by Nazifa 261112966, Bonita Baladi 261097353 (added paste invite link bar and empty state to group-meetings section), Sophia Casalme 261149930 (invite url modal)
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Navbar from '../components/Navbar'
@@ -149,6 +149,16 @@ function isServerBookingId(id) {
   return /^\d+$/.test(String(id).trim())
 }
 
+// added by Bonita - parse a group meeting share URL and extract the group ID
+function parseGroupIdFromUrl(urlStr) {
+  try {
+    const gid = new URL(urlStr.trim()).searchParams.get('group')
+    return gid ? Number(gid) : null
+  } catch {
+    return null
+  }
+}
+
 export default function UserDashboardPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -175,8 +185,12 @@ export default function UserDashboardPage() {
   const [rescheduleTarget, setRescheduleTarget] = useState(null)
   const [rescheduleLoading, setRescheduleLoading] = useState(false)
   const [rescheduleErr, setRescheduleErr] = useState(null)
-  // added by Bonita - group meeting id from ?group= URL param
+  // added by Bonita - group meeting id from ?group= URL param or paste bar
   const [groupId, setGroupId] = useState(null)
+  // added by Bonita - controlled input value for the paste invite link bar
+  const [groupLinkInput, setGroupLinkInput] = useState('')
+  // added by Bonita - error message for invalid paste link
+  const [groupLinkError, setGroupLinkError] = useState('')
 
   // Load only after we know a student is logged in.
   // avoids any issues with 401 errors when there is no session
@@ -545,6 +559,18 @@ export default function UserDashboardPage() {
     }
   }
 
+  // added by Bonita - handle submitting the paste invite link bar
+  function handleGroupLinkSubmit() {
+    setGroupLinkError('')
+    const gid = parseGroupIdFromUrl(groupLinkInput)
+    if (!gid) {
+      setGroupLinkError('No group ID found. Make sure you paste the full invite link.')
+      return
+    }
+    setGroupId(gid)
+    setGroupLinkInput('')
+  }
+
   const visibleOwnerSlots = useMemo(
     () => availableSlots.filter((slot) => slot.ownerId === selectedOwnerId && slot.visibility === 'Public'),
     [availableSlots, selectedOwnerId],
@@ -822,10 +848,48 @@ export default function UserDashboardPage() {
               </section>
             ) : null}
 
-            {/* added by Bonita - group meeting voting section, triggered by ?group= URL param */}
+            {/* added by Bonita - group meeting voting section */}
             {activeSection === 'group-meetings' ? (
               <section className="user-panel">
-                <GroupMeetingVote meetingId={groupId} />
+
+                {/* added by Bonita - paste invite link bar, always visible at top of section */}
+                <div className="groupmeeting-card" style={{ marginBottom: '1.2rem' }}>
+                  <h2>Join a Group Meeting</h2>
+                  <p style={{ marginBottom: '0.7rem' }}>
+                    Paste the invite link your professor shared with you, or open it directly in your browser.
+                  </p>
+                  {/* added by Bonita - input + button row for pasting the share URL */}
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="text"
+                      placeholder="e.g. http://localhost:5173/user-dashboard?group=4"
+                      value={groupLinkInput}
+                      onChange={(e) => setGroupLinkInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleGroupLinkSubmit() }} // added by Bonita - allow pressing Enter
+                      style={{ flex: 1, padding: '0.45rem 0.6rem', borderRadius: '8px', border: '1px solid #d3d3d3', font: 'inherit', fontSize: '0.88rem' }}
+                    />
+                    {/* added by Bonita - Go button triggers link parsing */}
+                    <button
+                      type="button"
+                      className="groupmeeting-btn groupmeeting-btn--primary"
+                      onClick={handleGroupLinkSubmit}
+                      style={{ whiteSpace: 'nowrap' }}
+                    >
+                      Go
+                    </button>
+                  </div>
+                  {/* added by Bonita - show error if the pasted link has no group ID */}
+                  {groupLinkError ? (
+                    <p className="groupmeeting-error" style={{ marginTop: '0.4rem' }}>{groupLinkError}</p>
+                  ) : null}
+                </div>
+
+                {/* added by Bonita - show voting UI if a group is loaded, otherwise show empty state */}
+                {groupId ? (
+                  <GroupMeetingVote meetingId={groupId} />
+                ) : (
+                  <p className="user-panel__empty">No scheduled group meetings. Paste an invite link above to join one.</p>
+                )}
               </section>
             ) : null}
 
