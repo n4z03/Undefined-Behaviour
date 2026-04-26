@@ -15,6 +15,10 @@
   margin-top: 0.65rem;
   display: grid;
   gap: 0.45rem;
+  max-height: 12rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  scrollbar-gutter: stable;
 }
 
 .owner-list__item {

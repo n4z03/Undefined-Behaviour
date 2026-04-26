@@ -227,6 +227,16 @@
 
 .weekly-calendar__event--selected .calendar-block {
   box-shadow: 0 0 0 2px rgba(196, 0, 0, 0.45);
+  background: #111111;
+  border-color: #c40000;
+  color: #ffffff;
+}
+
+.weekly-calendar__event--selected .calendar-block__time,
+.weekly-calendar__event--selected .calendar-block__status,
+.weekly-calendar__event--selected .calendar-block__booker {
+  color: #ffffff;
+  opacity: 0.95;
 }
 
 .weekly-calendar__event .calendar-block {
