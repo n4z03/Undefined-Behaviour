@@ -1,4 +1,6 @@
 // Nazifa Ahmed (261112966)
+// invite link persistence added by Bonita Baladi (261097353)
+
 import { useEffect, useState } from 'react'
 import { formatTime24To12 } from '../utils/ownerSlotAdapters'
 import '../styles/GroupMeeting.css'
@@ -21,6 +23,8 @@ export default function GroupMeetingManager({ refreshKey = 0 }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  // added by Bonita — tracks whether the invite link was copied so we can show feedback
+  const [linkCopied, setLinkCopied] = useState(false)
 
   useEffect(() => {
     loadGroups()
@@ -43,6 +47,8 @@ export default function GroupMeetingManager({ refreshKey = 0 }) {
     setError('')
     setSuccess('')
     setOpenedMeeting(null)
+    // added by Bonita — reset copy feedback when switching meetings
+    setLinkCopied(false)
     try {
       const response = await fetch(`/api/groupMeeting/${groupId}`, { credentials: 'include' })
       if (!response.ok) return
@@ -95,6 +101,19 @@ export default function GroupMeetingManager({ refreshKey = 0 }) {
     }
   }
 
+  // added by Bonita — copies the invite link and shows feedback for 2 seconds
+  function handleCopyInviteLink() {
+    const link = `${window.location.origin}/user-dashboard?group=${openMeetingId}`
+    navigator.clipboard.writeText(link).then(() => {
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    }).catch(() => {
+      // fallback if clipboard API fails
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    })
+  }
+
   // either show the "already picked" green banner, or the vote list + confirm box
   function showDetailOrBanner() {
     if (!openedMeeting) return null
@@ -120,6 +139,39 @@ export default function GroupMeetingManager({ refreshKey = 0 }) {
     return (
       <>
         <p className="groupmeeting-section-label">{openedMeeting.group.name} — responses</p>
+
+        {/* added by Bonita — persistent invite link so prof can reshare without losing it */}
+        <div style={{ marginBottom: '0.85rem' }}>
+          <p style={{ fontSize: '0.82rem', color: '#666', marginBottom: '0.3rem', fontWeight: 600 }}>
+            Invite link — share with students to vote:
+          </p>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <input
+              readOnly
+              value={`${window.location.origin}/user-dashboard?group=${openMeetingId}`}
+              style={{
+                flex: 1,
+                fontSize: '0.78rem',
+                padding: '0.3rem 0.5rem',
+                border: '1px solid #d0d0d0',
+                borderRadius: '6px',
+                background: '#f9f9f9',
+                color: '#444',
+              }}
+              onFocus={(e) => e.target.select()}
+            />
+            <button
+              type="button"
+              className="groupmeeting-btn groupmeeting-btn--secondary"
+              style={{ whiteSpace: 'nowrap', fontSize: '0.78rem' }}
+              onClick={handleCopyInviteLink}
+            >
+              {linkCopied ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+        </div>
+        {/* end added by Bonita */}
+
         <div className="groupmeeting-options">
           {openedMeeting.slots.map((slot) => (
             <div key={slot.id} className="groupmeeting-option">
