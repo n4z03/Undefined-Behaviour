@@ -1,5 +1,7 @@
 // Nazifa Ahmed (261112966)
 // code added by Rupneet (ID: 261096653)
+// code added by Bonita Baladi (261097353)
+
 
 const express = require('express');
 const router = express.Router();
@@ -35,6 +37,23 @@ function normalizeTimeForSql(timeValue) {
     const txt = String(timeValue).trim();
     if (/^\d{2}:\d{2}$/.test(txt)) return `${txt}:00`;
     return txt;
+}
+
+// added by Bonita — converts 24h time string (HH:MM or HH:MM:SS) to 12h format (e.g. 2:00 PM)
+function formatTime12(timeStr) {
+    if (!timeStr) return '';
+    const [h, m] = timeStr.split(':').map(Number);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const hour = h % 12 || 12;
+    const min = String(m).padStart(2, '0');
+    return `${hour}:${min} ${period}`;
+}
+
+// added by Bonita — formats YYYY-MM-DD to a readable date (e.g. Monday, April 28, 2026)
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 async function userHasOverlap(conn, user_id, slotDate, startTime, endTime, bookingToIgnore = null) {
@@ -260,13 +279,24 @@ router.post('/book-slot/:slotId', requireLogin, requireUser, async (req, res) =>
 
         await conn.commit();
 
+        // added by Bonita — use \r\n for mailto line breaks (works in Outlook + Gmail)
+        // and format times as 12h for readability
         res.status(201).json({
             message: 'Slot booked successfully.',
             booking_id: bookingId,
             notify: {
                 to: slot.owner_email,
                 subject: `New booking: ${slot.title}`,
-                body: `Hi ${slot.owner_name},\n\n${booker.name} (${booker.email}) has booked your slot "${slot.title}" on ${slot.slot_date} from ${slot.start_time} to ${slot.end_time}.`,
+                body: [
+                    `Hi ${slot.owner_name},`,
+                    '',
+                    `${booker.name} (${booker.email}) has booked your slot "${slot.title}".`,
+                    '',
+                    `Date: ${formatDate(slot.slot_date)}`,
+                    `Time: ${formatTime12(slot.start_time)} - ${formatTime12(slot.end_time)}`,
+                    '',
+                    'You can view this booking in your McBook dashboard.',
+                ].join('\r\n'),
             },
         });
 
@@ -484,13 +514,23 @@ router.delete('/:bookingId', requireLogin, requireUser, async (req, res) => {
             [booking_id, user_id]
         );
 
+        // added by Bonita — use \r\n for mailto line breaks and format times as 12h
         res.json({
             message: 'Booking cancelled.',
             deleted_booking_id: booking_id,
             notify: {
                 to: booking.owner_email,
                 subject: `Booking cancelled: ${booking.title}`,
-                body: `Hi ${booking.owner_name},\n\n${booking.user_name} has cancelled their booking for "${booking.title}" on ${booking.slot_date} from ${booking.start_time} to ${booking.end_time}.`,
+                body: [
+                    `Hi ${booking.owner_name},`,
+                    '',
+                    `${booking.user_name} has cancelled their booking for "${booking.title}".`,
+                    '',
+                    `Date: ${formatDate(booking.slot_date)}`,
+                    `Time: ${formatTime12(booking.start_time)} - ${formatTime12(booking.end_time)}`,
+                    '',
+                    'The slot is now available for others to book.',
+                ].join('\r\n'),
             },
         });
 
