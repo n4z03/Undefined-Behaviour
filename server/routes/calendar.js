@@ -89,7 +89,7 @@ router.get('/export', requireLogin, async (req, res) => {
     try {
         // Fetch all confirmed bookings for this user across all slot types
         const [bookings] = await pool.query(
-            `SELECT 
+            `SELECT
                 b.id AS booking_id,
                 bs.title,
                 bs.description,
@@ -180,36 +180,61 @@ router.get('/export/owner', requireLogin, async (req, res) => {
 
 // ─────────────────────────────────────────────
 // GET /api/calendar/export/:bookingId
-// Returns a .ics file for a single confirmed booking.
-// Only accessible by the user who made the booking.
+// Returns a .ics file for a single confirmed booking (student)
+// or a single booked slot (owner).
+// added by Bonita (261097353) — Bug 4 fix: widened query so owners can also export
+// a single slot by slot_id, not just students by booking_id
 // ─────────────────────────────────────────────
 router.get('/export/:bookingId', requireLogin, async (req, res) => {
     const user_id = req.user.id;
-    const booking_id = Number(req.params.bookingId);
+    const id = Number(req.params.bookingId);
 
-    if (!Number.isInteger(booking_id) || booking_id < 1) {
+    if (!Number.isInteger(id) || id < 1) {
         return res.status(400).json({ error: 'Invalid booking id.' });
     }
 
     try {
-        const [rows] = await pool.query(
-            `SELECT
-                b.id AS booking_id,
-                bs.title,
-                bs.description,
-                bs.slot_date,
-                bs.start_time,
-                bs.end_time,
-                bs.location,
-                bs.slot_type,
-                u.name  AS owner_name,
-                u.email AS owner_email
-             FROM bookings b
-             JOIN booking_slots bs ON b.slot_id = bs.id
-             JOIN users u ON bs.owner_id = u.id
-             WHERE b.id = ? AND b.user_id = ? AND b.status = 'confirmed'`,
-            [booking_id, user_id]
-        );
+        let rows;
+
+        if (req.user.role === 'owner') {
+            // added by Bonita (261097353) — owner path: look up by slot id
+            [rows] = await pool.query(
+                `SELECT
+                    bs.id AS booking_id,
+                    bs.title,
+                    bs.description,
+                    bs.slot_date,
+                    bs.start_time,
+                    bs.end_time,
+                    bs.location,
+                    bs.slot_type
+                 FROM booking_slots bs
+                 JOIN bookings b ON b.slot_id = bs.id AND b.status = 'confirmed'
+                 WHERE bs.id = ? AND bs.owner_id = ?
+                 LIMIT 1`,
+                [id, user_id]
+            );
+        } else {
+            // student path: look up by booking id (unchanged)
+            [rows] = await pool.query(
+                `SELECT
+                    b.id AS booking_id,
+                    bs.title,
+                    bs.description,
+                    bs.slot_date,
+                    bs.start_time,
+                    bs.end_time,
+                    bs.location,
+                    bs.slot_type,
+                    u.name  AS owner_name,
+                    u.email AS owner_email
+                 FROM bookings b
+                 JOIN booking_slots bs ON b.slot_id = bs.id
+                 JOIN users u ON bs.owner_id = u.id
+                 WHERE b.id = ? AND b.user_id = ? AND b.status = 'confirmed'`,
+                [id, user_id]
+            );
+        }
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Booking not found.' });
