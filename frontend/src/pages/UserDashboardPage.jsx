@@ -161,7 +161,7 @@ function parseGroupIdFromUrl(urlStr) {
 
 export default function UserDashboardPage() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams() // added by Bonita (261097353)
   const [activeSection, setActiveSection] = useState('overview')
   const [userName, setUserName] = useState('User')
   const [selectedOwnerId, setSelectedOwnerId] = useState('')
@@ -185,8 +185,8 @@ export default function UserDashboardPage() {
   const [rescheduleTarget, setRescheduleTarget] = useState(null)
   const [rescheduleLoading, setRescheduleLoading] = useState(false)
   const [rescheduleErr, setRescheduleErr] = useState(null)
-  // added by Bonita - group meeting id from ?group= URL param or paste bar
-  const [groupId, setGroupId] = useState(null)
+  // added by Bonita (261097353) — derived from URL so groupId survives hard refresh; no useState needed
+  const groupId = searchParams.get('group') ? Number(searchParams.get('group')) : null
   // added by Bonita - controlled input value for the paste invite link bar
   const [groupLinkInput, setGroupLinkInput] = useState('')
   // added by Bonita - error message for invalid paste link
@@ -277,10 +277,7 @@ export default function UserDashboardPage() {
           setBrowseSlotsLoading(false)
           setAvailableSlots([])
           setBrowseOwners([])
-          const ownerParam = searchParams.get('owner')
-          const redirectUrl = ownerParam
-            ? `/user-dashboard?owner=${ownerParam}` : '/user-dashboard'
-          navigate(`/auth?mode=login&redirect=${encodeURIComponent(redirectUrl)}`, { replace: true })
+          navigate('/auth?mode=login&redirect=/user-dashboard', { replace: true })
           return
         }
         if (!response.ok) {
@@ -349,17 +346,9 @@ export default function UserDashboardPage() {
   useEffect(() => {
     const gid = searchParams.get('group')
     if (gid) {
-      setGroupId(Number(gid))
+      // added by Bonita (261097353) — no longer need setGroupId; groupId is derived from URL directly
       setActiveSection('group-meetings')
     }
-  }, [searchParams])
-
-  // added by Sophia
-  useEffect(() => {
-    const ownerParam = searchParams.get('owner')
-    if (!ownerParam) return
-    setSelectedOwnerId(ownerParam)
-    setActiveSection('browse-slots')
   }, [searchParams])
 
   async function handleSidebarSelect(sectionId) {
@@ -578,7 +567,12 @@ export default function UserDashboardPage() {
       setGroupLinkError('No group ID found. Make sure you paste the full invite link.')
       return
     }
-    setGroupId(gid)
+    // added by Bonita (261097353) — push group ID into URL instead of local state so it survives hard refresh
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('group', gid)
+      return next
+    })
     setGroupLinkInput('')
   }
 
@@ -728,7 +722,7 @@ export default function UserDashboardPage() {
                           <strong>Title:</strong> {selectedCalendarAppointment.title}
                         </p>
                         <p>
-                          <strong>Instructor:</strong> {selectedCalendarAppointment.ownerName}
+                          <strong>Owner:</strong> {selectedCalendarAppointment.ownerName}
                         </p>
                         <p>
                           <strong>Date:</strong> {selectedCalendarAppointment.dateLabel}
@@ -737,7 +731,7 @@ export default function UserDashboardPage() {
                           <strong>Time:</strong> {selectedCalendarAppointment.time} - {selectedCalendarAppointment.endTime}
                         </p>
                         <div className="user-side-panel__actions">
-                          <a href={`mailto:${selectedCalendarAppointment.ownerEmail}`}>Message Instructor</a>
+                          <a href={`mailto:${selectedCalendarAppointment.ownerEmail}`}>Message Owner</a>
                           {appointmentForSelectedCalSlot && isServerBookingId(appointmentForSelectedCalSlot.id) ? (
                             <button type="button" onClick={() => openReschedule(appointmentForSelectedCalSlot)}>
                               Change time
@@ -806,9 +800,9 @@ export default function UserDashboardPage() {
                         selectedOwnerId={selectedOwnerId}
                         onSelectOwner={setSelectedOwnerId}
                       />
-                      <section className="user-panel user-panel--browse-slots">
+                      <section className="user-panel">
                         <h2>Browse Available Slots</h2>
-                        <div className="user-card-list user-card-list--browse-slots">
+                        <div className="user-card-list">
                           {browseOwners.length === 0 ? (
                             <p className="user-panel__empty">No available slots right now.</p>
                           ) : visibleOwnerSlots.length === 0 ? (
@@ -826,7 +820,7 @@ export default function UserDashboardPage() {
 
                 <aside className="user-side-panel">
                   <h2>Quick Actions</h2>
-                  <p>Select an instructor and reserve an available slot.</p>
+                  <p>Select an owner and reserve an available slot.</p>
                   <button type="button" onClick={() => setActiveSection('my-appointments')}>
                     View My Appointments
                   </button>
