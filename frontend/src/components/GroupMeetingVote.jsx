@@ -31,7 +31,6 @@ export default function GroupMeetingVote({ meetingId }) {
     setLoading(true)
     setError('')
     setSuccess('')
-    setSaved(false) // added by Bonita (261097353)
     try {
       const response = await fetch(`/api/groupMeeting/${meetingId}`, { credentials: 'include' })
       if (!response.ok) {
@@ -40,14 +39,12 @@ export default function GroupMeetingVote({ meetingId }) {
       }
       const json = await response.json()
       setInfo(json.group)
-      setAllTimes(json.slots || [])
-      setMyPicks(
-        new Set(
-          (json.slots || [])
-            .filter((one) => one.i_voted)
-            .map((one) => one.id),
-        ),
-      )
+      const slots = json.slots || []
+      setAllTimes(slots)
+      const myVotedIds = new Set(slots.filter((one) => one.i_voted).map((one) => one.id))
+      setMyPicks(myVotedIds)
+      // added by Bonita (261097353) — if user already has votes in DB, go straight to "saved" state
+      setSaved(myVotedIds.size > 0)
     } catch {
       setError('Request failed.')
     } finally {
@@ -55,6 +52,7 @@ export default function GroupMeetingVote({ meetingId }) {
     }
   }
 
+  // added by Bonita (261097353) — toggle pick and update vote_count optimistically so prof sees it immediately
   function flipPick(slotId) {
     setMyPicks((before) => {
       const after = new Set(before)
@@ -62,6 +60,13 @@ export default function GroupMeetingVote({ meetingId }) {
       else after.add(slotId)
       return after
     })
+    setAllTimes((prev) =>
+      prev.map((slot) => {
+        if (slot.id !== slotId) return slot
+        const adding = !myPicks.has(slotId)
+        return { ...slot, vote_count: slot.vote_count + (adding ? 1 : -1) }
+      }),
+    )
   }
 
   async function handleSave() {
@@ -166,7 +171,7 @@ export default function GroupMeetingVote({ meetingId }) {
               className="groupmeeting-btn groupmeeting-btn--secondary"
               onClick={() => setSaved(false)}
             >
-              Edit
+              Edit Your Vote
             </button>
           </>
         ) : (
