@@ -416,13 +416,15 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
 
         const confirmedSlot = slotRows[0];
 
-        // Get all users who voted for this specific slot
+        // added by Bonita (261097353) — Bug fix: notify ALL students who voted on any slot
+        // in this group, not just those who voted for the winning slot
         const [voters] = await conn.query(
-            `SELECT u.id, u.name, u.email
+            `SELECT DISTINCT u.id, u.name, u.email
              FROM bookings b
              JOIN users u ON b.user_id = u.id
-             WHERE b.slot_id = ? AND b.status = 'confirmed'`,
-            [slot_id]
+             JOIN booking_slots bs ON b.slot_id = bs.id
+             WHERE bs.group_id = ? AND b.status = 'confirmed'`,
+            [group_id]
         );
 
         const weeks = is_recurring ? Number(recurrence_weeks) : 0;
@@ -480,7 +482,7 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
             recurrence_weeks: is_recurring ? weeks : null,
             booked_users: voters,
             // Frontend uses this to build mailto: notifications for all voters
-            // after demo 1 fix: owner also receives a confirmation email
+            // demo1 fix: owner also receives a confirmation email
             notify: [
                 // notify all voters (students)
                 ...voters.map(v => ({

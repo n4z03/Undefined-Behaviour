@@ -52,18 +52,12 @@ export default function GroupMeetingVote({ meetingId }) {
     }
   }
 
-  // added by Bonita (261097353) — toggle pick and update vote_count optimistically so prof sees it immediately
+  // added by Bonita (261097353) — only toggle the checkbox; vote counts come from DB after save
   function flipPick(slotId) {
     setMyPicks((before) => {
       const after = new Set(before)
-      const adding = !before.has(slotId) // use 'before' not stale closure
-      if (adding) after.add(slotId)
-      else after.delete(slotId)
-      setAllTimes((prev) =>
-        prev.map((slot) =>
-          slot.id !== slotId ? slot : { ...slot, vote_count: slot.vote_count + (adding ? 1 : -1) },
-        ),
-      )
+      if (after.has(slotId)) after.delete(slotId)
+      else after.add(slotId)
       return after
     })
   }
@@ -91,20 +85,20 @@ export default function GroupMeetingVote({ meetingId }) {
           credentials: 'include',
           body: JSON.stringify({ slot_ids: newIds }),
         })
-        // added by Bonita (261097353) — read body once; calling .json() twice on the same Response always fails the second time
-        const voteData = await response.json().catch(() => ({}))
         if (!response.ok) {
-          setError(voteData.error || 'Could not save votes.')
+          const oops = await response.json()
+          setError(oops.error || 'Could not save votes.')
           return
         }
-        // added by Bonita (261097353) — commit saved state before opening mailto so the
-        // browser visibility change from the popup doesn't cause a flicker/revert
         setAllTimes((prev) =>
           prev.map((slot) => ({ ...slot, i_voted: myPicks.has(slot.id) })),
         )
         setSuccess('Your availability has been saved.')
         setSaved(true)
+        // added by Bonita (261097353) — reload from DB to get accurate vote counts after save
+        await loadGroup()
         // Open mailto to notify the owner of the new vote
+        const voteData = await response.json().catch(() => ({}))
         if (voteData.notify) {
           const subj = encodeURIComponent(voteData.notify.subject)
           const body = encodeURIComponent(voteData.notify.body)
