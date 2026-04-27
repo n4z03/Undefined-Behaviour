@@ -83,19 +83,22 @@ export default function OwnerDashboardPage() {
   // added by Bonita - fetch real requests from backend instead of hardcoded data
   const [meetingRequestsData, setMeetingRequestsData] = useState([])
 
-  useEffect(() => {
-    async function fetchRequests() {
-      try {
-        const res = await fetch('/api/meetingRequests/incoming', { credentials: 'include' })
-        if (!res.ok) return
-        const data = await res.json()
-        setMeetingRequestsData(data.requests || [])
-      } catch (e) {
-        console.error('Failed to fetch meeting requests:', e)
-      }
+useEffect(() => {
+  async function fetchRequests() {
+    try {
+      const res = await fetch('/api/meetingRequests/incoming', { credentials: 'include' })
+      if (!res.ok) return
+      const data = await res.json()
+      setMeetingRequestsData(data.requests || [])
+    } catch (e) {
+      console.error('Failed to fetch meeting requests:', e)
     }
-    fetchRequests()
-  }, [])
+  }
+  fetchRequests()
+  // added by Bonita — poll every 30 seconds so new requests appear without page refresh
+  const interval = setInterval(fetchRequests, 30000)
+  return () => clearInterval(interval)
+}, [])
 
   // added by Bonita - accept/decline handlers wired to backend
   async function handleAccept(requestId) {

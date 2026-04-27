@@ -7,11 +7,9 @@ const router = express.Router();
 const pool = require('../db');
 
 // ─────────────────────────────────────────────
-// AUTH MIDDLEWARE (placeholder until Nazifa finishes)
-// TODO: replace with real session/JWT middleware
+// AUTH MIDDLEWARE
 // ─────────────────────────────────────────────
 function requireLogin(req, res, next) {
-    // TEMP: real auth will set req.user from session/token
     if (!req.session || !req.session.user) {
         return res.status(401).json({ error: 'You must be logged in.' });
     }
@@ -22,6 +20,14 @@ function requireLogin(req, res, next) {
 function requireOwner(req, res, next) {
     if (req.user.role !== 'owner') {
         return res.status(403).json({ error: 'Owner access only.' });
+    }
+    next();
+}
+
+// added by Bonita (261097353) — Bug 5 fix: prevent owners from booking slots
+function requireUser(req, res, next) {
+    if (req.user.role !== 'user') {
+        return res.status(403).json({ error: 'Student access only.' });
     }
     next();
 }
@@ -390,7 +396,8 @@ router.delete('/:id', requireLogin, requireOwner, async (req, res) => {
 // User books a specific active child slot.
 // Returns owner email for mailto notification.
 // ─────────────────────────────────────────────
-router.post('/:slotId/book', requireLogin, async (req, res) => {
+// added by Bonita (261097353) — Bug 5 fix: added requireUser so owners cannot book slots
+router.post('/:slotId/book', requireLogin, requireUser, async (req, res) => {
     const user_id = req.user.id;
     const slot_id = Number(req.params.slotId);
 
