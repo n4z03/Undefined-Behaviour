@@ -263,7 +263,10 @@ export default function UserDashboardPage() {
           setBrowseSlotsLoading(false)
           setAvailableSlots([])
           setBrowseOwners([])
-          navigate('/auth?mode=login&redirect=/user-dashboard', { replace: true })
+          const ownerParam = searchParams.get('owner')
+          const redirectUrl = ownerParam
+            ? `/user-dashboard?owner=${ownerParam}` : '/user-dashboard'
+          navigate(`/auth?mode=login&redirect=${encodeURIComponent(redirectUrl)}`, { replace: true })
           return
         }
         if (!response.ok) {
@@ -335,6 +338,14 @@ export default function UserDashboardPage() {
       setGroupId(Number(gid))
       setActiveSection('group-meetings')
     }
+  }, [searchParams])
+
+  // added by Sophia
+  useEffect(() => {
+    const ownerParam = searchParams.get('owner')
+    if (!ownerParam) return
+    setSelectedOwnerId(ownerParam)
+    setActiveSection('browse-slots')
   }, [searchParams])
 
   async function handleSidebarSelect(sectionId) {

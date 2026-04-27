@@ -59,6 +59,8 @@ export default function OwnerDashboardPage() {
   const [panelMode, setPanelMode] = useState('default')
   // so group meeting list reloads when i make a new one
   const [groupRefreshKey, setGroupRefreshKey] = useState(0)
+  // 
+  const [ownerId, setOwnerId] = useState(null)
 
   /** Monday YYYY-MM-DD of the visible week on the owner overview calendar */
   const [weekMonday, setWeekMonday] = useState(() => getMondayOfWeekContaining())
@@ -179,6 +181,7 @@ export default function OwnerDashboardPage() {
 
         if (!response.ok) return
         const data = await response.json()
+        setOwnerId(data?.user?.id)
         // If somehow a user accesses here, redirect them
         if (data?.user?.role !== 'owner') {
           navigate('/user-dashboard', { replace: true })
@@ -313,6 +316,15 @@ export default function OwnerDashboardPage() {
                       Next Week
                     </button>
                   </div>
+                  {/* Share availabilities button by Sophia */}
+                  <button type="button" className="owner-dashboard__week-nav-btn" 
+                  style={{backgroundColor: '#c40000', color: 'white'}}
+                  onClick={() => {
+                    const url = `${window.location.origin}/user-dashboard?owner=${ownerId}`
+                    navigator.clipboard.writeText(url)
+                    setActionMessage('Availabilities link copied to clipboard!')
+                    setTimeout(() => setActionMessage(''), 3000)
+                  }}>Share All Availabilities</button>
                 </div>
                 <div className="owner-dashboard__workspace owner-dashboard__workspace--overview">
                   <WeeklyCalendar

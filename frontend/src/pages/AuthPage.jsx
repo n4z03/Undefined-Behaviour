@@ -1,5 +1,5 @@
 // code written by Rupneet (ID: 261096653)
-// Code added by Nazifa (261112966)
+// Code added by Nazifa (261112966), and Sophia (261149930)
 
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -56,7 +56,7 @@ export default function AuthPage() {
                   onSwitchToSignup={() => changeMode('signup')} 
                   onLogin={(user) => {
                     if (redirectPath) {
-                      navigate(redirectPath)
+                      navigate(decodeURIComponent(redirectPath))
                     } else if (user.role === 'owner') {
                       navigate('/owner-dashboard')
                     } else {
