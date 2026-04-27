@@ -392,7 +392,10 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
         await conn.beginTransaction();
 
         const [groupRows] = await conn.query(
-            `SELECT * FROM slot_groups WHERE id = ? AND owner_id = ?`,
+            `SELECT sg.*, u.name AS owner_name, u.email AS owner_email
+             FROM slot_groups sg
+             JOIN users u ON sg.owner_id = u.id
+             WHERE sg.id = ? AND sg.owner_id = ?`,
             [group_id, owner_id]
         );
         if (groupRows.length === 0) {
@@ -477,11 +480,21 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
             recurrence_weeks: is_recurring ? weeks : null,
             booked_users: voters,
             // Frontend uses this to build mailto: notifications for all voters
-            notify: voters.map(v => ({
-                to: v.email,
-                subject: `Your meeting has been confirmed`,
-                body: `Hi ${v.name}, your group meeting has been confirmed. Date: ${confirmedSlot.slot_date}, Time: ${confirmedSlot.start_time} - ${confirmedSlot.end_time}${is_recurring ? `, repeating for ${weeks} week(s)` : ''}.`,
-            })),
+            // after demo 1 fix: owner also receives a confirmation email
+            notify: [
+                // notify all voters (students)
+                ...voters.map(v => ({
+                    to: v.email,
+                    subject: `Your meeting has been confirmed`,
+                    body: `Hi ${v.name}, your group meeting has been confirmed. Date: ${confirmedSlot.slot_date}, Time: ${confirmedSlot.start_time} - ${confirmedSlot.end_time}${is_recurring ? `, repeating for ${weeks} week(s)` : ''}.`,
+                })),
+                // notify the owner themselves
+                {
+                    to: groupRows[0].owner_email,
+                    subject: `You confirmed a group meeting time`,
+                    body: `Hi ${groupRows[0].owner_name}, you have confirmed the time slot for your group meeting "${groupRows[0].title}". Date: ${confirmedSlot.slot_date}, Time: ${confirmedSlot.start_time} - ${confirmedSlot.end_time}${is_recurring ? `, repeating for ${weeks} week(s)` : ''}. ${voters.length} participant(s) have been booked.`,
+                },
+            ],
         });
 
     } catch (err) {
