@@ -96,6 +96,13 @@ export default function GroupMeetingVote({ meetingId }) {
           setError(oops.error || 'Could not save votes.')
           return
         }
+        // added by Bonita (261097353) — commit saved state before opening mailto so the
+        // browser visibility change from the popup doesn't cause a flicker/revert
+        setAllTimes((prev) =>
+          prev.map((slot) => ({ ...slot, i_voted: myPicks.has(slot.id) })),
+        )
+        setSuccess('Your availability has been saved.')
+        setSaved(true)
         // Open mailto to notify the owner of the new vote
         const voteData = await response.json().catch(() => ({}))
         if (voteData.notify) {
@@ -103,15 +110,14 @@ export default function GroupMeetingVote({ meetingId }) {
           const body = encodeURIComponent(voteData.notify.body)
           window.open(`mailto:${voteData.notify.to}?subject=${subj}&body=${body}`, '_blank')
         }
+      } else {
+        // no new votes (only removals, or no changes) — still commit state
+        setAllTimes((prev) =>
+          prev.map((slot) => ({ ...slot, i_voted: myPicks.has(slot.id) })),
+        )
+        setSuccess('Your availability has been saved.')
+        setSaved(true) // added by Bonita (261097353)
       }
-
-      // added by Bonita (261097353) — update allTimes in place so i_voted reflects current picks,
-      // avoids calling loadGroup() which would race against setSaved(true)
-      setAllTimes((prev) =>
-        prev.map((slot) => ({ ...slot, i_voted: myPicks.has(slot.id) })),
-      )
-      setSuccess('Your availability has been saved.')
-      setSaved(true) // added by Bonita (261097353)
     } catch {
       setError('Request failed.')
     } finally {
