@@ -91,9 +91,10 @@ export default function GroupMeetingVote({ meetingId }) {
           credentials: 'include',
           body: JSON.stringify({ slot_ids: newIds }),
         })
+        // added by Bonita (261097353) — read body once; calling .json() twice on the same Response always fails the second time
+        const voteData = await response.json().catch(() => ({}))
         if (!response.ok) {
-          const oops = await response.json()
-          setError(oops.error || 'Could not save votes.')
+          setError(voteData.error || 'Could not save votes.')
           return
         }
         // added by Bonita (261097353) — commit saved state before opening mailto so the
@@ -104,7 +105,6 @@ export default function GroupMeetingVote({ meetingId }) {
         setSuccess('Your availability has been saved.')
         setSaved(true)
         // Open mailto to notify the owner of the new vote
-        const voteData = await response.json().catch(() => ({}))
         if (voteData.notify) {
           const subj = encodeURIComponent(voteData.notify.subject)
           const body = encodeURIComponent(voteData.notify.body)

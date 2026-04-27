@@ -342,14 +342,15 @@ export default function UserDashboardPage() {
     fetchInviteSlots()
   }, [searchParams])
 
-  // added by Bonita - read ?group= param and switch to group-meetings section
+  // added by Bonita - read ?group= param on initial load only and switch to group-meetings section
+  // added by Bonita (261097353) — intentionally uses [] not [searchParams] so this only runs once on mount;
+  // running on every searchParams change would remount GroupMeetingVote and wipe its saved state
   useEffect(() => {
-    const gid = searchParams.get('group')
+    const gid = new URLSearchParams(window.location.search).get('group')
     if (gid) {
-      // added by Bonita (261097353) — no longer need setGroupId; groupId is derived from URL directly
       setActiveSection('group-meetings')
     }
-  }, [searchParams])
+  }, [])
 
   async function handleSidebarSelect(sectionId) {
     if (sectionId === 'logout') {
