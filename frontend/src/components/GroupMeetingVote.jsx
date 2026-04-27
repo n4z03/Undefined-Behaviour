@@ -1,5 +1,5 @@
 // Nazifa Ahmed (261112966)
-// Code added by Bonita Baladi (261097353)
+// code added by Bonita Baladi (261097353)
 
 import { useEffect, useState } from 'react'
 import { formatTime24To12 } from '../utils/ownerSlotAdapters'
@@ -56,17 +56,16 @@ export default function GroupMeetingVote({ meetingId }) {
   function flipPick(slotId) {
     setMyPicks((before) => {
       const after = new Set(before)
-      if (after.has(slotId)) after.delete(slotId)
-      else after.add(slotId)
+      const adding = !before.has(slotId) // use 'before' not stale closure
+      if (adding) after.add(slotId)
+      else after.delete(slotId)
+      setAllTimes((prev) =>
+        prev.map((slot) =>
+          slot.id !== slotId ? slot : { ...slot, vote_count: slot.vote_count + (adding ? 1 : -1) },
+        ),
+      )
       return after
     })
-    setAllTimes((prev) =>
-      prev.map((slot) => {
-        if (slot.id !== slotId) return slot
-        const adding = !myPicks.has(slotId)
-        return { ...slot, vote_count: slot.vote_count + (adding ? 1 : -1) }
-      }),
-    )
   }
 
   async function handleSave() {
@@ -85,33 +84,34 @@ export default function GroupMeetingVote({ meetingId }) {
         })
       }
 
-	    if (newIds.length > 0) {
-  const response = await fetch(`/api/groupMeeting/${meetingId}/vote`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ slot_ids: newIds }),
-  })
-  if (!response.ok) {
-    const oops = await response.json()
-    setError(oops.error || 'Could not save votes.')
-    return
-  }
-  // Open mailto to notify the owner of the new vote
-  const voteData = await response.json().catch(() => ({}))
-  if (voteData.notify) {
-    const subj = encodeURIComponent(voteData.notify.subject)
-    const body = encodeURIComponent(voteData.notify.body)
-    window.open(`mailto:${voteData.notify.to}?subject=${subj}&body=${body}`, '_blank')
-  }
-}
+      if (newIds.length > 0) {
+        const response = await fetch(`/api/groupMeeting/${meetingId}/vote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ slot_ids: newIds }),
+        })
+        if (!response.ok) {
+          const oops = await response.json()
+          setError(oops.error || 'Could not save votes.')
+          return
+        }
+        // Open mailto to notify the owner of the new vote
+        const voteData = await response.json().catch(() => ({}))
+        if (voteData.notify) {
+          const subj = encodeURIComponent(voteData.notify.subject)
+          const body = encodeURIComponent(voteData.notify.body)
+          window.open(`mailto:${voteData.notify.to}?subject=${subj}&body=${body}`, '_blank')
+        }
+      }
 
-
-
-
+      // added by Bonita (261097353) — update allTimes in place so i_voted reflects current picks,
+      // avoids calling loadGroup() which would race against setSaved(true)
+      setAllTimes((prev) =>
+        prev.map((slot) => ({ ...slot, i_voted: myPicks.has(slot.id) })),
+      )
       setSuccess('Your availability has been saved.')
       setSaved(true) // added by Bonita (261097353)
-      await loadGroup()
     } catch {
       setError('Request failed.')
     } finally {
@@ -181,7 +181,8 @@ export default function GroupMeetingVote({ meetingId }) {
             onClick={handleSave}
             disabled={saving}
           >
-            {saving ? 'Saving…' : 'Save My Availability'}
+            {/* added by Bonita (261097353) — label changes after first vote */}
+            {saving ? 'Saving…' : allTimes.some((s) => s.i_voted) ? 'Edit My Availability' : 'Save My Availability'}
           </button>
         )}
       </div>
