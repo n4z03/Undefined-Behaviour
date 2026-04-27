@@ -27,10 +27,11 @@ export default function GroupMeetingVote({ meetingId }) {
     loadGroup()
   }, [meetingId])
 
-  async function loadGroup() {
-    setLoading(true)
+  // added by Bonita (261097353) — silent=true skips resetting saved/success so post-save refresh doesn't flicker
+  async function loadGroup(silent = false) {
+    if (!silent) setLoading(true)
     setError('')
-    setSuccess('')
+    if (!silent) setSuccess('')
     try {
       const response = await fetch(`/api/groupMeeting/${meetingId}`, { credentials: 'include' })
       if (!response.ok) {
@@ -44,11 +45,12 @@ export default function GroupMeetingVote({ meetingId }) {
       const myVotedIds = new Set(slots.filter((one) => one.i_voted).map((one) => one.id))
       setMyPicks(myVotedIds)
       // added by Bonita (261097353) — if user already has votes in DB, go straight to "saved" state
-      setSaved(myVotedIds.size > 0)
+      // only update saved on initial load, not on silent refresh (handleSave manages saved after that)
+      if (!silent) setSaved(myVotedIds.size > 0)
     } catch {
       setError('Request failed.')
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
@@ -94,8 +96,8 @@ export default function GroupMeetingVote({ meetingId }) {
         }
         setSuccess('Your availability has been saved.')
         setSaved(true)
-        // added by Bonita (261097353) — reload from DB so vote counts are accurate after save
-        await loadGroup()
+        // added by Bonita (261097353) — silent reload so counts update without flickering saved state
+        await loadGroup(true)
         // Open mailto to notify the owner of the new vote
         if (voteData.notify) {
           const subj = encodeURIComponent(voteData.notify.subject)
@@ -106,7 +108,7 @@ export default function GroupMeetingVote({ meetingId }) {
         // added by Bonita (261097353) — reload even when only removals happened so count decrements correctly
         setSuccess('Your availability has been saved.')
         setSaved(true)
-        await loadGroup()
+        await loadGroup(true)
       }
     } catch {
       setError('Request failed.')

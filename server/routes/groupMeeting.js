@@ -23,7 +23,7 @@ function requireOwner(req, res, next) {
     next();
 }
 
-// format HH:MM:SS or HH:MM to 12h time for email bodies
+// added by Bonita (261097353) — format HH:MM:SS or HH:MM to 12h time for email bodies
 function fmt12h(timeStr) {
     if (!timeStr) return timeStr;
     const [hStr, mStr] = timeStr.split(':');
@@ -427,13 +427,15 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
 
         const confirmedSlot = slotRows[0];
 
-        // Get all users who voted for this specific slot
+        // added by Bonita (261097353) — fetch ALL voters across the whole group, not just
+        // those who voted for the winning slot, so confirmation email goes to everyone who participated
         const [voters] = await conn.query(
-            `SELECT u.id, u.name, u.email
+            `SELECT DISTINCT u.id, u.name, u.email
              FROM bookings b
              JOIN users u ON b.user_id = u.id
-             WHERE b.slot_id = ? AND b.status = 'confirmed'`,
-            [slot_id]
+             JOIN booking_slots bs ON b.slot_id = bs.id
+             WHERE bs.group_id = ? AND b.status = 'confirmed'`,
+            [group_id]
         );
 
         const weeks = is_recurring ? Number(recurrence_weeks) : 0;
@@ -501,7 +503,7 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
                     body: `Hi ${v.name},\n\nYour group meeting has been confirmed.\n\nDate: ${confirmedSlot.slot_date}\nTime: ${fmt12h(confirmedSlot.start_time)} - ${fmt12h(confirmedSlot.end_time)}${is_recurring ? `\nThis meeting repeats for ${weeks} week(s).` : ''}\n\nSee you there!`,
                 })),
                 // notify the owner themselves
-                // use 12h for times and proper newlines
+                // use fmt12h for times and proper newlines
                 {
                     to: groupRows[0].owner_email,
                     subject: `You confirmed a group meeting time`,
