@@ -158,6 +158,13 @@
   gap: 0.65rem;
 }
 
+.user-card-list--browse-slots {
+  max-height: 30rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  scrollbar-gutter: stable;
+}
+
 .user-side-panel {
   background: #e8e8e8;
   border: 1px solid #d8d8d8;

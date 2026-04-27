@@ -717,7 +717,7 @@ export default function UserDashboardPage() {
                           <strong>Title:</strong> {selectedCalendarAppointment.title}
                         </p>
                         <p>
-                          <strong>Owner:</strong> {selectedCalendarAppointment.ownerName}
+                          <strong>Instructor:</strong> {selectedCalendarAppointment.ownerName}
                         </p>
                         <p>
                           <strong>Date:</strong> {selectedCalendarAppointment.dateLabel}
@@ -726,7 +726,7 @@ export default function UserDashboardPage() {
                           <strong>Time:</strong> {selectedCalendarAppointment.time} - {selectedCalendarAppointment.endTime}
                         </p>
                         <div className="user-side-panel__actions">
-                          <a href={`mailto:${selectedCalendarAppointment.ownerEmail}`}>Message Owner</a>
+                          <a href={`mailto:${selectedCalendarAppointment.ownerEmail}`}>Message Instructor</a>
                           {appointmentForSelectedCalSlot && isServerBookingId(appointmentForSelectedCalSlot.id) ? (
                             <button type="button" onClick={() => openReschedule(appointmentForSelectedCalSlot)}>
                               Change time
@@ -795,9 +795,9 @@ export default function UserDashboardPage() {
                         selectedOwnerId={selectedOwnerId}
                         onSelectOwner={setSelectedOwnerId}
                       />
-                      <section className="user-panel">
+                      <section className="user-panel user-panel--browse-slots">
                         <h2>Browse Available Slots</h2>
-                        <div className="user-card-list">
+                        <div className="user-card-list user-card-list--browse-slots">
                           {browseOwners.length === 0 ? (
                             <p className="user-panel__empty">No available slots right now.</p>
                           ) : visibleOwnerSlots.length === 0 ? (
@@ -815,7 +815,7 @@ export default function UserDashboardPage() {
 
                 <aside className="user-side-panel">
                   <h2>Quick Actions</h2>
-                  <p>Select an owner and reserve an available slot.</p>
+                  <p>Select an instructor and reserve an available slot.</p>
                   <button type="button" onClick={() => setActiveSection('my-appointments')}>
                     View My Appointments
                   </button>
