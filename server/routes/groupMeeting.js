@@ -23,6 +23,17 @@ function requireOwner(req, res, next) {
     next();
 }
 
+// format HH:MM:SS or HH:MM to 12h time for email bodies
+function fmt12h(timeStr) {
+    if (!timeStr) return timeStr;
+    const [hStr, mStr] = timeStr.split(':');
+    let h = parseInt(hStr, 10);
+    const m = mStr || '00';
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${h}:${m} ${ampm}`;
+}
+
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
@@ -416,15 +427,13 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
 
         const confirmedSlot = slotRows[0];
 
-        // added by Bonita (261097353) — Bug fix: notify ALL students who voted on any slot
-        // in this group, not just those who voted for the winning slot
+        // Get all users who voted for this specific slot
         const [voters] = await conn.query(
-            `SELECT DISTINCT u.id, u.name, u.email
+            `SELECT u.id, u.name, u.email
              FROM bookings b
              JOIN users u ON b.user_id = u.id
-             JOIN booking_slots bs ON b.slot_id = bs.id
-             WHERE bs.group_id = ? AND b.status = 'confirmed'`,
-            [group_id]
+             WHERE b.slot_id = ? AND b.status = 'confirmed'`,
+            [slot_id]
         );
 
         const weeks = is_recurring ? Number(recurrence_weeks) : 0;
@@ -485,16 +494,18 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
             // demo1 fix: owner also receives a confirmation email
             notify: [
                 // notify all voters (students)
+                // use fmt12h for times and proper newlines
                 ...voters.map(v => ({
                     to: v.email,
                     subject: `Your meeting has been confirmed`,
-                    body: `Hi ${v.name}, your group meeting has been confirmed. Date: ${confirmedSlot.slot_date}, Time: ${confirmedSlot.start_time} - ${confirmedSlot.end_time}${is_recurring ? `, repeating for ${weeks} week(s)` : ''}.`,
+                    body: `Hi ${v.name},\n\nYour group meeting has been confirmed.\n\nDate: ${confirmedSlot.slot_date}\nTime: ${fmt12h(confirmedSlot.start_time)} - ${fmt12h(confirmedSlot.end_time)}${is_recurring ? `\nThis meeting repeats for ${weeks} week(s).` : ''}\n\nSee you there!`,
                 })),
                 // notify the owner themselves
+                // use 12h for times and proper newlines
                 {
                     to: groupRows[0].owner_email,
                     subject: `You confirmed a group meeting time`,
-                    body: `Hi ${groupRows[0].owner_name}, you have confirmed the time slot for your group meeting "${groupRows[0].title}". Date: ${confirmedSlot.slot_date}, Time: ${confirmedSlot.start_time} - ${confirmedSlot.end_time}${is_recurring ? `, repeating for ${weeks} week(s)` : ''}. ${voters.length} participant(s) have been booked.`,
+                    body: `Hi ${groupRows[0].owner_name},\n\nYou have confirmed the time slot for your group meeting "${groupRows[0].title}".\n\nDate: ${confirmedSlot.slot_date}\nTime: ${fmt12h(confirmedSlot.start_time)} - ${fmt12h(confirmedSlot.end_time)}${is_recurring ? `\nThis meeting repeats for ${weeks} week(s).` : ''}\n\n${voters.length} participant(s) have been booked.`,
                 },
             ],
         });

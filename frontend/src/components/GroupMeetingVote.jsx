@@ -52,12 +52,18 @@ export default function GroupMeetingVote({ meetingId }) {
     }
   }
 
-  // added by Bonita (261097353) — only toggle the checkbox; vote counts come from DB after save
+  // added by Bonita (261097353) — toggle pick and update vote_count optimistically so prof sees it immediately
   function flipPick(slotId) {
     setMyPicks((before) => {
       const after = new Set(before)
-      if (after.has(slotId)) after.delete(slotId)
-      else after.add(slotId)
+      const adding = !before.has(slotId) // use 'before' not stale closure
+      if (adding) after.add(slotId)
+      else after.delete(slotId)
+      setAllTimes((prev) =>
+        prev.map((slot) =>
+          slot.id !== slotId ? slot : { ...slot, vote_count: slot.vote_count + (adding ? 1 : -1) },
+        ),
+      )
       return after
     })
   }
@@ -90,6 +96,8 @@ export default function GroupMeetingVote({ meetingId }) {
           setError(oops.error || 'Could not save votes.')
           return
         }
+        // added by Bonita (261097353) — commit saved state before opening mailto so the
+        // browser visibility change from the popup doesn't cause a flicker/revert
         setAllTimes((prev) =>
           prev.map((slot) => ({ ...slot, i_voted: myPicks.has(slot.id) })),
         )
@@ -105,12 +113,11 @@ export default function GroupMeetingVote({ meetingId }) {
           window.open(`mailto:${voteData.notify.to}?subject=${subj}&body=${body}`, '_blank')
         }
       } else {
-        // no new votes (only removals, or no changes) — still commit state
-        setAllTimes((prev) =>
-          prev.map((slot) => ({ ...slot, i_voted: myPicks.has(slot.id) })),
-        )
+        // added by Bonita (261097353) — Bug fix: call loadGroup even when only removals happened
+        // so the vote count decrements correctly on the page
         setSuccess('Your availability has been saved.')
-        setSaved(true) // added by Bonita (261097353)
+        setSaved(true)
+        await loadGroup()
       }
     } catch {
       setError('Request failed.')
