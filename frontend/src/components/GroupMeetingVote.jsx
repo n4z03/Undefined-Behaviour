@@ -86,32 +86,27 @@ export default function GroupMeetingVote({ meetingId }) {
           credentials: 'include',
           body: JSON.stringify({ slot_ids: newIds }),
         })
+        // added by Bonita (261097353) — read body once; calling .json() twice on the same Response always fails the second time
+        const voteData = await response.json().catch(() => ({}))
         if (!response.ok) {
-          const oops = await response.json()
-          setError(oops.error || 'Could not save votes.')
+          setError(voteData.error || 'Could not save votes.')
           return
         }
-        // added by Bonita (261097353) — commit saved state before opening mailto so the
-        // browser visibility change from the popup doesn't cause a flicker/revert
-        setAllTimes((prev) =>
-          prev.map((slot) => ({ ...slot, i_voted: myPicks.has(slot.id) })),
-        )
         setSuccess('Your availability has been saved.')
         setSaved(true)
+        // added by Bonita (261097353) — reload from DB so vote counts are accurate after save
+        await loadGroup()
         // Open mailto to notify the owner of the new vote
-        const voteData = await response.json().catch(() => ({}))
         if (voteData.notify) {
           const subj = encodeURIComponent(voteData.notify.subject)
           const body = encodeURIComponent(voteData.notify.body)
           window.open(`mailto:${voteData.notify.to}?subject=${subj}&body=${body}`, '_blank')
         }
       } else {
-        // no new votes (only removals, or no changes) — still commit state
-        setAllTimes((prev) =>
-          prev.map((slot) => ({ ...slot, i_voted: myPicks.has(slot.id) })),
-        )
+        // added by Bonita (261097353) — reload even when only removals happened so count decrements correctly
         setSuccess('Your availability has been saved.')
-        setSaved(true) // added by Bonita (261097353)
+        setSaved(true)
+        await loadGroup()
       }
     } catch {
       setError('Request failed.')
