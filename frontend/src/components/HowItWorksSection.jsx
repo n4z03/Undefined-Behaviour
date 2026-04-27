@@ -14,6 +14,8 @@ const featureContent = {
       'Manage upcoming bookings from your dashboard',
       'Export appointments to your calendar',
     ],
+    imageSrc: '/landing-dashboard.png',
+    imageAlt: 'McBook dashboard preview',
   },
   'request-meeting': {
     title: 'Request a Meeting',
@@ -25,6 +27,8 @@ const featureContent = {
       'If accepted, a booking slot is created automatically',
       'The appointment then appears in both dashboards',
     ],
+    imageSrc: '/landing-dashboard.png',
+    imageAlt: 'Request workflow dashboard preview',
   },
   'export-calendar': {
     title: 'Export to Calendar',
@@ -36,6 +40,8 @@ const featureContent = {
       'The feature should be presented as one of the project’s highlighted functions',
       'Both students and admins can export their appointments',
     ],
+    imageSrc: '/landing-export.png',
+    imageAlt: 'Export to calendar preview',
   },
   'group-scheduling': {
     title: 'Group Scheduling',
@@ -47,6 +53,8 @@ const featureContent = {
       'The system helps identify the best slot',
       'Shared meetings can then be scheduled more efficiently',
     ],
+    imageSrc: '/landing-group-meeting.png',
+    imageAlt: 'Group meeting management preview',
   },
 }
 
@@ -71,7 +79,9 @@ export default function HowItWorksSection({ activeFeature }) {
 
           <div className="feature-accordion__visual" aria-hidden="true">
             <div className="feature-accordion__red-block" />
-            <div className="feature-accordion__image-card">picture of dashboard</div>
+            <div className="feature-accordion__image-card">
+              <img className="feature-accordion__image" src={panel.imageSrc} alt={panel.imageAlt || panel.title} />
+            </div>
           </div>
         </div>
       </div>
