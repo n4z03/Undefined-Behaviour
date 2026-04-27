@@ -1,4 +1,6 @@
 // Nazifa Ahmed (261112966)
+// Code added by Bonita Baladi (261097353)
+
 import { useEffect, useState } from 'react'
 import { formatTime24To12 } from '../utils/ownerSlotAdapters'
 import '../styles/GroupMeeting.css'
@@ -16,6 +18,7 @@ export default function GroupMeetingVote({ meetingId }) {
   const [myPicks, setMyPicks] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false) // added by Bonita (261097353)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -28,6 +31,7 @@ export default function GroupMeetingVote({ meetingId }) {
     setLoading(true)
     setError('')
     setSuccess('')
+    setSaved(false) // added by Bonita (261097353)
     try {
       const response = await fetch(`/api/groupMeeting/${meetingId}`, { credentials: 'include' })
       if (!response.ok) {
@@ -101,6 +105,7 @@ export default function GroupMeetingVote({ meetingId }) {
 
 
       setSuccess('Your availability has been saved.')
+      setSaved(true) // added by Bonita (261097353)
       await loadGroup()
     } catch {
       setError('Request failed.')
@@ -151,15 +156,29 @@ export default function GroupMeetingVote({ meetingId }) {
       {error ? <p className="groupmeeting-error">{error}</p> : null}
       {success ? <p className="groupmeeting-success">{success}</p> : null}
 
+      {/* added by Bonita (261097353) — hide save button after saving, show tag + edit button instead */}
       <div className="groupmeeting-btn-row">
-        <button
-          type="button"
-          className="groupmeeting-btn groupmeeting-btn--primary"
-          onClick={handleSave}
-          disabled={saving}
-        >
-          {saving ? 'Saving…' : 'Save My Availability'}
-        </button>
+        {saved ? (
+          <>
+            <span className="groupmeeting-saved-tag">✓ Availability saved</span>
+            <button
+              type="button"
+              className="groupmeeting-btn groupmeeting-btn--secondary"
+              onClick={() => setSaved(false)}
+            >
+              Edit
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className="groupmeeting-btn groupmeeting-btn--primary"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? 'Saving…' : 'Save My Availability'}
+          </button>
+        )}
       </div>
     </div>
   )

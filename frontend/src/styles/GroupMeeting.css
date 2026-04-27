@@ -1,4 +1,5 @@
 /* Nazifa Ahmed 261112966 */
+/* Code added by Bonita Baladi (261097353) */
 
 .groupmeeting-card {
   background: #ffffff;
@@ -467,4 +468,18 @@
 @media (max-width: 900px) {
   .groupmeeting-layout { grid-template-columns: 1fr; }
   .groupmeeting-slot-time-row { grid-template-columns: 1fr; }
+}
+
+/* added by Bonita (261097353) — confirmation tag shown after saving availability */
+.groupmeeting-saved-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #eaf6ec;
+  color: #2a5c38;
+  border: 1px solid #b6ddbf;
+  border-radius: 20px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.88rem;
+  font-weight: 600;
 }
