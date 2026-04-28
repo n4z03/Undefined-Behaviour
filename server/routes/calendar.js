@@ -1,4 +1,5 @@
 // Bonita Baladi, 261097353
+// Added by Sophia Casalme, 261149930 - let owners export slots they've booked
 
 // Bonus Feature - Calender export .ics
 
@@ -141,7 +142,7 @@ router.get('/export/owner', requireLogin, async (req, res) => {
     }
 
     try {
-        const [slots] = await pool.query(
+        const [ownedSlots] = await pool.query(
             `SELECT DISTINCT
                 bs.id AS slot_id,
                 bs.title,
@@ -158,11 +159,36 @@ router.get('/export/owner', requireLogin, async (req, res) => {
             [owner_id]
         );
 
-        if (slots.length === 0) {
+        // slots the owner has joined as a participant (sophia)
+        const [joinedSlots] = await pool.query(
+            `SELECT
+                bs.id AS slot_id,
+                bs.title,
+                bs.description,
+                bs.slot_date,
+                bs.start_time,
+                bs.end_time,
+                bs.location,
+                bs.slot_type
+             FROM bookings b
+             JOIN booking_slots bs ON b.slot_id = bs.id
+             WHERE b.user_id = ? AND b.status = 'confirmed'`,
+            [owner_id]
+        );
+ 
+        // Merge and deduplicate by slot_id
+        const seen = new Set()
+        const allSlots = [...ownedSlots, ...joinedSlots].filter((s) => {
+            if (seen.has(s.slot_id)) return false
+            seen.add(s.slot_id)
+            return true
+        })
+
+        if (allSlots.length === 0) {
             return res.status(404).json({ error: 'No booked slots found to export.' });
         }
 
-        const vevents = slots.map((slot) =>
+        const vevents = allSlots.map((slot) =>
             buildVEvent(slot, `slot-${slot.slot_id}`)
         );
 
@@ -209,8 +235,8 @@ router.get('/export/:bookingId', requireLogin, async (req, res) => {
                     bs.location,
                     bs.slot_type
                  FROM booking_slots bs
-                 JOIN bookings b ON b.slot_id = bs.id AND b.status = 'confirmed'
-                 WHERE bs.id = ? AND bs.owner_id = ?
+                 JOIN bookings b ON b.slot_id = bs.id 
+                 WHERE bs.id = ? AND b.user_id = ? AND b.status = 'confirmed'
                  LIMIT 1`,
                 [id, user_id]
             );

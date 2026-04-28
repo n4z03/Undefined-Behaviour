@@ -175,6 +175,127 @@ router.get('/', requireLogin, requireOwner, async (req, res) => {
 
 });
 
+// GET /api/ownerSlots/dashboard
+// Returns the owner's own slots and slots they've booked as a participant
+router.get('/dashboard', requireLogin, requireOwner, async (req, res) => {
+  const owner_id = req.user.id;
+
+  try {
+      // Slots this owner created
+      const [ownedSlots] = await pool.query(
+          `SELECT
+              s.*,
+              (SELECT COUNT(*) FROM bookings b
+               WHERE b.slot_id = s.id AND b.status = 'confirmed') AS current_bookings
+           FROM booking_slots s
+           WHERE s.owner_id = ?
+           ORDER BY s.slot_date ASC, s.start_time ASC`,
+          [owner_id]
+      );
+
+      // Slots this owner has booked as a participant 
+      const [bookedSlots] = await pool.query(
+        `SELECT
+          bs.*,
+          b.id AS booking_id,
+          b.notes AS booking_notes,
+          b.booked_at,
+          u.name AS host_name,
+          u.email AS host_email
+        FROM bookings b
+        JOIN booking_slots bs ON b.slot_id = bs.id
+        JOIN users u ON bs.owner_id = u.id
+        WHERE b.user_id = ? AND b.status = 'confirmed'
+        ORDER BY bs.slot_date ASC, bs.start_time ASC`,
+        [owner_id]
+      );
+      res.json({ owned_slots: ownedSlots, booked_slots: bookedSlots });
+  } catch (err) {
+      console.error("Error fetching dashboard:", err);
+      res.status(500).json({ error: "Failed to load dashboard." });
+  }
+
+});
+
+// POST /api/ownerSlots/:id/book
+// Allow any logged-in user to book an owner's active slot
+// An owner cannot book their own slot
+router.post('/:id/book', requireLogin, async (req, res) => {
+  const booker_id = req.user.id;
+  const slot_id = Number(req.params.id);
+  try {
+    if (!Number.isInteger(slot_id)) {
+      return res.status(400).json({ error: "Invalid slot id." });
+    }
+  
+    // Fetch the active slot 
+    const [slots] = await pool.query(
+      `SELECT * FROM booking_slots WHERE id = ? AND status = 'active'`,
+      [slot_id]
+    );
+    const slot = slots[0];
+
+    if (!slot) {
+      return res.status(404).json({ error: "Slot not found or not active." });
+    }
+
+    // Prevent self-booking
+    if (slot.owner_id === booker_id) {
+      return res.status(400).json({ error: "You cannot book your own slot." });
+    }
+
+    // Check slot capacity
+    const [countRows] = await pool.query(
+      `SELECT COUNT(*) AS count FROM bookings WHERE slot_id = ? AND status = 'confirmed'`,
+      [slot_id]
+      );
+    if (countRows[0].count >= slot.max_bookings) {
+      return res.status(409).json({ error: "Slot is fully booked." });
+    }
+
+    // Prevent double booking
+    const [existing] = await pool.query(
+      `SELECT id, status FROM bookings WHERE slot_id = ? AND user_id = ?`,
+      [slot_id, booker_id]
+    );
+
+    const existingBooking = existing[0];
+
+    if (existingBooking && existingBooking.status === 'confirmed') {
+      return res.status(409).json({ error: "You have already booked this slot." });
+    }
+
+    let bookingId;
+
+    if (existingBooking && existingBooking.status === 'cancelled') {
+      await pool.query(
+        `UPDATE bookings
+         SET status = 'confirmed',
+             notes = ?,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [req.body.notes || null, existingBooking.id]
+      );
+    } else {
+        const [result] = await pool.query(
+          `INSERT INTO bookings (slot_id, user_id, notes) VALUES (?, ?, ?)`,
+          [slot_id, booker_id, req.body.notes || null]
+    );
+
+    bookingId = result.insertId;
+    }
+
+    res.status(201).json({
+      message: "Slot booked successfully.",
+      booking_id: bookingId,
+    });
+
+  } catch (err) {
+    console.error("Error booking slot:", err);
+    res.status(500).json({ error: "Failed to book slot." });
+  }
+});
+
 // GET /api/ownerSlots/slots/:id
 // Returns a single slot by ID if it is owned by the logged-in owner
 router.get('/:id', requireLogin, requireOwner, async (req, res) => {
@@ -521,6 +642,75 @@ router.get('/:id/participants', requireLogin, requireOwner, async (req, res) => 
         res.status(500).json({ error: "Failed to fetch participants." });
     }
 
+});
+
+// DELETE /api/ownerSlots/:id/book
+// Allows a logged-in user (including owners) to cancel a booking they made.
+// Returns host info so the frontend can generate a mailto cancellation notice.
+router.delete('/:id/book', requireLogin, async (req, res) => {
+  const booker_id = req.user.id;
+  const slot_id = Number(req.params.id);
+
+  if (!Number.isInteger(slot_id)) {
+      return res.status(400).json({ error: "Invalid slot id." });
+  }
+
+  try {
+      // Find the confirmed booking
+      const [bookings] = await pool.query(
+          `SELECT 
+            b.id AS booking_id, 
+            bs.title, 
+            bs.slot_date, 
+            bs.start_time, 
+            bs.end_time,
+            u.name AS host_name, 
+            u.email AS host_email,
+            me.name AS booker_name
+           FROM bookings b
+           JOIN booking_slots bs ON b.slot_id = bs.id
+           JOIN users u ON bs.owner_id = u.id
+           JOIN users me ON b.user_id = me.id
+           WHERE b.slot_id = ? AND b.user_id = ? AND b.status = 'confirmed'`,
+          [slot_id, booker_id]
+      );
+
+      if (bookings.length === 0) {
+          return res.status(404).json({ error: "No confirmed booking found for this slot." });
+      }
+
+      const booking = bookings[0];
+
+      // Cancel the booking
+      await pool.query(
+          `UPDATE bookings SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
+           WHERE slot_id = ? AND user_id = ? AND status = 'confirmed'`,
+          [slot_id, booker_id]
+      );
+
+      // Return host info for mailto — same pattern as other cancellation routes
+      res.json({
+          message: "Booking cancelled.",
+          delted_booking_id: booking.booking_id,
+          notify: {
+            to: booking.host_email,
+            subject: `Booking cancelled: ${booking.title}`,
+            body: [
+              `Hi ${booking.host_name},`,
+              '',
+              `${booking.booker_name} has cancelled their booking for "${booking.title}".`,
+              '',
+              `Date: ${booking.slot_date}`,
+              `Time: ${booking.start_time} - ${booking.end_time}`,
+              '',
+              'The slot is now available for others to book.',
+            ].join('\r\n'),
+          },
+      });
+    } catch (err) {
+      console.error("Error cancelling booking:", err);
+      res.status(500).json({ error: "Failed to cancel booking." });
+    }
 });
 
 // DELETE /api/ownerSlots/slots/:id

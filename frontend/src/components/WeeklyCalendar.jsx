@@ -31,7 +31,7 @@ function buildSkipRowIndexByDay(days, timeRows, slots) {
   return skip
 }
 
-function LegacyWeeklyCalendar({ days, timeRows, slots, selectedSlotId, onSelectSlot, onSelectEmptyCell }) {
+function LegacyWeeklyCalendar({ days, timeRows, slots, selectedSlotId, selectedEmptyCell, onSelectSlot, onSelectEmptyCell }) {
   const skipRows = useMemo(() => buildSkipRowIndexByDay(days, timeRows, slots), [days, timeRows, slots])
 
   function findSlot(day, time) {
@@ -72,11 +72,12 @@ function LegacyWeeklyCalendar({ days, timeRows, slots, selectedSlotId, onSelectS
             const isSelected = slot && selectedSlotId === slot.id
 
             const isLastDay = dayIdx === days.length - 1
+            const isSelectedEmpty = !slot && selectedEmptyCell?.day === day && selectedEmptyCell?.time === time
 
             return (
               <div
                 key={`${day}-${time}`}
-                className={`weekly-calendar__cell${isSelected ? ' weekly-calendar__cell--selected' : ''}${span > 1 ? ' weekly-calendar__cell--span' : ''}${isLastDay ? ' weekly-calendar__cell--last-col' : ''}`}
+                className={`weekly-calendar__cell${isSelected ? ' weekly-calendar__cell--selected' : ''}${isSelectedEmpty ? ' weekly-calendar__cell--selected' : ''}${span > 1 ? ' weekly-calendar__cell--span' : ''}${isLastDay ? ' weekly-calendar__cell--last-col' : ''}`}
                 style={{
                   gridColumn: dayIdx + 2,
                   gridRowStart: rowIdx + 2,
@@ -127,6 +128,7 @@ function OwnerWeekCalendar({
   timeEndLabel,
   slots,
   selectedSlotId,
+  selectedEmptyCell,
   onSelectSlot,
   onSelectEmptyCell,
 }) {
@@ -184,28 +186,35 @@ function OwnerWeekCalendar({
           >
             <div className="weekly-calendar__day-column-inner" style={{ height: `${bodyHeightPx}px` }}>
               <div className="weekly-calendar__day-grid-bg" aria-hidden="true">
-                {timeRows.map((time, rowIdx) => (
-                  <button
-                    key={`${col.dateStr}-${time}`}
-                    type="button"
-                    className="weekly-calendar__empty-button weekly-calendar__empty-button--owner"
-                    style={{ height: `${ROW_HEIGHT_PX}px` }}
-                    onClick={() => {
-                      const startTime24 = start24FromRowIndex(rowIdx)
-                      onSelectEmptyCell({
-                        slotDate: col.dateStr,
-                        fullDate: col.dateStr,
-                        day: col.headerLabel,
-                        time,
-                        startTime24,
-                        endTime24: addMinutes(startTime24, 30),
-                      })
-                    }}
-                    aria-label={`Create slot on ${col.headerLabel} at ${time}`}
-                  >
-                    +
-                  </button>
-                ))}
+                {timeRows.map((time, rowIdx) => {
+                  const startTime24 = start24FromRowIndex(rowIdx)
+                  const selectedDate = selectedEmptyCell?.slotDate || selectedEmptyCell?.fullDate
+                  const selectedStart = selectedEmptyCell?.startTime24
+                  const isSelectedEmpty =
+                    selectedDate === col.dateStr &&
+                    (selectedStart ? selectedStart === startTime24 : selectedEmptyCell?.time === time)
+                  return (
+                    <button
+                      key={`${col.dateStr}-${time}`}
+                      type="button"
+                      className={`weekly-calendar__empty-button weekly-calendar__empty-button--owner${isSelectedEmpty ? ' weekly-calendar__empty-button--selected' : ''}`}
+                      style={{ height: `${ROW_HEIGHT_PX}px` }}
+                      onClick={() => {
+                        onSelectEmptyCell({
+                          slotDate: col.dateStr,
+                          fullDate: col.dateStr,
+                          day: col.headerLabel,
+                          time,
+                          startTime24,
+                          endTime24: addMinutes(startTime24, 30),
+                        })
+                      }}
+                      aria-label={`Create slot on ${col.headerLabel} at ${time}`}
+                    >
+                      +
+                    </button>
+                  )
+                })}
               </div>
               <div className="weekly-calendar__day-events">
                 {(slotsByDate[col.dateStr] || []).map((slot) => {
@@ -244,6 +253,7 @@ export default function WeeklyCalendar({
   timeRows,
   slots,
   selectedSlotId,
+  selectedEmptyCell,
   onSelectSlot,
   onSelectEmptyCell,
   weekColumns,
@@ -257,6 +267,7 @@ export default function WeeklyCalendar({
         timeEndLabel={timeEndLabel}
         slots={slots}
         selectedSlotId={selectedSlotId}
+        selectedEmptyCell={selectedEmptyCell}
         onSelectSlot={onSelectSlot}
         onSelectEmptyCell={onSelectEmptyCell}
       />
@@ -269,6 +280,7 @@ export default function WeeklyCalendar({
       timeRows={timeRows}
       slots={slots}
       selectedSlotId={selectedSlotId}
+      selectedEmptyCell={selectedEmptyCell}
       onSelectSlot={onSelectSlot}
       onSelectEmptyCell={onSelectEmptyCell}
     />

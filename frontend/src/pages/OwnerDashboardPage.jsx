@@ -3,7 +3,6 @@
 // Bonita Baladi (261097353) - wired meetingRequestsData to /api/meetingRequests/incoming,removed hardcoded meetingRequests import, fixed RecentRequestsPreview and RequestCard renders
 
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../api'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -28,10 +27,17 @@ import {
 import GroupMeetingForm from '../components/GroupMeetingForm'
 import GroupMeetingManager from '../components/GroupMeetingManager'
 import '../styles/OwnerDashboardPage.css'
+import AppointmentCard from '../components/AppointmentCard'
+import CancelBookingCard from '../components/CancelBookingCard'
+import OwnerList from '../components/OwnerList'
+import AvailableSlotCard from '../components/AvailableSlotCard'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 const sidebarSections = [
   { id: 'overview', label: 'Overview' },
   { id: 'calendar', label: 'All Bookings' },
+  { id: 'browse-slots', label: 'Browse Slots' },
+  { id: 'meetings-joined', label: 'Meetings I\'ve Joined' },
   { id: 'group-meeting', label: 'Group Meeting' },
   { id: 'requests', label: 'Requests' },
   { id: 'export', label: 'Export to Calendar' },
@@ -59,15 +65,41 @@ export default function OwnerDashboardPage() {
   const [panelMode, setPanelMode] = useState('default')
   // so group meeting list reloads when i make a new one
   const [groupRefreshKey, setGroupRefreshKey] = useState(0)
-  // 
   const [ownerId, setOwnerId] = useState(null)
+  const [searchParams] = useSearchParams()
+
+  // browse slots
+  const [browseOwners, setBrowseOwners] = useState([])
+  const [availableSlots, setAvailableSlots] = useState([])
+  const [selectedBrowseOwnerId, setSelectedBrowseOwnerId] = useState('')
+  const [browseSlotsLoading, setBrowseSlotsLoading] = useState(false)
+  const [browseSlotsError, setBrowseSlotsError] = useState(null)
+
+  // meetings the owner has joined as a participant
+  const [bookedSlots, setBookedSlots] = useState([])
+  const [bookedSlotsLoading, setBookedSlotsLoading] = useState(false)
+  const [cancelTarget, setCancelTarget] = useState(null)
+  const [cancelLoading, setCancelLoading] = useState(false)
 
   /** Monday YYYY-MM-DD of the visible week on the owner overview calendar */
   const [weekMonday, setWeekMonday] = useState(() => getMondayOfWeekContaining())
 
   const weekColumns = useMemo(() => buildWeekColumnsFromMonday(weekMonday), [weekMonday])
   const weekRangeLabel = useMemo(() => formatWeekRangeLabel(weekMonday), [weekMonday])
-  const calendarSlotsForWeek = useMemo(() => filterSlotsByWeek(slots, weekMonday), [slots, weekMonday])
+  const allCalendarSlots = useMemo(() => {
+    const joinedSlots = mapBackendSlotsToCalendarSlots(bookedSlots).map((slot) => ({
+      ...slot,
+      id: `joined-${slot.backendId || slot.id}`,
+      originalSlotId: slot.backendId || slot.id,
+      bookingId: slot.booking_id,
+      title: `Joined: ${slot.title}`,
+      visibility: 'Joined',
+      bookingStatus: 'Joined',
+      isJoinedSlot: true,
+    }))
+    return [...slots, ...joinedSlots]
+  }, [slots, bookedSlots])
+  const calendarSlotsForWeek = useMemo(() => filterSlotsByWeek(allCalendarSlots, weekMonday), [allCalendarSlots, weekMonday])
   const upcomingMeetings = useMemo(() => {
     const now = Date.now()
     return slots
@@ -82,6 +114,48 @@ export default function OwnerDashboardPage() {
 
   // added by Bonita - fetch real requests from backend instead of hardcoded data
   const [meetingRequestsData, setMeetingRequestsData] = useState([])
+
+  function mapOwnerBookedSlotToAppointment(row) {
+    const slotDate = String(row.slot_date || '').split('T')[0]
+  
+    return {
+      id: String(row.booking_id),
+      slotId: String(row.id),
+      exportId: String(row.id),
+      ownerId: String(row.owner_id),
+      ownerName: row.host_name,
+      ownerEmail: row.host_email,
+      title: row.title,
+      dateLabel: new Date(`${slotDate}T12:00:00`).toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+      }),
+      timeRange: `${row.start_time?.slice(0, 5)} - ${row.end_time?.slice(0, 5)}`,
+      slotDate,
+      status: 'Confirmed',
+      recurringLabel: Number(row.is_recurring) === 1 ? 'Recurring' : null,
+    }
+  }
+
+  function mapOwnerAvailableSlotToBrowse(row) {
+    return {
+      id: String(row.id),
+      ownerId: String(row.owner_id),
+      ownerName: row.owner_name,
+      ownerEmail: row.owner_email,
+      title: row.title,
+      dateLabel: new Date(`${String(row.slot_date).split('T')[0]}T12:00:00`).toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+      }),
+      timeRange: `${row.start_time?.slice(0, 5)} - ${row.end_time?.slice(0, 5)}`,
+      status: 'Available',
+      visibility: 'Public',
+      recurringLabel: Number(row.is_recurring) === 1 ? 'Recurring' : null,
+    }
+  }
 
 useEffect(() => {
   async function fetchRequests() {
@@ -173,6 +247,7 @@ useEffect(() => {
 
   useEffect(() => {
     fetchOwnerSlots()
+    loadBookedSlots()
   }, [])
 
   useEffect(() => {
@@ -200,6 +275,57 @@ useEffect(() => {
     fetchOwnerName()
   }, [])
 
+  useEffect(() => {
+    const ownerParam = searchParams.get('owner')
+    if (!ownerParam) return
+    setSelectedBrowseOwnerId(ownerParam)
+    setActiveSection('browse-slots')
+    loadAvailableSlots()
+  }, [])
+
+  async function loadAvailableSlots() {
+    setBrowseSlotsLoading(true)
+    setBrowseSlotsError(null)
+    try {
+      const res = await apiFetch('/api/bookings/available-slots', { credentials: 'include' })
+      if (!res.ok) { setBrowseSlotsError('Could not load available slots.'); return }
+      const data = await res.json()
+      const rows = data.slots || []
+      setAvailableSlots(rows.map(mapOwnerAvailableSlotToBrowse))
+      // Build unique owner list from slots
+      const ownerMap = new Map()
+      for (const row of rows) {
+        if (!ownerMap.has(String(row.owner_id))) {
+          ownerMap.set(String(row.owner_id), { id: String(row.owner_id), name: row.owner_name, email: row.owner_email })
+        }
+      }
+      const owners = Array.from(ownerMap.values())
+      setBrowseOwners(owners)
+      const ownerParam = searchParams.get('owner')
+      if (owners.length > 0 && !ownerParam) {
+        setSelectedBrowseOwnerId(owners[0].id)
+      }
+    } catch (e) {
+      setBrowseSlotsError('Could not load available slots.')
+    } finally {
+      setBrowseSlotsLoading(false)
+    }
+  }
+  
+  async function loadBookedSlots() {
+    setBookedSlotsLoading(true)
+    try {
+      const res = await apiFetch('/api/ownerSlots/dashboard', { credentials: 'include' })
+      if (!res.ok) return
+      const data = await res.json()
+      setBookedSlots(data.booked_slots || [])
+    } catch (e) {
+      console.error('Could not load booked slots:', e)
+    } finally {
+      setBookedSlotsLoading(false)
+    }
+  }
+
   async function handleSidebarSelect(sectionId) {
     if (sectionId === 'logout') {
       await apiFetch('/api/auth/logout', {
@@ -213,6 +339,40 @@ useEffect(() => {
     setSelectedSlot(null)
     setSelectedCell(null)
     setPanelMode('default')
+
+    if (sectionId === 'browse-slots') loadAvailableSlots()
+    if (sectionId === 'meetings-joined') loadBookedSlots()
+  }
+
+  async function confirmCancelJoinedBooking() {
+    if (!cancelTarget) return
+    setCancelLoading(true)
+    try {
+      const res = await apiFetch(`/api/ownerSlots/${cancelTarget.slotId}/book`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        window.alert(data.error || 'Could not cancel booking.')
+        return
+      }
+      if (data.notify) {
+        window.open(
+          `mailto:${data.notify.to}?subject=${encodeURIComponent(data.notify.subject)}&body=${encodeURIComponent(data.notify.body)}`,
+          '_blank',
+          'noopener,noreferrer',
+        )
+      }
+  
+      setCancelTarget(null)
+      await loadBookedSlots()
+      await fetchOwnerSlots()
+    } catch (e) {
+      window.alert('Could not cancel booking.')
+    } finally {
+      setCancelLoading(false)
+    }
   }
 
   function handleSlotSelect(slot) {
@@ -336,6 +496,7 @@ useEffect(() => {
                     timeEndLabel={ownerCalendarTimeEnd}
                     slots={calendarSlotsForWeek}
                     selectedSlotId={selectedSlot ? selectedSlot.id : null}
+                    selectedEmptyCell={selectedCell}
                     onSelectSlot={handleSlotSelect}
                     onSelectEmptyCell={handleEmptyCellSelect}
                   />
@@ -413,6 +574,98 @@ useEffect(() => {
               </>
             ) : null}
 
+            {/* Code added by Sophia */}
+            {activeSection === 'browse-slots' ? (
+  <div className="user-dashboard__workspace">
+    <div className="user-dashboard__left-stack">
+      {browseSlotsError ? (
+        <p className="user-panel__empty">{browseSlotsError}</p>
+      ) : browseSlotsLoading ? (
+        <p className="user-panel__empty">Loading available slots…</p>
+      ) : (
+        <>
+          <OwnerList
+            owners={browseOwners}
+            selectedOwnerId={selectedBrowseOwnerId}
+            onSelectOwner={setSelectedBrowseOwnerId}
+          />
+
+          <section className="user-panel">
+            <h2>Browse Available Slots</h2>
+            <div className="user-card-list">
+              {browseOwners.length === 0 ? (
+                <p className="user-panel__empty">No available slots from other professors right now.</p>
+              ) : availableSlots.filter((slot) => String(slot.ownerId) === String(selectedBrowseOwnerId)).length === 0? (
+                <p className="user-panel__empty">No slots listed for this professor.</p>
+              ) : (
+                availableSlots
+                  .filter((slot) => String(slot.ownerId) === String(selectedBrowseOwnerId))
+                  .map((slot) => (
+                    <AvailableSlotCard
+                      key={slot.id}
+                      slot={slot}
+                      onBook={async (slotId) => {
+                        try {
+                          const res = await apiFetch(`/api/ownerSlots/${slotId}/book`, {
+                            method: 'POST',
+                            credentials: 'include',
+                          })
+
+                          const data = await res.json().catch(() => ({}))
+
+                          if (!res.ok) {
+                            window.alert(data.error || 'Could not book slot.')
+                            return
+                          }
+
+                          setActionMessage('Slot booked successfully!')
+                          setTimeout(() => setActionMessage(''), 3000)
+
+                          await loadAvailableSlots()
+                          await loadBookedSlots()
+                          await fetchOwnerSlots()
+                        } catch (e) {
+                          window.alert('Could not book slot.')
+                        }
+                      }}
+                    />
+                  ))
+              )}
+            </div>
+          </section>
+        </>
+      )}
+    </div>
+  </div>
+) : null}
+
+{activeSection === 'meetings-joined' ? (
+  <section className="user-panel">
+    <h2>Meetings I've Joined</h2>
+    <div className="user-card-list">
+      {bookedSlotsLoading ? (
+        <p className="user-panel__empty">Loading…</p>
+      ) : bookedSlots.length === 0 ? (
+        <p className="user-panel__empty">You haven't joined any meetings yet.</p>
+      ) : (
+        bookedSlots.map((slot) => {
+          const appointment = mapOwnerBookedSlotToAppointment(slot)
+
+          return (
+            <AppointmentCard
+              key={appointment.id}
+              appointment={appointment}
+              onCancel={setCancelTarget}
+              onReschedule={undefined}
+            />
+          )
+        })
+      )}
+    </div>
+  </section>
+) : null}
+ 
+
             {/* Code added by Nazifa */}
             {activeSection === 'group-meeting' ? (
               <div className="owner-dashboard__workspace" style={{ gridTemplateColumns: '1fr 1fr' }}>
@@ -448,6 +701,18 @@ useEffect(() => {
         </div>
       </main>
       <Footer />
+
+      {cancelTarget ? (
+  <CancelBookingCard
+    appointment={cancelTarget}
+    isLoading={cancelLoading}
+    onClose={() => {
+      if (!cancelLoading) setCancelTarget(null)
+    }}
+    onConfirm={confirmCancelJoinedBooking}
+  />
+) : null}
+
     </div>
   )
 }

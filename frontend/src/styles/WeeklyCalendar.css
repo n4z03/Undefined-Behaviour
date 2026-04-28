@@ -118,6 +118,13 @@
   background: rgba(196, 0, 0, 0.055);
 }
 
+.weekly-calendar__empty-button--selected {
+  opacity: 1;
+  color: #a80000;
+  background: rgba(196, 0, 0, 0.12);
+  box-shadow: inset 0 0 0 2px rgba(196, 0, 0, 0.28);
+}
+
 /* ---- Owner 7-day date-based week (same visual language, proportional events) ---- */
 
 .weekly-calendar--owner-week {

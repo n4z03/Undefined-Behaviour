@@ -6,7 +6,8 @@ import '../styles/AppointmentCard.css'
 
 async function exportAppointment(appointment) {
   try {
-    const res = await fetch(`/api/calendar/export/${appointment.id}`, {
+    const exportId = appointment.exportId || appointment.id
+    const res = await fetch(`/api/calendar/export/${exportId}`, {
       credentials: 'include',
     })
     if (!res.ok) {
