@@ -895,8 +895,8 @@ export default function UserDashboardPage() {
                 {groupId ? (
                   <GroupMeetingVote meetingId={groupId} />
                 ) : (
-                  <p className="user-panel__empty">No scheduled group meetings. Paste an invite link above to join one.</p>
-                )}
+              <p className="user-panel__empty">Paste an invite link above to join one.</p>
+		)}
 
                 {/* added by Bonita (261097353) — show confirmed group meeting bookings below the invite/vote UI */}
                 {(() => {
