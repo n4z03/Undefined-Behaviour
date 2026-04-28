@@ -291,7 +291,12 @@ export default function UserDashboardPage() {
         const data = await response.json()
         const role = data?.user?.role
         if (role === 'owner') {
-          navigate('/owner-dashboard', { replace: true })
+          const ownerParam = searchParams.get('owner')
+          if (ownerParam) {
+            navigate(`/owner-dashboard?owner=${ownerParam}`, { replace: true })
+          } else {
+            navigate('/owner-dashboard', { replace: true })
+          }
           setBrowseSlotsLoading(false)
           return
         }

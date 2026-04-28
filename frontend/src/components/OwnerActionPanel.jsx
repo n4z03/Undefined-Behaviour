@@ -31,6 +31,7 @@ function DefaultPanel({ onModeChange }) {
 }
 
 function slotStatusLabel(slot) {
+  if (slot.isJoinedSlot) return 'Joined'
   if (slot.bookingStatus === 'Booked') return 'Booked'
   if (slot.bookingStatus === 'Draft') return 'Draft'
   return 'Available'
@@ -112,6 +113,74 @@ function SlotDetailsPanel({ slot, onModeChange, onSlotCreated, onSlotPatched, on
   const [visibilityErr, setVisibilityErr] = useState('');
   const [ownerCancelDialog, setOwnerCancelDialog] = useState(null)
   const [ownerCancelLoading, setOwnerCancelLoading] = useState(false)
+
+  if (slot.isJoinedSlot) {
+    return (
+      <>
+        <h2>{slot.title}</h2>
+        <p className="owner-action-panel__muted">{slot.dateLabel}</p>
+  
+        <div className="owner-action-panel__details">
+          <div className="owner-action-panel__detail-row">
+            <span className="owner-action-panel__detail-label">Time</span>
+            <span className="owner-action-panel__detail-value">
+              {slot.time} – {slot.endTime}
+            </span>
+          </div>
+  
+          <div className="owner-action-panel__detail-row">
+            <span className="owner-action-panel__detail-label">Status</span>
+            <span className="owner-action-panel__detail-value">Joined</span>
+          </div>
+        </div>
+  
+        <p className="owner-action-panel__hint">
+          This is a meeting you joined. You cannot edit or change its visibility.
+        </p>
+  
+        <div className="owner-action-panel__slot-actions">
+          <ActionButton
+            kind="secondary"
+            onClick={async () => {
+              try {
+                const res = await fetch(`/api/ownerSlots/${slot.originalSlotId}/book`, {
+                  method: 'DELETE',
+                  credentials: 'include',
+                })
+
+                const data = await res.json().catch(() => ({}))
+
+                if (!res.ok) {
+                  alert(data.error || 'Could not cancel booking')
+                  return
+                }
+
+                if (data.notify) {
+                  const subj = encodeURIComponent(data.notify.subject)
+                  const body = encodeURIComponent(data.notify.body)
+                  window.open(`mailto:${data.notify.to}?subject=${subj}&body=${body}`, '_blank')
+                }
+
+                window.location.reload()
+              } catch (e) {
+                alert('Could not cancel booking')
+              }
+            }}
+          >
+            Cancel Booking
+          </ActionButton>
+  
+          <button
+            type="button"
+            className="owner-action-panel__text-link"
+            onClick={() => onModeChange('default')}
+          >
+            Clear Selection
+          </button>
+        </div>
+      </>
+    )
+  }
 
   useEffect(() => {
     if (!slot) return

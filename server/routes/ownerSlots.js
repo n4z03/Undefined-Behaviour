@@ -255,22 +255,39 @@ router.post('/:id/book', requireLogin, async (req, res) => {
 
     // Prevent double booking
     const [existing] = await pool.query(
-      `SELECT id FROM bookings WHERE slot_id = ? AND user_id = ? AND status = 'confirmed'`,
+      `SELECT id, status FROM bookings WHERE slot_id = ? AND user_id = ?`,
       [slot_id, booker_id]
     );
-    if (existing.length > 0) {
+
+    const existingBooking = existing[0];
+
+    if (existingBooking && existingBooking.status === 'confirmed') {
       return res.status(409).json({ error: "You have already booked this slot." });
     }
 
-    // Insert booking
-    const [result] = await pool.query(
-      `INSERT INTO bookings (slot_id, user_id, notes) VALUES (?, ?, ?)`,
-      [slot_id, booker_id, req.body.notes || null]
+    let bookingId;
+
+    if (existingBooking && existingBooking.status === 'cancelled') {
+      await pool.query(
+        `UPDATE bookings
+         SET status = 'confirmed',
+             notes = ?,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [req.body.notes || null, existingBooking.id]
+      );
+    } else {
+        const [result] = await pool.query(
+          `INSERT INTO bookings (slot_id, user_id, notes) VALUES (?, ?, ?)`,
+          [slot_id, booker_id, req.body.notes || null]
     );
+
+    bookingId = result.insertId;
+    }
 
     res.status(201).json({
       message: "Slot booked successfully.",
-      booking_id: result.insertId,
+      booking_id: bookingId,
     });
 
   } catch (err) {
@@ -641,11 +658,19 @@ router.delete('/:id/book', requireLogin, async (req, res) => {
   try {
       // Find the confirmed booking
       const [bookings] = await pool.query(
-          `SELECT b.id AS booking_id, bs.title, bs.slot_date, bs.start_time, bs.end_time,
-                  u.name AS host_name, u.email AS host_email
+          `SELECT 
+            b.id AS booking_id, 
+            bs.title, 
+            bs.slot_date, 
+            bs.start_time, 
+            bs.end_time,
+            u.name AS host_name, 
+            u.email AS host_email,
+            me.name AS booker_name
            FROM bookings b
            JOIN booking_slots bs ON b.slot_id = bs.id
            JOIN users u ON bs.owner_id = u.id
+           JOIN users me ON b.user_id = me.id
            WHERE b.slot_id = ? AND b.user_id = ? AND b.status = 'confirmed'`,
           [slot_id, booker_id]
       );
@@ -658,30 +683,34 @@ router.delete('/:id/book', requireLogin, async (req, res) => {
 
       // Cancel the booking
       await pool.query(
-          `UPDATE bookings SET status = 'cancelled' WHERE slot_id = ? AND user_id = ? AND status = 'confirmed'`,
+          `UPDATE bookings SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
+           WHERE slot_id = ? AND user_id = ? AND status = 'confirmed'`,
           [slot_id, booker_id]
       );
 
-      // Return host info for mailto — same pattern as your other cancellation routes
+      // Return host info for mailto — same pattern as other cancellation routes
       res.json({
-          message: "Booking cancelled successfully.",
-          cancelledSlot: {
-              slot_id,
-              title: booking.title,
-              slot_date: booking.slot_date,
-              start_time: booking.start_time,
-              end_time: booking.end_time,
-          },
-          host: {
-              name: booking.host_name,
-              email: booking.host_email,
+          message: "Booking cancelled.",
+          delted_booking_id: booking.booking_id,
+          notify: {
+            to: booking.host_email,
+            subject: `Booking cancelled: ${booking.title}`,
+            body: [
+              `Hi ${booking.host_name},`,
+              '',
+              `${booking.booker_name} has cancelled their booking for "${booking.title}".`,
+              '',
+              `Date: ${booking.slot_date}`,
+              `Time: ${booking.start_time} - ${booking.end_time}`,
+              '',
+              'The slot is now available for others to book.',
+            ].join('\r\n'),
           },
       });
-
-  } catch (err) {
+    } catch (err) {
       console.error("Error cancelling booking:", err);
       res.status(500).json({ error: "Failed to cancel booking." });
-  }
+    }
 });
 
 // DELETE /api/ownerSlots/slots/:id
