@@ -5,8 +5,13 @@
 import '../styles/AppointmentCard.css'
 
 async function exportAppointment(appointment) {
+  const numId = Number(appointment.id)
+  if (!Number.isInteger(numId) || numId < 1) {
+    window.alert('This appointment cannot be exported yet. Please refresh the page and try again.')
+    return
+  }
   try {
-    const res = await fetch(`/api/calendar/export/${appointment.id}`, {
+    const res = await fetch(`/api/calendar/export/${numId}`, {
       credentials: 'include',
     })
     if (!res.ok) {
@@ -18,7 +23,7 @@ async function exportAppointment(appointment) {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${appointment.title.replace(/\s+/g, '-')}.ics`
+    link.download = `${(appointment.title || 'appointment').replace(/\s+/g, '-')}.ics`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

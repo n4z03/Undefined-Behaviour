@@ -8,9 +8,10 @@
     "start": "node index.js",
     "build-frontend": "cd ../frontend && npm run build",
     "populate": "node scripts/populating-script.js",
+    "init-db": "node scripts/init-db.js",
     "clear": "node scripts/clear-db.js",
     "seed": "node scripts/seed-demo.js",
-    "demo": "npm run clear && npm run seed"
+    "demo": "npm run init-db && npm run clear && npm run seed"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

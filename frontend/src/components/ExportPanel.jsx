@@ -43,11 +43,11 @@ export default function ExportPanel({ compact = false, showHeading = true, isOwn
  
       // For Google Calendar, open the import page in a new tab after download
       if (calendarType === 'google') {
-        window.open('https://calendar.google.com/calendar/r/settings/export', '_blank')
+        window.open('https://calendar.google.com/calendar/r/settings/import', '_blank')
       }
-      // For Outlook, open the import instructions in a new tab after download
+      // For Outlook, open the calendar so the user can drag-and-drop the downloaded .ics file
       if (calendarType === 'outlook') {
-        window.open('https://outlook.live.com/calendar/0/addevent', '_blank')
+        window.open('https://outlook.live.com/calendar/', '_blank')
       }
  
     } catch (err) {
@@ -78,7 +78,7 @@ export default function ExportPanel({ compact = false, showHeading = true, isOwn
       </div>
       {error ? <p className="export-panel__error">{error}</p> : null}
       <p className="export-panel__note">
-        Downloads a .ics file compatible with Google Calendar and Outlook.
+        Downloads a .ics file, then opens the calendar import page so you can upload it.
       </p>
     </section>
   )
