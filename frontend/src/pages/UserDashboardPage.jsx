@@ -695,6 +695,7 @@ export default function UserDashboardPage() {
                     timeEndLabel={userCalendarTimeEnd}
                     slots={calendarSlotsForWeek}
                     selectedSlotId={selectedCalendarAppointmentId}
+                    selectedEmptyCell={selectedFreeSlotCell}
                     onSelectSlot={(slot) => {
                       setSelectedCalendarAppointmentId(slot.id)
                       setSelectedFreeSlotCell(null)
@@ -715,6 +716,9 @@ export default function UserDashboardPage() {
                             onSubmit={handleSubmitRequest}
                             title={`Request for ${selectedFreeSlotCell.day} at ${selectedFreeSlotCell.time}`}
                             initialPreferredTime={`${selectedFreeSlotCell.day} at ${selectedFreeSlotCell.time}`}
+                            initialProposedDate={selectedFreeSlotCell.slotDate || selectedFreeSlotCell.fullDate || ''}
+                            initialProposedStart={selectedFreeSlotCell.startTime24 || ''}
+                            initialProposedEnd={selectedFreeSlotCell.endTime24 || ''}
                             onCancel={() => setSelectedFreeSlotCell(null)}
                           />
                         </div>

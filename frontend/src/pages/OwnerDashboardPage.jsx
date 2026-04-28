@@ -336,6 +336,7 @@ useEffect(() => {
                     timeEndLabel={ownerCalendarTimeEnd}
                     slots={calendarSlotsForWeek}
                     selectedSlotId={selectedSlot ? selectedSlot.id : null}
+                    selectedEmptyCell={selectedCell}
                     onSelectSlot={handleSlotSelect}
                     onSelectEmptyCell={handleEmptyCellSelect}
                   />

@@ -9,10 +9,25 @@ function tomorrowYmd() {
   return d.toISOString().slice(0, 10)
 }
 
+function splitPreferredTime(preferredTime) {
+  const raw = String(preferredTime || '').trim()
+  if (!raw) return { line1: '', line2: '' }
+  const marker = ' at '
+  const idx = raw.lastIndexOf(marker)
+  if (idx === -1) return { line1: raw, line2: '' }
+  return {
+    line1: raw.slice(0, idx).trim(),
+    line2: raw.slice(idx + marker.length).trim(),
+  }
+}
+
 export default function RequestMeetingForm({
   owners = [],
   onSubmit,
   initialPreferredTime = '',
+  initialProposedDate = '',
+  initialProposedStart = '',
+  initialProposedEnd = '',
   title = 'Request a Meeting',
   onCancel,
 }) {
@@ -22,10 +37,17 @@ export default function RequestMeetingForm({
   const [proposedStart, setProposedStart] = useState('10:00')
   const [proposedEnd, setProposedEnd] = useState('10:30')
   const [subject, setSubject] = useState('')
+  const preferredTimeLines = splitPreferredTime(initialPreferredTime)
 
   useEffect(() => {
     if (owners[0]?.id) setOwnerId(owners[0].id)
   }, [owners])
+
+  useEffect(() => {
+    if (initialProposedDate) setProposedDate(initialProposedDate)
+    if (initialProposedStart) setProposedStart(initialProposedStart)
+    if (initialProposedEnd) setProposedEnd(initialProposedEnd)
+  }, [initialProposedDate, initialProposedStart, initialProposedEnd])
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -95,7 +117,14 @@ export default function RequestMeetingForm({
         </label>
       </div>
       {initialPreferredTime ? (
-        <p className="request-meeting-form__note">Calendar note: {initialPreferredTime}</p>
+        <p className="request-meeting-form__note">
+          <span className="request-meeting-form__note-label">Calendar note:</span>
+          <span className="request-meeting-form__note-value">
+            {preferredTimeLines.line2
+              ? `${preferredTimeLines.line1} at ${preferredTimeLines.line2}`
+              : preferredTimeLines.line1}
+          </span>
+        </p>
       ) : null}
       <button type="submit" disabled={owners.length === 0}>
         Submit request
