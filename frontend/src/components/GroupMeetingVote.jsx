@@ -27,10 +27,11 @@ export default function GroupMeetingVote({ meetingId }) {
     loadGroup()
   }, [meetingId])
 
-  async function loadGroup() {
-    setLoading(true)
+  // added by Bonita (261097353) — silent=true skips resetting saved/success so post-save refresh doesn't flicker
+  async function loadGroup(silent = false) {
+    if (!silent) setLoading(true)
     setError('')
-    setSuccess('')
+    if (!silent) setSuccess('')
     try {
       const response = await fetch(`/api/groupMeeting/${meetingId}`, { credentials: 'include' })
       if (!response.ok) {
@@ -44,26 +45,22 @@ export default function GroupMeetingVote({ meetingId }) {
       const myVotedIds = new Set(slots.filter((one) => one.i_voted).map((one) => one.id))
       setMyPicks(myVotedIds)
       // added by Bonita (261097353) — if user already has votes in DB, go straight to "saved" state
-      setSaved(myVotedIds.size > 0)
+      // only update saved on initial load, not on silent refresh (handleSave manages saved after that)
+      if (!silent) setSaved(myVotedIds.size > 0)
     } catch {
       setError('Request failed.')
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
-  // added by Bonita (261097353) — toggle pick and update vote_count optimistically so prof sees it immediately
+  // added by Bonita (261097353) — only toggle checkbox; vote counts come from DB after save
+  // removing optimistic vote_count update to prevent double-counting
   function flipPick(slotId) {
     setMyPicks((before) => {
       const after = new Set(before)
-      const adding = !before.has(slotId) // use 'before' not stale closure
-      if (adding) after.add(slotId)
-      else after.delete(slotId)
-      setAllTimes((prev) =>
-        prev.map((slot) =>
-          slot.id !== slotId ? slot : { ...slot, vote_count: slot.vote_count + (adding ? 1 : -1) },
-        ),
-      )
+      if (after.has(slotId)) after.delete(slotId)
+      else after.add(slotId)
       return after
     })
   }
@@ -97,13 +94,10 @@ export default function GroupMeetingVote({ meetingId }) {
           setError(voteData.error || 'Could not save votes.')
           return
         }
-        // added by Bonita (261097353) — commit saved state before opening mailto so the
-        // browser visibility change from the popup doesn't cause a flicker/revert
-        setAllTimes((prev) =>
-          prev.map((slot) => ({ ...slot, i_voted: myPicks.has(slot.id) })),
-        )
         setSuccess('Your availability has been saved.')
         setSaved(true)
+        // added by Bonita (261097353) — silent reload so counts update without flickering saved state
+        await loadGroup(true)
         // Open mailto to notify the owner of the new vote
         if (voteData.notify) {
           const subj = encodeURIComponent(voteData.notify.subject)
@@ -111,12 +105,10 @@ export default function GroupMeetingVote({ meetingId }) {
           window.open(`mailto:${voteData.notify.to}?subject=${subj}&body=${body}`, '_blank')
         }
       } else {
-        // no new votes (only removals, or no changes) — still commit state
-        setAllTimes((prev) =>
-          prev.map((slot) => ({ ...slot, i_voted: myPicks.has(slot.id) })),
-        )
+        // added by Bonita (261097353) — reload even when only removals happened so count decrements correctly
         setSuccess('Your availability has been saved.')
-        setSaved(true) // added by Bonita (261097353)
+        setSaved(true)
+        await loadGroup(true)
       }
     } catch {
       setError('Request failed.')

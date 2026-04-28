@@ -1,5 +1,5 @@
 // Rupneet Shahriar (261096653)
-//code added by Nazifa 261112966, Bonita Baladi 261097353 (added paste invite link bar and empty state to group-meetings section), Sophia Casalme 261149930 (invite url modal)
+//code added by Nazifa 261112966, Bonita Baladi 261097353 (added paste invite link bar and empty state to group-meetings section), Sophia Casalme 261149930 (share availabilities, invite url modal)
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Navbar from '../components/Navbar'
@@ -101,6 +101,7 @@ function mapApiBookingToAppointment(row) {
     endMinutes: timeToMinutesFromMidnight(row.end_time),
     status: 'Confirmed',
     recurringLabel: Number(row.is_recurring) === 1 ? 'Recurring' : null,
+    slotType: row.slot_type || 'office_hours',
   }
 }
 
@@ -155,6 +156,7 @@ function isServerBookingId(id) {
 function parseGroupIdFromUrl(urlStr) {
   try {
     const url = new URL(urlStr.trim())
+    const hash = url.hash || ''
     if (hash.includes('?')) {
       const hashSearch = hash.slice(hash.indexOf('?'))
       const gid = new URLSearchParams(hashSearch).get('group')
@@ -286,7 +288,10 @@ export default function UserDashboardPage() {
           setBrowseSlotsLoading(false)
           setAvailableSlots([])
           setBrowseOwners([])
-          navigate('/auth?mode=login&redirect=/user-dashboard', { replace: true })
+          const ownerParam = searchParams.get('owner')
+          const redirectUrl = ownerParam
+            ? `/user-dashboard?owner=${ownerParam}` : '/user-dashboard'
+          navigate(`/auth?mode=login&redirect=${encodeURIComponent(redirectUrl)}`, { replace: true })
           return
         }
         if (!response.ok) {
@@ -296,7 +301,12 @@ export default function UserDashboardPage() {
         const data = await response.json()
         const role = data?.user?.role
         if (role === 'owner') {
-          navigate('/owner-dashboard', { replace: true })
+          const ownerParam = searchParams.get('owner')
+          if (ownerParam) {
+            navigate(`/owner-dashboard?owner=${ownerParam}`, { replace: true })
+          } else {
+            navigate('/owner-dashboard', { replace: true })
+          }
           setBrowseSlotsLoading(false)
           return
         }
@@ -309,6 +319,12 @@ export default function UserDashboardPage() {
           await loadMeetingOwnerList()
           if (cancel) return
           await loadAvailableSlots()
+          // added by Sophia: pre-select owner in browse slots
+          const ownerParam = searchParams.get('owner')
+          if (ownerParam) {
+            setSelectedOwnerId(ownerParam)
+            setActiveSection('browse-slots')
+          }
         } else {
           setBrowseSlotsLoading(false)
         }
@@ -708,6 +724,7 @@ export default function UserDashboardPage() {
                     timeEndLabel={userCalendarTimeEnd}
                     slots={calendarSlotsForWeek}
                     selectedSlotId={selectedCalendarAppointmentId}
+                    selectedEmptyCell={selectedFreeSlotCell}
                     onSelectSlot={(slot) => {
                       setSelectedCalendarAppointmentId(slot.id)
                       setSelectedFreeSlotCell(null)
@@ -728,6 +745,9 @@ export default function UserDashboardPage() {
                             onSubmit={handleSubmitRequest}
                             title={`Request for ${selectedFreeSlotCell.day} at ${selectedFreeSlotCell.time}`}
                             initialPreferredTime={`${selectedFreeSlotCell.day} at ${selectedFreeSlotCell.time}`}
+                            initialProposedDate={selectedFreeSlotCell.slotDate || selectedFreeSlotCell.fullDate || ''}
+                            initialProposedStart={selectedFreeSlotCell.startTime24 || ''}
+                            initialProposedEnd={selectedFreeSlotCell.endTime24 || ''}
                             onCancel={() => setSelectedFreeSlotCell(null)}
                           />
                         </div>
@@ -908,8 +928,36 @@ export default function UserDashboardPage() {
                 {groupId ? (
                   <GroupMeetingVote meetingId={groupId} />
                 ) : (
-                  <p className="user-panel__empty">No scheduled group meetings. Paste an invite link above to join one.</p>
-                )}
+              <p className="user-panel__empty">Paste an invite link above to join one.</p>
+		)}
+
+                {/* added by Bonita (261097353) — show confirmed group meeting bookings below the invite/vote UI */}
+                {(() => {
+                  const confirmedGroupMeetings = appointments.filter((a) => a.slotType === 'group_meeting')
+                  if (confirmedGroupMeetings.length === 0) return null
+                  return (
+                    <div style={{ marginTop: '1.4rem' }}>
+                      <h2 style={{ marginBottom: '0.75rem' }}>My Confirmed Group Meetings</h2>
+                      <div className="user-card-list">
+                        {confirmedGroupMeetings.map((appt) => (
+                          <div key={appt.id} className="groupmeeting-card" style={{ padding: '1rem 1.2rem' }}>
+                            <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: '0.25rem' }}>{appt.title}</div>
+                            <div style={{ fontSize: '0.88rem', color: '#555', marginBottom: '0.15rem' }}>{appt.dateLabel}</div>
+                            <div style={{ fontSize: '0.88rem', color: '#555', marginBottom: '0.15rem' }}>{appt.timeRange}</div>
+                            {appt.ownerName ? (
+                              <div style={{ fontSize: '0.82rem', color: '#888', marginTop: '0.3rem' }}>
+                                Organized by {appt.ownerName}
+                              </div>
+                            ) : null}
+                            {appt.recurringLabel ? (
+                              <div style={{ fontSize: '0.78rem', color: '#c00', marginTop: '0.2rem' }}>Recurring</div>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
               </section>
             ) : null}
 

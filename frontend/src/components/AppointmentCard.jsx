@@ -5,7 +5,9 @@
 import '../styles/AppointmentCard.css'
 
 async function exportAppointment(appointment) {
-  const numId = Number(appointment.id)
+  // Prefer exportId when set (owners joining another host need slot id per /api/calendar/export).
+  const rawExportId = appointment.exportId ?? appointment.id
+  const numId = Number(rawExportId)
   if (!Number.isInteger(numId) || numId < 1) {
     window.alert('This appointment cannot be exported yet. Please refresh the page and try again.')
     return

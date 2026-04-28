@@ -303,8 +303,35 @@
   gap: 0.45rem;
 }
 
+.user-side-panel__request-form-wrap {
+  width: 100%;
+}
+
 .user-side-panel__request-form-wrap .request-meeting-form {
-  margin-bottom: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.user-side-panel__request-form-wrap .request-meeting-form p {
+  margin: 0.38rem 0 0.2rem;
+  font-size: 0.85rem;
+  color: #666666;
+}
+
+.user-side-panel__request-form-wrap .request-meeting-form button {
+  margin-top: 0.35rem;
+  font-size: 0.88rem;
+  padding: 0.52rem 0.68rem;
+}
+
+.user-side-panel__request-form-wrap .request-meeting-form__note-label,
+.user-side-panel__request-form-wrap .request-meeting-form__note-value {
+  display: block;
 }
 
 .user-side-panel__request-list .user-request-card {
