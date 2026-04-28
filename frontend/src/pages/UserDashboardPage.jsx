@@ -1,5 +1,5 @@
 // Rupneet Shahriar (261096653)
-//code added by Nazifa 261112966, Bonita Baladi 261097353 (added paste invite link bar and empty state to group-meetings section), Sophia Casalme 261149930 (invite url modal)
+//code added by Nazifa 261112966, Bonita Baladi 261097353 (added paste invite link bar and empty state to group-meetings section), Sophia Casalme 261149930 (share availabilities, invite url modal)
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Navbar from '../components/Navbar'
@@ -278,7 +278,10 @@ export default function UserDashboardPage() {
           setBrowseSlotsLoading(false)
           setAvailableSlots([])
           setBrowseOwners([])
-          navigate('/auth?mode=login&redirect=/user-dashboard', { replace: true })
+          const ownerParam = searchParams.get('owner')
+          const redirectUrl = ownerParam
+            ? `/user-dashboard?owner=${ownerParam}` : '/user-dashboard'
+          navigate(`/auth?mode=login&redirect=${encodeURIComponent(redirectUrl)}`, { replace: true })
           return
         }
         if (!response.ok) {
@@ -301,6 +304,12 @@ export default function UserDashboardPage() {
           await loadMeetingOwnerList()
           if (cancel) return
           await loadAvailableSlots()
+          // added by Sophia: pre-select owner in browse slots
+          const ownerParam = searchParams.get('owner')
+          if (ownerParam) {
+            setSelectedOwnerId(ownerParam)
+            setActiveSection('browse-slots')
+          }
         } else {
           setBrowseSlotsLoading(false)
         }
