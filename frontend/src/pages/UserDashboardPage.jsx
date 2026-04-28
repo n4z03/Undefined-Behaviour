@@ -101,6 +101,7 @@ function mapApiBookingToAppointment(row) {
     endMinutes: timeToMinutesFromMidnight(row.end_time),
     status: 'Confirmed',
     recurringLabel: Number(row.is_recurring) === 1 ? 'Recurring' : null,
+    slotType: row.slot_type || 'office_hours',
   }
 }
 
@@ -896,6 +897,34 @@ export default function UserDashboardPage() {
                 ) : (
                   <p className="user-panel__empty">No scheduled group meetings. Paste an invite link above to join one.</p>
                 )}
+
+                {/* added by Bonita (261097353) — show confirmed group meeting bookings below the invite/vote UI */}
+                {(() => {
+                  const confirmedGroupMeetings = appointments.filter((a) => a.slotType === 'group_meeting')
+                  if (confirmedGroupMeetings.length === 0) return null
+                  return (
+                    <div style={{ marginTop: '1.4rem' }}>
+                      <h2 style={{ marginBottom: '0.75rem' }}>My Confirmed Group Meetings</h2>
+                      <div className="user-card-list">
+                        {confirmedGroupMeetings.map((appt) => (
+                          <div key={appt.id} className="groupmeeting-card" style={{ padding: '1rem 1.2rem' }}>
+                            <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: '0.25rem' }}>{appt.title}</div>
+                            <div style={{ fontSize: '0.88rem', color: '#555', marginBottom: '0.15rem' }}>{appt.dateLabel}</div>
+                            <div style={{ fontSize: '0.88rem', color: '#555', marginBottom: '0.15rem' }}>{appt.timeRange}</div>
+                            {appt.ownerName ? (
+                              <div style={{ fontSize: '0.82rem', color: '#888', marginTop: '0.3rem' }}>
+                                Organized by {appt.ownerName}
+                              </div>
+                            ) : null}
+                            {appt.recurringLabel ? (
+                              <div style={{ fontSize: '0.78rem', color: '#c00', marginTop: '0.2rem' }}>Recurring</div>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
               </section>
             ) : null}
 
