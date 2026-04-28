@@ -21,6 +21,8 @@ const calendarRoutes = require('./routes/calendar'); // added by Bonita
 const app = express()
 const port = process.env.PORT || 3000
 
+app.set('trust proxy', 1)
+
 const DEPLOYED_FRONTEND_ORIGIN =
   process.env.FRONTEND_ORIGIN || 'https://winter2026-comp307-group39.cs.mcgill.ca'
 
@@ -56,12 +58,13 @@ app.use(
       httpOnly: true,
       sameSite: 'lax',
       path: '/',
-      // https only in prod (course server) — local dev is http so this stays off there
+      // secure cookies only in production (class server is HTTPS; localhost is HTTP)
       secure: process.env.NODE_ENV === 'production',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     },
   }),
-) // added by sophia
+)
+
 app.use('/api/auth', authenticationRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/owners', ownerRoutes);
@@ -74,6 +77,14 @@ app.use('/api/calendar', calendarRoutes); // added by Bonita
 
 app.get('/api/health', (req, res) => {
   res.json({ message: 'server running' })
+})
+
+
+const FRONTEND_DIST = path.join(__dirname, '..', 'frontend', 'dist')
+app.use(express.static(FRONTEND_DIST))
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(FRONTEND_DIST, 'index.html'))
 })
 
 app.listen(port, () => {
