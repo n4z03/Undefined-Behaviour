@@ -68,7 +68,7 @@ export default function GroupMeetingForm({ onCreated }) {
         setError((json.errors && json.errors[0]) || json.error || 'Could not create meeting.')
         return
       }
-      const url = `${window.location.origin}/user-dashboard?group=${json.group.id}`
+      const url = `${window.location.origin}/#/user-dashboard?group=${json.group.id}`
       setShareUrl(url)
       if (onCreated) onCreated()
     } catch {

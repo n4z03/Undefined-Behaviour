@@ -103,7 +103,7 @@ export default function GroupMeetingManager({ refreshKey = 0 }) {
 
   // added by Bonita — copies the invite link and shows feedback for 2 seconds
   function handleCopyInviteLink() {
-    const link = `${window.location.origin}/user-dashboard?group=${openMeetingId}`
+    const link = `${window.location.origin}/#/user-dashboard?group=${openMeetingId}`
     navigator.clipboard.writeText(link).then(() => {
       setLinkCopied(true)
       setTimeout(() => setLinkCopied(false), 2000)
@@ -148,7 +148,7 @@ export default function GroupMeetingManager({ refreshKey = 0 }) {
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <input
               readOnly
-              value={`${window.location.origin}/user-dashboard?group=${openMeetingId}`}
+              value={`${window.location.origin}/#/user-dashboard?group=${openMeetingId}`}
               style={{
                 flex: 1,
                 fontSize: '0.78rem',

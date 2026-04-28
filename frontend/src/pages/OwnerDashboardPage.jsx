@@ -483,7 +483,8 @@ useEffect(() => {
                   <button type="button" className="owner-dashboard__week-nav-btn" 
                   style={{backgroundColor: '#c40000', color: 'white'}}
                   onClick={() => {
-                    const url = `${window.location.origin}/user-dashboard?owner=${ownerId}`
+                    // Use hash route so shared links still work on static hosts without SPA rewrite rules.
+                    const url = `${window.location.origin}/#/user-dashboard?owner=${ownerId}`
                     navigator.clipboard.writeText(url)
                     setActionMessage('Availabilities link copied to clipboard!')
                     setTimeout(() => setActionMessage(''), 3000)
