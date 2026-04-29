@@ -258,7 +258,7 @@ router.post('/:groupId/vote', requireLogin, async (req, res) => {
 
         // Owners cannot vote in their own group
         if (groupRows[0].owner_id === user_id) {
-            return res.status(403).json({ error: 'Owners cannot vote in their own group meeting.' });
+            return res.status(403).json({ error: 'You cannot vote in your own group meeting.' });
         }
 
         // Confirm all slot_ids belong to this group.

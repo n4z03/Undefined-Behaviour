@@ -1,9 +1,11 @@
 // Nazifa Ahmed (261112966)
 // invite link persistence added by Bonita Baladi (261097353)
+// prof-to-prof group meeting join added by Bonita Baladi (261097353)
 
 import { useEffect, useState } from 'react'
 import { formatTime24To12 } from '../utils/ownerSlotAdapters'
 import '../styles/GroupMeeting.css'
+import GroupMeetingVote from './GroupMeetingVote' // added by Bonita (261097353) — for prof-to-prof voting
 
 // short date for the prof view
 function showShortDate(ymd) {
@@ -25,6 +27,10 @@ export default function GroupMeetingManager({ refreshKey = 0 }) {
   const [success, setSuccess] = useState('')
   // added by Bonita — tracks whether the invite link was copied so we can show feedback
   const [linkCopied, setLinkCopied] = useState(false)
+  // added by Bonita (261097353) — prof-to-prof: state for pasting a colleague's invite link
+  const [joinLinkInput, setJoinLinkInput] = useState('')
+  const [joinLinkError, setJoinLinkError] = useState('')
+  const [joinGroupId, setJoinGroupId] = useState(null)
 
   useEffect(() => {
     loadGroups()
@@ -112,6 +118,34 @@ export default function GroupMeetingManager({ refreshKey = 0 }) {
       setLinkCopied(true)
       setTimeout(() => setLinkCopied(false), 2000)
     })
+  }
+
+  // added by Bonita (261097353) — parse group ID from a pasted invite URL (supports hash and normal routes)
+  function parseGroupIdFromUrl(urlStr) {
+    try {
+      const url = new URL(urlStr.trim())
+      const hash = url.hash || ''
+      if (hash.includes('?')) {
+        const gid = new URLSearchParams(hash.slice(hash.indexOf('?'))).get('group')
+        if (gid) return Number(gid)
+      }
+      const gid = url.searchParams.get('group')
+      return gid ? Number(gid) : null
+    } catch {
+      return null
+    }
+  }
+
+  // added by Bonita (261097353) — handle Go button for joining another prof's group meeting
+  function handleJoinLinkSubmit() {
+    setJoinLinkError('')
+    const gid = parseGroupIdFromUrl(joinLinkInput)
+    if (!gid) {
+      setJoinLinkError('No group ID found. Make sure you paste the full invite link.')
+      return
+    }
+    setJoinGroupId(gid)
+    setJoinLinkInput('')
   }
 
   // either show the "already picked" green banner, or the vote list + confirm box
@@ -263,6 +297,39 @@ export default function GroupMeetingManager({ refreshKey = 0 }) {
 
   return (
     <div className="groupmeeting-card">
+
+      {/* added by Bonita (261097353) — prof-to-prof: join a colleague's group meeting via invite link */}
+      <h2>Join a Colleague's Group Meeting</h2>
+      <p style={{ marginBottom: '0.7rem' }}>
+        Paste an invite link from another professor to vote on their meeting times.
+      </p>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.3rem' }}>
+        <input
+          type="text"
+          placeholder="e.g. http://localhost:5173/user-dashboard?group=4"
+          value={joinLinkInput}
+          onChange={(e) => setJoinLinkInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleJoinLinkSubmit() }}
+          style={{ flex: 1, padding: '0.45rem 0.6rem', borderRadius: '8px', border: '1px solid #d3d3d3', font: 'inherit', fontSize: '0.88rem' }}
+        />
+        <button
+          type="button"
+          className="groupmeeting-btn groupmeeting-btn--primary"
+          onClick={handleJoinLinkSubmit}
+          style={{ whiteSpace: 'nowrap' }}
+        >
+          Go
+        </button>
+      </div>
+      {joinLinkError ? (
+        <p className="groupmeeting-error" style={{ marginTop: '0.4rem' }}>{joinLinkError}</p>
+      ) : null}
+      {/* added by Bonita (261097353) — render vote UI when a colleague's group ID is loaded */}
+      {joinGroupId ? <GroupMeetingVote meetingId={joinGroupId} /> : null}
+
+      <hr className="groupmeeting-divider" style={{ margin: '1.2rem 0' }} />
+      {/* end added by Bonita */}
+
       <h2>Your Group Meetings</h2>
       <p>Select a meeting to review vote counts and confirm a time.</p>
 
