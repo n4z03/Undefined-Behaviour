@@ -524,6 +524,15 @@ export default function UserDashboardPage() {
       setRescheduleTarget(null)
       await loadMyBookings()
       await loadAvailableSlots()
+      if (data.notify && data.notify.to) {
+        const subj = encodeURIComponent(data.notify.subject)
+        const body = encodeURIComponent(data.notify.body)
+        window.open(
+          `mailto:${data.notify.to}?subject=${subj}&body=${body}`,
+          '_blank',
+          'noopener,noreferrer',
+        )
+      }
     } catch (e) {
       console.error(e)
       setRescheduleErr('Request failed')
