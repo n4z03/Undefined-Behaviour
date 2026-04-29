@@ -493,6 +493,7 @@ router.delete('/:bookingId', requireLogin, requireUser, async (req, res) => {
     try {
         const [rows] = await pool.query(
             `SELECT b.*, bs.title, bs.slot_date, bs.start_time, bs.end_time,
+                    bs.slot_type,
                     u.name  AS owner_name,
                     u.email AS owner_email,
                     me.name AS user_name
@@ -519,6 +520,21 @@ router.delete('/:bookingId', requireLogin, requireUser, async (req, res) => {
             [booking_id, user_id]
         );
 
+        // 'requested' slots are created exclusively for one student via the
+        // meeting-request flow (1 student requests, prof accepts, slot is created
+        // with max_bookings=1 and auto-booked for that student). When that student
+        // cancels, the slot has no reason to exist — leaving it 'active' would
+        // expose a bookable slot to other students, which is wrong.
+        // Delete the slot itself; the FK on meeting_requests.created_slot_id is
+        // ON DELETE SET NULL, and the booking row cascades away as well.
+        const slotWasFullyRemoved = booking.slot_type === 'requested';
+        if (slotWasFullyRemoved) {
+            await pool.query(
+                `DELETE FROM booking_slots WHERE id = ?`,
+                [booking.slot_id]
+            );
+        }
+
         // added by Bonita — use \r\n for mailto line breaks and format times as 12h
         res.json({
             message: 'Booking cancelled.',
@@ -534,7 +550,9 @@ router.delete('/:bookingId', requireLogin, requireUser, async (req, res) => {
                     `Date: ${formatDate(booking.slot_date)}`,
                     `Time: ${formatTime12(booking.start_time)} - ${formatTime12(booking.end_time)}`,
                     '',
-                    'The slot is now available for others to book.',
+                    slotWasFullyRemoved
+                        ? 'This slot has been removed from your calendar.'
+                        : 'The slot is now available for others to book.',
                 ].join('\r\n'),
             },
         });
