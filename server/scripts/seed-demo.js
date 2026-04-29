@@ -1,25 +1,14 @@
 /*
  * Nazifa Ahmed (261112966)
- *
+ * Note: This file uses AI to generate the demo data. 
  * Seeds the database with realistic demo data covering EVERY feature in
  * the app, so the demo can exercise the full flow end-to-end.
  *
- * Centred on two main accounts:
- *   demoprof@mcgill.ca           password: 123456  (owner)
- *   demostudent@mail.mcgill.ca   password: 123456  (student)
- *
- * Features covered:
- *   ── Auth ─ multiple users (owners + students), all password 123456
- *   ── Owner one-time slots ─ active, private/draft, past, multi-booking
- *   ── Owner recurring slots ─ parent + auto-generated weekly children
- *   ── Bookings ─ upcoming, past, multi-booking, recurring, with notes
- *   ── Meeting requests ─ pending/accepted/declined with the proper
- *      [YYYY-MM-DD HH:MM - HH:MM] subject format so the "Accept" button
- *      really works in the UI
- *   ── Group meetings ─ voting open, confirmed one-time, confirmed
- *      recurring (with auto-generated child slots + bookings)
- *   ── Owner invites ─ general invite + invite tied to a slot group
- *   ── Calendar export ─ confirmed bookings export to .ics automatically
+ * Accounts:
+ * demoprof@mcgill.ca           password: 123456  (owner)
+ * demostudent@mail.mcgill.ca   password: 123456  (student)
+ * 
+
  *
  * Run from the server/ folder:
  *   npm run init-db && npm run clear && npm run seed
@@ -33,8 +22,6 @@ const crypto = require('crypto');
 const pool = require('../db');
 
 const PASSWORD = '123456';
-
-// ─── Helpers ───────────────────────────────────────────────────────────────
 
 function ymd(offsetDays = 0) {
   const d = new Date();
@@ -101,10 +88,6 @@ async function insertBooking(slotId, userId, notes) {
   return r.insertId;
 }
 
-/**
- * Build a meeting-request subject in the exact format the accept handler
- * parses when it auto-creates a slot:  [YYYY-MM-DD HH:MM - HH:MM] subject
- */
 function requestSubject(date, start, end, subject) {
   return `[${date} ${start} - ${end}] ${subject}`.trim();
 }
@@ -119,12 +102,6 @@ async function insertRequest(ownerId, userId, date, start, end, subject, message
   return r.insertId;
 }
 
-/**
- * Create a recurring slot the same way POST /api/recurringSlots does:
- *   - one parent row (is_recurring=1, parent_slot_id=NULL, recurrence_weeks=N)
- *   - N child rows (is_recurring=1, parent_slot_id=parentId)
- * Returns { parentId, childIds }.
- */
 async function insertRecurringSlot(ownerId, opts) {
   const { title, description, date, start, end, location, weeks, status, maxBookings } = opts;
   const parentId = await insertSlot(ownerId, {
@@ -153,32 +130,24 @@ async function insertRecurringSlot(ownerId, opts) {
   }
   return { parentId, childIds };
 }
-
-// ─── Main ──────────────────────────────────────────────────────────────────
-
 async function main() {
   const hash = await bcrypt.hash(PASSWORD, 10);
 
   console.log('Seeding demo data...\n');
 
-  // ── 1. Primary demo accounts ────────────────────────────────────────────
-  const profId    = await insertUser('TEST PROF',    'demoprof@mcgill.ca',         hash, 'owner');
-  const studentId = await insertUser('TEST STUDENT', 'demostudent@mail.mcgill.ca', hash, 'user');
+  const profId    = await insertUser('Joseph Vybihal', 'demoprof@mcgill.ca',         hash, 'owner');
+  const studentId = await insertUser('Victor Z',       'demostudent@mail.mcgill.ca', hash, 'user');
   console.log(`Created main accounts:  demoprof (id=${profId})  demostudent (id=${studentId})`);
-
-  // ── 2. Supporting professors ────────────────────────────────────────────
   const prof2Id = await insertUser('Prof. Sarah Okafor',  'sarah.okafor@mcgill.ca',  hash, 'owner');
   const prof3Id = await insertUser('Prof. Michael Tran',  'michael.tran@mcgill.ca',  hash, 'owner');
   const prof4Id = await insertUser('Prof. Leila Nassiri', 'leila.nassiri@mcgill.ca', hash, 'owner');
   console.log('Created supporting professors.');
 
-  // ── 3. Supporting students ──────────────────────────────────────────────
   const s2Id = await insertUser('Priya Sharma',  'priya.sharma@mail.mcgill.ca',  hash, 'user');
   const s3Id = await insertUser('Omar Khalil',   'omar.khalil@mail.mcgill.ca',   hash, 'user');
   const s4Id = await insertUser('Sofia Leblanc', 'sofia.leblanc@mail.mcgill.ca', hash, 'user');
   console.log('Created supporting students.\n');
 
-  // ── 4. demoprof one-time slots ──────────────────────────────────────────
   console.log('--- One-time slots for demoprof ---');
 
   const slot1 = await insertSlot(profId, {
@@ -202,28 +171,28 @@ async function main() {
     location: 'McConnell Engineering, Room 320',
     status: 'active',
   });
-  // Multi-booking slot (max 3)
+
   const slot4 = await insertSlot(profId, {
     title: 'COMP 307 - Assignment Review',
     description: 'Assignment 3 review session (group, up to 3 students).',
     date: ymd(5), start: '15:00:00', end: '15:30:00',
     status: 'active', maxBookings: 3,
   });
-  // Multi-booking slot (max 5)
+
   const slot5 = await insertSlot(profId, {
     title: 'COMP 307 - Exam Prep',
     description: 'Final exam preparation session (up to 5 students).',
     date: ymd(7), start: '09:00:00', end: '10:00:00',
     status: 'active', maxBookings: 5,
   });
-  // Private (draft) slot — not visible to students
+
   const slotDraft = await insertSlot(profId, {
     title: 'Research Mentoring (Draft)',
     description: 'Research mentoring session — not yet published.',
     date: ymd(10), start: '11:00:00', end: '12:00:00',
     status: 'private',
   });
-  // Past slot (lets us show a past appointment)
+
   const slotPast = await insertSlot(profId, {
     title: 'COMP 307 - Office Hours',
     description: 'Last week office hours.',
@@ -233,7 +202,6 @@ async function main() {
   console.log(`  Created ${[slot1, slot2, slot3, slot4, slot5, slotDraft, slotPast].length} one-time slots ` +
               `(5 active, 1 draft, 1 past).`);
 
-  // ── 5. demoprof recurring slot (parent + children) ──────────────────────
   console.log('\n--- Recurring slot for demoprof ---');
   const recurring = await insertRecurringSlot(profId, {
     title: 'COMP 307 - Tuesday Office Hours (Weekly)',
@@ -245,13 +213,10 @@ async function main() {
   });
   console.log(`  Parent slot ${recurring.parentId}, ${recurring.childIds.length} child occurrences.`);
 
-  // ── 6. Bookings into demoprof's slots ───────────────────────────────────
   console.log('\n--- Bookings ---');
   await insertBooking(slot1,    studentId, 'Need help with Assignment 3.');
   await insertBooking(slotPast, studentId, 'Reviewed midterm feedback.');
-  // Book the FIRST occurrence of the recurring slot (parent row)
   await insertBooking(recurring.parentId, studentId, 'Recurring weekly meeting.');
-  // Other students fill out the multi-booking slots
   await insertBooking(slot3, s2Id, 'Questions about final project.');
   await insertBooking(slot4, s2Id);
   await insertBooking(slot4, s3Id, 'Assignment 3 clarification.');
@@ -260,7 +225,6 @@ async function main() {
   console.log('  demostudent has 3 bookings (1 upcoming, 1 past, 1 recurring).');
   console.log('  Supporting students fill out the multi-booking slots.');
 
-  // ── 7. Slots from supporting professors (Browse Slots page) ─────────────
   console.log('\n--- Supporting professors slots ---');
 
   const oSlot1 = await insertSlot(prof2Id, {
@@ -295,12 +259,7 @@ async function main() {
   });
   console.log('  6 slots across 3 supporting profs (1 already booked by demostudent).');
 
-  // ── 8. Meeting requests with parseable subject format ───────────────────
-  // The Accept handler parses the [YYYY-MM-DD HH:MM - HH:MM] prefix,
-  // so all requests below are actually acceptable in the UI.
   console.log('\n--- Meeting requests ---');
-
-  // demostudent → demoprof (PENDING — owner can Accept or Decline)
   await insertRequest(
     profId, studentId,
     ymd(4), '13:00:00', '13:30:00',
@@ -309,7 +268,6 @@ async function main() {
       "Could we go over it together? I'm available most afternoons this week.",
     'pending'
   );
-  // Priya → demoprof (PENDING)
   await insertRequest(
     profId, s2Id,
     ymd(5), '11:00:00', '11:20:00',
@@ -318,12 +276,11 @@ async function main() {
       'implementing. Could you spare 20 minutes this week?',
     'pending'
   );
-  // demostudent → Prof Okafor (ACCEPTED — paired with a booked slot below)
   const acceptedSlotDate  = ymd(2);
   const acceptedSlotStart = '13:30:00';
   const acceptedSlotEnd   = '14:00:00';
   const acceptedSlotId = await insertSlot(prof2Id, {
-    title: `Meeting with TEST STUDENT`,
+    title: `Meeting with Victor Z`,
     description: requestSubject(acceptedSlotDate, acceptedSlotStart, acceptedSlotEnd,
       'COMP 202 midterm review'),
     date: acceptedSlotDate, start: acceptedSlotStart, end: acceptedSlotEnd,
@@ -337,12 +294,11 @@ async function main() {
     'Could we go over my midterm? I would like to understand where I lost marks.',
     'accepted'
   );
-  // Link the accepted request to the slot it produced
   await pool.query(
     `UPDATE meeting_requests SET created_slot_id = ? WHERE id = ?`,
     [acceptedSlotId, acceptedRequestId]
   );
-  // demostudent → Prof Tran (DECLINED)
+
   await insertRequest(
     prof3Id, studentId,
     ymd(6), '16:00:00', '16:30:00',
@@ -351,7 +307,6 @@ async function main() {
       'session before the final?',
     'declined'
   );
-  // Omar → demoprof (PENDING — extra incoming request for the prof view)
   await insertRequest(
     profId, s3Id,
     ymd(6), '10:00:00', '10:30:00',
@@ -363,10 +318,7 @@ async function main() {
   console.log('  All requests use the [YYYY-MM-DD HH:MM - HH:MM] subject format,');
   console.log('  so demoprof can really click "Accept" on the pending ones.');
 
-  // ── 9. Group meetings ───────────────────────────────────────────────────
   console.log('\n--- Group meetings ---');
-
-  // ── 9a. Voting open ──────────────────────────────────────────────────
   const [g1] = await pool.query(
     `INSERT INTO slot_groups (owner_id, name, description) VALUES (?, ?, ?)`,
     [profId, 'COMP 307 Project Review',
@@ -392,10 +344,8 @@ async function main() {
     type: 'group_meeting', status: 'private',
     maxBookings: 999, groupId: groupId1,
   });
-  // demostudent has voted on two options already
   await insertBooking(gSlot1a, studentId);
   await insertBooking(gSlot1c, studentId);
-  // Other students' votes
   await insertBooking(gSlot1a, s2Id);
   await insertBooking(gSlot1b, s2Id);
   await insertBooking(gSlot1b, s3Id);
@@ -403,7 +353,6 @@ async function main() {
   await insertBooking(gSlot1c, s4Id);
   console.log(`  [voting open] Group ${groupId1} "COMP 307 Project Review": 3 options, votes in.`);
 
-  // ── 9b. Confirmed one-time ──────────────────────────────────────────
   const [g2] = await pool.query(
     `INSERT INTO slot_groups (owner_id, name, description) VALUES (?, ?, ?)`,
     [profId, 'COMP 307 Final Exam Q&A',
@@ -414,13 +363,13 @@ async function main() {
   const gSlot2a = await insertSlot(profId, {
     title: 'COMP 307 Final Exam Q&A',
     date: ymd(9), start: '10:00:00', end: '11:00:00',
-    type: 'group_meeting', status: 'active',     // confirmed winner
+    type: 'group_meeting', status: 'active',
     maxBookings: 999, groupId: groupId2,
   });
   await insertSlot(profId, {
     title: 'COMP 307 Final Exam Q&A',
     date: ymd(10), start: '15:00:00', end: '16:00:00',
-    type: 'group_meeting', status: 'private',    // losing options stay private
+    type: 'group_meeting', status: 'private',
     maxBookings: 999, groupId: groupId2,
   });
   await insertBooking(gSlot2a, studentId);
@@ -428,7 +377,6 @@ async function main() {
   await insertBooking(gSlot2a, s3Id);
   console.log(`  [confirmed]   Group ${groupId2} "COMP 307 Final Exam Q&A": ${ymd(9)} 10:00.`);
 
-  // ── 9c. Confirmed RECURRING (parent + child slots + bookings) ──────
   const [g3] = await pool.query(
     `INSERT INTO slot_groups (owner_id, name, description) VALUES (?, ?, ?)`,
     [profId, 'COMP 307 Capstone Standups',
@@ -438,7 +386,6 @@ async function main() {
   const standupStart = '13:00:00';
   const standupEnd   = '13:30:00';
   const standupBaseDate = ymd(3);
-  // Parent (winning slot) — active + recurring
   const gSlot3Parent = await insertSlot(profId, {
     title: 'COMP 307 Capstone Standups',
     date: standupBaseDate, start: standupStart, end: standupEnd,
@@ -446,10 +393,8 @@ async function main() {
     maxBookings: 999, groupId: groupId3,
     isRecurring: true, recurrenceWeeks: 2,
   });
-  // Voters on the parent (now booked for all child occurrences too)
   const standupVoters = [studentId, s2Id, s3Id];
   for (const uid of standupVoters) await insertBooking(gSlot3Parent, uid);
-  // Child slots (one per recurrence week) + voter bookings on each
   for (let w = 1; w <= 2; w++) {
     const childId = await insertSlot(profId, {
       title: 'COMP 307 Capstone Standups',
@@ -463,10 +408,7 @@ async function main() {
   console.log(`  [recurring]   Group ${groupId3} "Capstone Standups": ${standupBaseDate} 13:00, ` +
               `repeating for 2 more weeks.`);
 
-  // ── 10. Owner invites ────────────────────────────────────────────────────
   console.log('\n--- Owner invites ---');
-
-  // 10a. General invite for demoprof (no group)
   const generalToken = token();
   await pool.query(
     `INSERT INTO owner_invites (owner_id, token, label) VALUES (?, ?, ?)`,
@@ -474,7 +416,6 @@ async function main() {
   );
   console.log(`  General invite token: ${generalToken}`);
 
-  // 10b. Group-scoped invite (tied to "COMP 307 Project Review")
   const groupInviteToken = token();
   await pool.query(
     `INSERT INTO owner_invites (owner_id, group_id, token, label) VALUES (?, ?, ?, ?)`,
@@ -482,7 +423,6 @@ async function main() {
   );
   console.log(`  Group invite token  : ${groupInviteToken} (group ${groupId1})`);
 
-  // ── Summary ──────────────────────────────────────────────────────────────
   console.log('\n' + '═'.repeat(64));
   console.log('Demo seed complete!\n');
   console.log('  PROFESSOR LOGIN');
