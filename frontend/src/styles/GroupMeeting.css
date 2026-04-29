@@ -119,6 +119,12 @@
   box-shadow: 0 0 0 2px rgba(196, 0, 0, 0.15);
 }
 
+.groupmeeting-form input::placeholder,
+.groupmeeting-form textarea::placeholder,
+.groupmeeting-slot-row input::placeholder {
+  font-weight: 400;
+}
+
 .groupmeeting-slot-time-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -524,6 +530,17 @@
 .groupmeeting--embedded .groupmeeting-slot-time-row {
   max-width: 100%;
   overflow: hidden;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.4rem;
+}
+
+/* ensure time columns can actually shrink inside narrow side panels */
+.groupmeeting--embedded .groupmeeting-slot-time-row > label {
+  min-width: 0;
+}
+
+.groupmeeting--embedded .groupmeeting-time-input {
+  min-width: 0;
 }
 
 /* bonita — make time-option box white so it doesn't look grey-in-grey */

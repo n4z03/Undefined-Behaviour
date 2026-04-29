@@ -140,6 +140,25 @@ export default function OwnerDashboardPage() {
     }
   }
 
+  function mapOverviewSlotToUpcomingItem(slot, inferredRole = null) {
+    return {
+      id: String(slot.id),
+      slotId: String(slot.backendId || slot.id),
+      exportId: String(slot.backendId || slot.id),
+      ownerId: String(ownerId || ''),
+      ownerName: slot.bookedBy || 'Booked meeting',
+      ownerEmail: slot.bookedEmail || '',
+      title: slot.title,
+      dateLabel: slot.dateLabel,
+      timeRange: `${slot.time} - ${slot.endTime}`,
+      slotDate: slot.fullDate || slot.dateInput || '',
+      status: slot.bookingStatus === 'Joined' ? 'Joined' : 'Confirmed',
+      recurringLabel: slot.recurringLabel || null,
+      direction: slot.isJoinedSlot ? 'outgoing' : 'incoming',
+      role: slot.isJoinedSlot ? 'owner' : inferredRole || 'user',
+    }
+  }
+
   function mapOwnerAvailableSlotToBrowse(row) {
     return {
       id: String(row.id),
@@ -369,6 +388,10 @@ useEffect(() => {
     }
   }
 
+  async function refreshOwnerMeetingViews() {
+    await Promise.all([fetchOwnerSlots(), loadBookedSlots(), loadSlotParticipants()])
+  }
+
   async function handleSidebarSelect(sectionId) {
     if (sectionId === 'logout') {
       await apiFetch('/api/auth/logout', {
@@ -384,9 +407,11 @@ useEffect(() => {
     setPanelMode('default')
 
     if (sectionId === 'browse-slots') loadAvailableSlots()
+    if (sectionId === 'overview') {
+      refreshOwnerMeetingViews()
+    }
     if (sectionId === 'calendar') {
-      loadBookedSlots()
-      loadSlotParticipants()
+      refreshOwnerMeetingViews()
     }
   }
 
@@ -610,9 +635,44 @@ useEffect(() => {
                       direction: 'outgoing',
                       role: slot.booker_role || 'owner', // they booked another owner's slot
                   }))
+                  // Infer role by slot from participant records so filters stay accurate.
+                  const roleBySlotId = new Map()
+                  for (const p of incoming) {
+                    const sid = String(p.slotId || '')
+                    if (!sid) continue
+                    const set = roleBySlotId.get(sid) || new Set()
+                    set.add(p.role || 'user')
+                    roleBySlotId.set(sid, set)
+                  }
+                  for (const o of outgoing) {
+                    const sid = String(o.slotId || '')
+                    if (!sid) continue
+                    const set = roleBySlotId.get(sid) || new Set()
+                    set.add(o.role || 'owner')
+                    roleBySlotId.set(sid, set)
+                  }
+
+                  // Ensure everything visible in Overview upcoming panel also appears here.
+                  const fromOverviewPreview = upcomingMeetings.map((slot) => {
+                    const sid = String(slot.backendId || slot.id || '')
+                    const roleSet = roleBySlotId.get(sid)
+                    const inferredRole = roleSet && roleSet.size === 1 ? Array.from(roleSet)[0] : null
+                    return mapOverviewSlotToUpcomingItem(slot, inferredRole)
+                  })
 
                   // Merge and sort by date ascending
-                  const all = [...incoming, ...outgoing].sort((a, b) => {
+                  const allMerged = [...incoming, ...outgoing, ...fromOverviewPreview]
+                  const seen = new Set()
+                  const all = allMerged
+                    .filter((item) => {
+                      // Keep one entry per slot+direction+role so mixed-role slots
+                      // appear in the right filter buckets.
+                      const key = `${item.slotId || ''}|${item.slotDate || ''}|${item.timeRange || ''}|${item.direction || ''}|${item.role || ''}`
+                      if (seen.has(key)) return false
+                      seen.add(key)
+                      return true
+                    })
+                    .sort((a, b) => {
                     if (a.slotDate < b.slotDate) return -1
                     if (a.slotDate > b.slotDate) return 1
                     return (a.timeRange || '').localeCompare(b.timeRange || '')
@@ -726,7 +786,12 @@ useEffect(() => {
             {activeSection === 'group-meeting' ? (
               <div className="owner-dashboard__workspace" style={{ gridTemplateColumns: '1fr 1fr' }}>
                 <GroupMeetingForm onCreated={() => setGroupRefreshKey((k) => k + 1)} />
-                <GroupMeetingManager refreshKey={groupRefreshKey} />
+                <GroupMeetingManager
+                  refreshKey={groupRefreshKey}
+                  onConfirmed={async () => {
+                    await refreshOwnerMeetingViews()
+                  }}
+                />
               </div>
             ) : null}
 

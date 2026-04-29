@@ -394,7 +394,20 @@ export default function UserDashboardPage() {
     setActiveSection(sectionId)
     setSelectedCalendarAppointmentId(null)
     setSelectedFreeSlotCell(null)
+
+   
+    if (sectionId === 'overview' || sectionId === 'my-appointments' || sectionId === 'group-meetings') {
+      await loadMyBookings()
+    }
   }
+
+  
+  useEffect(() => {
+    const id = setInterval(() => {
+      loadMyBookings()
+    }, 15000)
+    return () => clearInterval(id)
+  }, [loadMyBookings])
 
   async function handleBookSlot(slotId) {
     const slot = availableSlots.find((item) => item.id === slotId)
