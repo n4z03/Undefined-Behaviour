@@ -492,22 +492,61 @@
   line-height: 1.45;
 }
 
-/* make time-option box white so it doesn't look grey-in-grey */
-.groupmeeting--embedded .groupmeeting-slot-row {
-  background: #ffffff;
+/* bonita — constrain everything to the panel width */
+.groupmeeting--embedded {
+  overflow: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-/* make all buttons full-width like the rest of the panel */
+/* bonita — constrain form to panel width */
+.groupmeeting--embedded .groupmeeting-form {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* bonita — constrain labels to panel width */
+.groupmeeting--embedded .groupmeeting-form label,
+.groupmeeting--embedded .groupmeeting-slot-row label {
+  max-width: 100%;
+}
+
+/* bonita — constrain inputs to panel width */
+.groupmeeting--embedded .groupmeeting-form input,
+.groupmeeting--embedded .groupmeeting-slot-row input,
+.groupmeeting--embedded .groupmeeting-time-input {
+  box-sizing: border-box;
+  max-width: 100%;
+  width: 100%;
+}
+
+/* bonita — constrain time row to panel width */
+.groupmeeting--embedded .groupmeeting-slot-time-row {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* bonita — make time-option box white so it doesn't look grey-in-grey */
+.groupmeeting--embedded .groupmeeting-slot-row {
+  background: #ffffff;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* bonita — make all buttons full-width like the rest of the panel */
 .groupmeeting--embedded .groupmeeting-btn-row {
   display: grid;
   gap: 0.48rem;
+  max-width: 100%;
 }
 
+/* bonita — prevent padding from pushing button wider than 100% */
 .groupmeeting--embedded .groupmeeting-btn {
   width: 100%;
   max-width: 100%;
   text-align: center;
-  box-sizing: border-box; /* bonita — prevent padding from pushing button wider than 100% */
+  box-sizing: border-box;
 }
 
 /* bonita — hint text in embedded success state */
