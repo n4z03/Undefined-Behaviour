@@ -148,7 +148,7 @@ router.get('/', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
 
     try {
-        // Include confirmed booking count and the first booker (for "Booked by" in owner UI)
+	// Include confirmed booking count and the first booker (for "Booked by" in owner UI)
         const [rows] = await pool.query(
             `SELECT
                 s.*,
@@ -164,7 +164,7 @@ router.get('/', requireLogin, requireOwner, async (req, res) => {
                  ORDER BY b.booked_at ASC LIMIT 1) AS booked_by_email
              FROM booking_slots s
              WHERE s.owner_id = ?
-             ORDER BY s.slot_date ASC, s.start_time ASC`,
+	    ORDER BY s.slot_date ASC, s.start_time ASC`,
             [owner_id]
         );
         res.json({ slots: rows });

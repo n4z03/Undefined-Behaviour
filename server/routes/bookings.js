@@ -109,6 +109,7 @@ router.get('/available-slots', requireLogin, async (req, res) => {
             JOIN users u ON bs.owner_id = u.id
             LEFT JOIN bookings b ON b.slot_id = bs.id AND b.status = 'confirmed'
             WHERE bs.status = 'active'
+              AND bs.slot_type != 'group_meeting'
               AND bs.owner_id != ?
               AND NOT EXISTS (
                   SELECT 1 FROM bookings b2
