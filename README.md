@@ -14,10 +14,28 @@ Bonita Baladi (261097353)
 - Bonita Baladi (261097353)
 - Nazifa (261112966)
 
-__Files Edited or Created by Nazifa__
-AI: index.js, server/scripts/populating-script.js, server/scripts/seed-demo.js
-__Files Edited or Created by Rupneet__
 
+__Files Edited or Created by Sophia__
+## 30% Non-Coded Portion
+### Rupneet's Portion
+Out of all of the code I've written, 30% is created by AI (mainly ChatGPT and Claude), mainly used for debugging and adding helper functions to connect diiferent endpoints across the dashboard. 
+
+### Sophia's Portion
+
+### Bonita's Portion
+
+### Nazifa's Portion
+AI tools (ChatGPT and Claude) were used selectively to support specific development tasks rather than to generate core application logic.
+
+- **Server/session deployment debugging:** AI was used to debug for differences between local and deployed behavior (for example: login/session issues related to proxy settings and secure cookie handling). This supported debugging work in `server/index.js`.
+- **SQLite adaptation and query validation:** AI was used to help translate database logic into SQLite-compatible patterns and verify SQL edge cases during schema and query development (for example in `db/schema.sqlite.sql`, `server/db.js`, `server/routes/bookings.js`, `server/routes/ownerSlots.js`, and `server/routes/meetingRequests.js`).
+- **Database scripts:** AI helped in generating initial versions of setup/reset/seeding scripts, which were then modified and integrated into the project.
+- **Estimated AI-assisted contribution:** approximately 15-20%, primarily in debugging support, scripting, and validation.
+- **Files with AI support:** `server/index.js`, `server/scripts/populating-script.js`, `server/scripts/seed-demo.js`.
+
+## All Teammember Contributions
+
+### Files Edited or Created by Rupneet
 Worked on implementing the entire front-end, including the landing page, authentication and dashboard. 
 
 
@@ -78,29 +96,6 @@ frontend/src/styles/HeroSection.css
 frontend/src/styles/Footer.css
 frontend/src/styles/AuthTabs.css
 
-Out of all of the files above, 30% is created by AI, mainly used for debugging and adding helper functions to connect diiferent endpoints across the dashboard. 
-
-
-__Files Edited or Created by Sophia__
-## 30% Non-Coded Portion
-### Rupneet's Portion
-
-### Sophia's Portion
-
-### Bonita's Portion
-
-### Nazifa's Portion
-AI tools (ChatGPT and Claude) were used selectively to support specific development tasks rather than to generate core application logic.
-
-- **Server/session deployment debugging:** AI was used to debug for differences between local and deployed behavior (for example: login/session issues related to proxy settings and secure cookie handling). This supported debugging work in `server/index.js`.
-- **SQLite adaptation and query validation:** AI was used to help translate database logic into SQLite-compatible patterns and verify SQL edge cases during schema and query development (for example in `db/schema.sqlite.sql`, `server/db.js`, `server/routes/bookings.js`, `server/routes/ownerSlots.js`, and `server/routes/meetingRequests.js`).
-- **Database scripts:** AI helped in generating initial versions of setup/reset/seeding scripts, which were then modified and integrated into the project.
-- **Estimated AI-assisted contribution:** approximately 15-20%, primarily in debugging support, scripting, and validation.
-- **Files with AI support:** `server/index.js`, `server/scripts/populating-script.js`, `server/scripts/seed-demo.js`.
-
-## All Teammember Contributions
-
-### Files Edited or Created by Rupneet
 ### Files Edited or Created by Sophia
 
 
