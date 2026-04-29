@@ -1,21 +1,16 @@
 # Undefined Behaviour — COMP 307
 
-# Team
-Nazifa
-Rupneet Shahriar (261096653)
-Sophia
-Bonita Baladi (261097353)
 ## URL
 <https://winter2026-comp307-group39.cs.mcgill.ca/>
 
 ## Team
-- Rupneet
+- Rupneet Shahriar (261096653)
 - Sophia Casalme (261149930)
 - Bonita Baladi (261097353)
-- Nazifa (261112966)
+- Nazifa Ahmed (261112966)
 
+**All team members confirm that we contributed equally and divided the work into 4.**
 
-__Files Edited or Created by Sophia__
 ## 30% Non-Coded Portion
 ### Rupneet's Portion
 Out of all of the code I've written, 30% is created by AI (mainly ChatGPT and Claude), mainly used for debugging and adding helper functions to connect diiferent endpoints across the dashboard. 
