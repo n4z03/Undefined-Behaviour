@@ -4,16 +4,16 @@
 Nazifa
 Rupneet
 Sophia
-Bonita Balad (261097353)
+Bonita Baladi (261097353)
 
 # All teammember contributions:
 
-# Files Edited or Created by Nazifa
-# Files Edited or Created by Rupneet
-# Files Edited or Created by Sophia
+__Files Edited or Created by Nazifa__
+__Files Edited or Created by Rupneet__
+__Files Edited or Created by Sophia__
 
 
-# Files Edited or Created by Bonita
+__Files Edited or Created by Bonita__
 server/routes/recurringSlots.js - bonita created and wrote POST /, GET /, GET /:id/children, PATCH /:id/visibility, DELETE /:id, and POST /:slotId/book. Also fixed SQLite INSERT OR IGNORE syntax and boolean 1/0 compatibility.
 
 server/routes/meetingRequests.js - bonita created and wrote POST /, GET /incoming, GET /outgoing, PATCH /:id/accept, PATCH /:id/decline, DELETE /:id, and added the notify payload logic to trigger owner/user mailto emails.
