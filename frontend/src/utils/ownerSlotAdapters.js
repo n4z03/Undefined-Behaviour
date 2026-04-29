@@ -1,4 +1,5 @@
 //code written by Rupneet (ID: 261096653)
+// code adedd by Bonita Baladi (261097353)
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -203,7 +204,13 @@ export function mapBackendSlotToCalendarSlot(slot) {
     bookingCount: nBooked,
     bookedBy: slot.booked_by_name || null,
     bookedEmail: slot.booked_by_email || null,
-    category: isRecurring ? 'recurring' : category,
+    
+    // added by Bonita — recurring slots now respect visibility and booking status
+    // instead of always showing as pink regardless of whether they are active or booked
+    category: isRecurring
+    ? (bookingStatus === 'Booked' ? 'booked' : status === 'Public' ? 'public' : 'private')
+    : category,
+   
     recurringLabel: isRecurring && slot.recurrence_weeks ? `Recurring for ${slot.recurrence_weeks} weeks` : null,
     inviteLink: slot.invite_link || `https://mcbook.app/invite/slot-${slot.id}`,
     rowSpan: rowSpanFromTimes(slot.start_time, slot.end_time),

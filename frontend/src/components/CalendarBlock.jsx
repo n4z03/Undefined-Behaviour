@@ -1,7 +1,8 @@
 // code written by Rupneet (ID: 261096653)
 // Code added by Nazifa Ahmed (261112966)
 // Code added by Sophia Casalme (261149930) - for when a owner books another owner's slot
-
+// code added by Bonita Baladi (261097353)
+//
 import '../styles/CalendarBlock.css'
 
 function statusClass(category, slot) {
@@ -16,7 +17,10 @@ function statusClass(category, slot) {
 function oneLineStatus(slot) {
   if (slot.isJoinedSlot) return 'Joined'
   if (slot.bookingStatus === 'Booked') return 'Booked'
-  if (slot.category === 'recurring') return 'Recurring'
+  
+  // added by Bonita — show Recurring label based on recurringLabel, not category
+  if (slot.recurringLabel) return 'Recurring'
+
   if (slot.category === 'group' || slot.bookingStatus === 'Draft') return 'Draft'
   return 'Available'
 }
