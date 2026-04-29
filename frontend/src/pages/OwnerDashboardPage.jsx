@@ -497,7 +497,11 @@ useEffect(() => {
     if (!cancelTarget) return
     setCancelLoading(true)
     try {
-      const res = await apiFetch(`/api/ownerSlots/${cancelTarget.slotId}/book`, {
+      const isIncoming = cancelTarget.direction === 'incoming'
+      const url = isIncoming
+        ? `/api/ownerSlots/${cancelTarget.slotId}`
+        : `/api/ownerSlots/${cancelTarget.slotId}/book`
+      const res = await apiFetch(url, {
         method: 'DELETE',
         credentials: 'include',
       })
@@ -506,7 +510,7 @@ useEffect(() => {
         window.alert(data.error || 'Could not cancel booking.')
         return
       }
-      if (data.host && data.cancelledSlot) {
+      if (!isIncoming && data.host && data.cancelledSlot) {
         const recipients = [data.host.email, ownerEmail]
           .filter(Boolean)
           .filter((email, idx, arr) => arr.indexOf(email) === idx)
@@ -516,6 +520,21 @@ useEffect(() => {
           `Hi,\n\n${ownerName} has cancelled the owner-owner booking for "${data.cancelledSlot.title}" on ${data.cancelledSlot.slot_date} (${data.cancelledSlot.start_time} – ${data.cancelledSlot.end_time}).\n\nBest,\nMcBook`,
         )
         window.open(`mailto:${recipients}?subject=${subj}&body=${body}`, '_blank', 'noopener,noreferrer')
+      }
+
+      if (isIncoming) {
+        const affected = (data.affectedUsers || []).map((u) => u && u.email).filter(Boolean)
+        if (affected.length > 0) {
+          const to = affected.join(',')
+          const subj = encodeURIComponent('Your booking was cancelled')
+          const body = encodeURIComponent(
+            'Hi, your booking for this time was cancelled.\n\n' +
+              `${cancelTarget.title}\n` +
+              `${cancelTarget.dateLabel}, ${cancelTarget.timeRange}\n\n` +
+              'Please book another time on McBook if you still need a meeting.\n',
+          )
+          window.open(`mailto:${to}?subject=${subj}&body=${body}`, '_blank', 'noopener,noreferrer')
+        }
       }
       setCancelTarget(null)
       await loadBookedSlots()
@@ -788,7 +807,7 @@ useEffect(() => {
                             ) : null}
                             <AppointmentCard
                               appointment={item}
-                              onCancel={item.direction === 'outgoing' ? setCancelTarget : undefined}
+                              onCancel={setCancelTarget}
                               onReschedule={undefined}
                             />
                           </div>
