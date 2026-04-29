@@ -1,4 +1,5 @@
 // Nazifa Ahmed (261112966)
+// Note: some AI was used to help with debugging and deployment issues.
 require('dotenv').config()
 
 const express = require('express')
