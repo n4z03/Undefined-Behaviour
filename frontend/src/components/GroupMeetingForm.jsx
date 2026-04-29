@@ -1,5 +1,5 @@
 // Nazifa Ahmed (261112966)
-// code added by Bonita Baladi (261097353)
+// Bonita Baladi (261097353)
 
 import { useState } from 'react'
 import '../styles/GroupMeeting.css'
@@ -9,8 +9,8 @@ function blankTimeOption() {
   return { date: '', startTime: '09:00', endTime: '09:30' }
 }
 
-// bonita — added embedded and onCancel props for use inside OwnerActionPanel
-export default function GroupMeetingForm({ onCreated, embedded = false, onCancel }) {
+// bonita — added embedded, onCancel, and onRefresh props for use inside OwnerActionPanel
+export default function GroupMeetingForm({ onCreated, embedded = false, onCancel, onRefresh }) {
   const [name, setName] = useState('')
   const [timeOptions, setTimeOptions] = useState([blankTimeOption()])
   const [loading, setLoading] = useState(false)
@@ -73,9 +73,10 @@ export default function GroupMeetingForm({ onCreated, embedded = false, onCancel
       }
       const url = `${window.location.origin}/#/user-dashboard?group=${json.group.id}`
       setShareUrl(url)
-      // bonita — when embedded: auto-copy link and show inline success message; non-embedded calls onCreated as before
+      // bonita — when embedded: auto-copy link and refresh calendar but stay on success screen
       if (embedded) {
         navigator.clipboard.writeText(url).catch(() => {})
+        if (onRefresh) onRefresh()
       } else {
         if (onCreated) onCreated()
       }
