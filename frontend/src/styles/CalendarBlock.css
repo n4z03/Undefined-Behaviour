@@ -62,6 +62,11 @@
   opacity: 0.9;
 }
 
+.calendar-block--joined .calendar-block__booker {
+  color: #7a5b00;
+  opacity: 0.95;
+}
+
 .calendar-block--public .calendar-block__booker {
   color: #4a0f0f;
 }
@@ -129,6 +134,22 @@
 
 .calendar-block--booked .calendar-block__status {
   color: #ffffff;
+  opacity: 0.95;
+}
+
+.calendar-block--joined {
+  background: #fff7bf;
+  border-color: rgba(180, 145, 0, 0.35);
+  color: #5f4600;
+}
+
+.calendar-block--joined .calendar-block__time {
+  color: #6c5100;
+  opacity: 0.9;
+}
+
+.calendar-block--joined .calendar-block__status {
+  color: #7a5b00;
   opacity: 0.95;
 }
 
