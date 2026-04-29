@@ -1,6 +1,7 @@
 // Comp 307 Project: Owner Features
 // Sophia Casalme, 261149930 
 // Code added by Nazifa Ahmed (261112966)
+// Code added by Bonita Baladi (261097353)
 
 /* Owner features: 
 Create new booking slots with specific date, time, and details.
