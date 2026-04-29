@@ -355,14 +355,16 @@ router.patch('/:bookingId/reschedule', requireLogin, requireUser, async (req, re
         }
 
         const [oldSlotRows] = await conn.query(
-            `SELECT owner_id FROM booking_slots WHERE id = ?`,
+            `SELECT owner_id, title, slot_date, start_time, end_time
+             FROM booking_slots WHERE id = ?`,
             [old_slot_id]
         );
         if (oldSlotRows.length === 0) {
             await tryRollback(conn);
             return res.status(404).json({ error: 'Current slot is missing.' });
         }
-        const oldOwnerId = Number(oldSlotRows[0].owner_id);
+        const oldSlot = oldSlotRows[0];
+        const oldOwnerId = Number(oldSlot.owner_id);
 
         const [newSlotRows] = await conn.query(
             `SELECT bs.*, u.name AS owner_name, u.email AS owner_email
@@ -458,17 +460,35 @@ router.patch('/:bookingId/reschedule', requireLogin, requireUser, async (req, re
                 bs.is_recurring,
                 u.id          AS owner_id,
                 u.name        AS owner_name,
-                u.email       AS owner_email
+                u.email       AS owner_email,
+                me.name       AS user_name
             FROM bookings b
             JOIN booking_slots bs ON b.slot_id = bs.id
             JOIN users u ON bs.owner_id = u.id
+            JOIN users me ON b.user_id = me.id
             WHERE b.id = ? AND b.user_id = ?`,
             [booking_id, user_id]
         );
 
+        const refreshed = rows[0] || null;
+
+        const notify = refreshed ? {
+            to: refreshed.owner_email,
+            subject: `Booking rescheduled: ${refreshed.title}`,
+            body: [
+                `Hi ${refreshed.owner_name},`,
+                '',
+                `${refreshed.user_name} has rescheduled their booking for "${refreshed.title}".`,
+                '',
+                `Old time: ${formatDate(oldSlot.slot_date)}, ${formatTime12(oldSlot.start_time)} - ${formatTime12(oldSlot.end_time)}`,
+                `New time: ${formatDate(refreshed.slot_date)}, ${formatTime12(refreshed.start_time)} - ${formatTime12(refreshed.end_time)}`,
+            ].join('\r\n'),
+        } : null;
+
         res.json({
             message: 'Booking rescheduled.',
-            booking: rows[0] || null,
+            booking: refreshed,
+            notify,
         });
     } catch (err) {
         await tryRollback(conn);
