@@ -73,7 +73,12 @@ export default function GroupMeetingForm({ onCreated, embedded = false, onCancel
       }
       const url = `${window.location.origin}/#/user-dashboard?group=${json.group.id}`
       setShareUrl(url)
-      if (onCreated) onCreated()
+      // bonita — when embedded: auto-copy link and show inline success message; non-embedded calls onCreated as before
+      if (embedded) {
+        navigator.clipboard.writeText(url).catch(() => {})
+      } else {
+        if (onCreated) onCreated()
+      }
     } catch {
       setError('Request failed. Is the server running?')
     } finally {
@@ -95,8 +100,23 @@ export default function GroupMeetingForm({ onCreated, embedded = false, onCancel
   }
 
   if (shareUrl) {
+    // bonita — embedded: show simple inline message instead of full share card
+    if (embedded) {
+      return (
+        <div className="groupmeeting--embedded">
+          <h2>Meeting Created!</h2>
+          <p>Link copied to clipboard.</p>
+          <p className="groupmeeting--embedded-hint">For more details, go to <strong>Group Meetings</strong>.</p>
+          <div className="groupmeeting-btn-row">
+            <button type="button" className="groupmeeting-btn groupmeeting-btn--primary" onClick={onCancel ?? reset}>
+              Done
+            </button>
+          </div>
+        </div>
+      )
+    }
     return (
-      <div className={embedded ? 'groupmeeting--embedded' : 'groupmeeting-card'}> {/* bonita — use embedded class so CSS overrides can scope to it */}
+      <div className="groupmeeting-card">
         <h2>Group Meeting Created</h2>
         <p>Share this link with students so they can vote for a preferred time.</p>
         <div className="groupmeeting-share">

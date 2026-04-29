@@ -505,6 +505,16 @@
 
 .groupmeeting--embedded .groupmeeting-btn {
   width: 100%;
+  max-width: 100%;
   text-align: center;
+  box-sizing: border-box; /* bonita — prevent padding from pushing button wider than 100% */
+}
+
+/* bonita — hint text in embedded success state */
+.groupmeeting--embedded-hint {
+  margin: 0.3rem 0 0;
+  font-size: 0.83rem;
+  color: #555555;
+  line-height: 1.45;
 }
 
