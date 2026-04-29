@@ -96,7 +96,7 @@ export default function GroupMeetingForm({ onCreated, embedded = false, onCancel
 
   if (shareUrl) {
     return (
-      <div className={embedded ? undefined : 'groupmeeting-card'}> {/* bonita — skip card wrapper when embedded in action panel */}
+      <div className={embedded ? 'groupmeeting--embedded' : 'groupmeeting-card'}> {/* bonita — use embedded class so CSS overrides can scope to it */}
         <h2>Group Meeting Created</h2>
         <p>Share this link with students so they can vote for a preferred time.</p>
         <div className="groupmeeting-share">
@@ -115,7 +115,7 @@ export default function GroupMeetingForm({ onCreated, embedded = false, onCancel
   }
 
   return (
-    <div className={embedded ? undefined : 'groupmeeting-card'}> {/* bonita — skip card wrapper when embedded in action panel */}
+    <div className={embedded ? 'groupmeeting--embedded' : 'groupmeeting-card'}> {/* bonita — use embedded class so CSS overrides can scope to it */}
       <h2>New Group Meeting</h2>
       <p>Add the times you are available. Students vote for what works for them.</p>
       <form className="groupmeeting-form" onSubmit={handleSubmit}>

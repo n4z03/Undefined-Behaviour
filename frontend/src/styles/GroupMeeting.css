@@ -483,3 +483,28 @@
   font-size: 0.88rem;
   font-weight: 600;
 }
+
+/* bonita — overrides when GroupMeetingForm is embedded inside OwnerActionPanel */
+.groupmeeting--embedded > p {
+  margin: 0.38rem 0 0.85rem;
+  color: #666666;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+/* make time-option box white so it doesn't look grey-in-grey */
+.groupmeeting--embedded .groupmeeting-slot-row {
+  background: #ffffff;
+}
+
+/* make all buttons full-width like the rest of the panel */
+.groupmeeting--embedded .groupmeeting-btn-row {
+  display: grid;
+  gap: 0.48rem;
+}
+
+.groupmeeting--embedded .groupmeeting-btn {
+  width: 100%;
+  text-align: center;
+}
+
