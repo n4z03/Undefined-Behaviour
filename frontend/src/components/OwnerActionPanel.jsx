@@ -522,7 +522,7 @@ function RecurringForm({ onModeChange, onSlotCreated }) {
     if (!slotDate) { setError('Start date is required.'); return }
     if (!startTime || !endTime) { setError('Start and end time are required.'); return }
     if (startTime >= endTime) { setError('Start time must be before end time.'); return }
-    if (!weeks || weeks < 1 || weeks > 52) { setError('Number of weeks must be between 1 and 52.'); return }
+    if (!weeks || weeks < 1 || weeks > 52) { setError('Total number of weeks must be between 1 and 52.'); return }
 
     setLoading(true)
     try {
@@ -544,7 +544,8 @@ function RecurringForm({ onModeChange, onSlotCreated }) {
         setError(data.error || (data.errors && data.errors[0]) || 'Failed to create recurring slot.')
         return
       }
-      setSuccess(`Created! ${data.children_created} occurrence(s) added to your calendar.`)
+      const total = Number(data.total_occurrences || weeks)
+      setSuccess(`Created! ${total} total occurrence(s) added to your calendar.`)
       if (onSlotCreated) await onSlotCreated()
       setTimeout(() => onModeChange('default'), 1500)
     } catch (e) {
@@ -582,7 +583,7 @@ function RecurringForm({ onModeChange, onSlotCreated }) {
           <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
         </label>
         <label>
-          Number of weeks
+          Total number of weeks (including first week)
           <input type="number" min={1} max={52} value={weeks} onChange={(e) => setWeeks(e.target.value)} />
         </label>
         <label>
@@ -593,6 +594,9 @@ function RecurringForm({ onModeChange, onSlotCreated }) {
           </select>
         </label>
       </div>
+      <p className="owner-action-panel__hint">
+        Note: if you do not make the recurring office hours public right now, you will have to individually make each booking public in the future.
+      </p>
       {error ? <p className="owner-action-panel__feedback owner-action-panel__feedback--error">{error}</p> : null}
       {success ? <p className="owner-action-panel__feedback owner-action-panel__feedback--success">{success}</p> : null}
       <div className="owner-action-panel__row">
