@@ -273,12 +273,15 @@ router.post('/:groupId/vote', requireLogin, async (req, res) => {
             return res.status(400).json({ error: 'One or more slot_ids do not belong to this group.' });
         }
 
-        // FIX: INSERT OR IGNORE is the correct SQLite syntax (INSERT IGNORE is MySQL-only)
         let inserted = 0;
         for (const slot_id of slot_ids) {
             const [result] = await pool.query(
-                `INSERT OR IGNORE INTO bookings (slot_id, user_id, status)
-                 VALUES (?, ?, 'confirmed')`,
+                `INSERT INTO bookings (slot_id, user_id, status)
+                 VALUES (?, ?, 'confirmed')
+                 ON CONFLICT(slot_id, user_id) DO UPDATE
+                   SET status = 'confirmed',
+                       updated_at = datetime('now')
+                   WHERE bookings.status != 'confirmed'`,
                 [slot_id, user_id]
             );
             inserted += result.affectedRows;
