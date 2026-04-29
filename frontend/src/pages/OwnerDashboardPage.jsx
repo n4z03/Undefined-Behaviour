@@ -745,7 +745,7 @@ useEffect(() => {
                   })
 
                   // Merge and sort by date ascending
-                  const allMerged = [...incoming, ...outgoing, ...fromOverviewPreview]
+                  const allMerged = [...incoming, ...outgoing]
                   const seen = new Set()
                   const all = allMerged
                     .filter((item) => {
