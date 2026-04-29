@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react'
 import '../styles/OwnerActionPanel.css'
 import { addMinutes, formatTime24To12, timeForInput, to24Hour } from '../utils/ownerSlotAdapters'
 import CancelBookingCard from './CancelBookingCard'
+import GroupMeetingForm from './GroupMeetingForm' // bonita — import real wired GroupMeetingForm to replace dummy GroupForm
 
 function ActionButton({ children, onClick, kind = 'primary' }) {
   return (
@@ -758,8 +759,10 @@ export default function OwnerActionPanel({ panelMode, selectedSlot, selectedCell
       ) : null}
       {panelMode === 'create' ? <CreateSlotForm selectedCell={selectedCell} onModeChange={onModeChange} onSlotCreated={onSlotCreated} /> : null}
       {panelMode === 'recurring' ? <RecurringForm onModeChange={onModeChange} onSlotCreated={onSlotCreated} /> : null}
-      {panelMode === 'group' ? <GroupForm onModeChange={onModeChange} /> : null}
+      {/* bonita — replaced dummy GroupForm with real GroupMeetingForm; onCreated navigates back to default panel */}
+      {panelMode === 'group' ? <GroupMeetingForm onCreated={() => onModeChange('default')} /> : null}
       {panelMode === 'default' ? <DefaultPanel onModeChange={onModeChange} /> : null}
     </aside>
   )
 }
+
