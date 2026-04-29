@@ -1,5 +1,5 @@
 // Nazifa Ahmed (261112966)
-// Note: some AI was used to help with debugging and deployment issues.
+// Note: Claude was used to help with disable secure session cookie for class-server deployment
 require('dotenv').config()
 
 const express = require('express')

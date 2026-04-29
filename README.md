@@ -9,6 +9,7 @@ Bonita Baladi (261097353)
 # All teammember contributions:
 
 __Files Edited or Created by Nazifa__
+AI: index.js, server/scripts/populating-script.js, server/scripts/seed-demo.js
 __Files Edited or Created by Rupneet__
 __Files Edited or Created by Sophia__
 
