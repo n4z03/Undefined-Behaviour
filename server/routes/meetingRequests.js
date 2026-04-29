@@ -1,5 +1,6 @@
 // Bonita Baladi, 261097353
 // Code added by Nazifa Ahmed (261112966)
+// owner-owner functionality code added by Rupneet (261096653)
 
 // Booking type 1: request a meeting
 
@@ -34,10 +35,10 @@ function requireUser(req, res, next) {
 
 // ─────────────────────────────────────────────
 // POST /api/meetingRequests
-// User sends a meeting request to an owner,
+// Any logged-in account (user or owner) can send a meeting request to an owner,
 // including a proposed date and time.
 // ─────────────────────────────────────────────
-router.post('/', requireLogin, requireUser, async (req, res) => {
+router.post('/', requireLogin, async (req, res) => { //added by Rupneet (261096653)
     const user_id = req.user.id;
 
     const {
@@ -133,7 +134,7 @@ router.get('/incoming', requireLogin, requireOwner, async (req, res) => {
 
     try {
         let query = `
-            SELECT mr.*, u.name AS user_name, u.email AS user_email
+            SELECT mr.*, u.name AS user_name, u.email AS user_email, u.role AS requester_role
             FROM meeting_requests mr
             JOIN users u ON mr.user_id = u.id
             WHERE mr.owner_id = ?`;
@@ -156,9 +157,9 @@ router.get('/incoming', requireLogin, requireOwner, async (req, res) => {
 
 // ─────────────────────────────────────────────
 // GET /api/meetingRequests/outgoing
-// User sees all requests they have sent
+// Sender (user or owner) sees all requests they have sent
 // ─────────────────────────────────────────────
-router.get('/outgoing', requireLogin, requireUser, async (req, res) => {
+router.get('/outgoing', requireLogin, async (req, res) => {
     const user_id = req.user.id;
     const { status } = req.query;
     const allowed = ['pending', 'accepted', 'declined'];
@@ -425,9 +426,9 @@ router.patch('/:id', requireLogin, requireUser, async (req, res) => {
 
 // ─────────────────────────────────────────────
 // DELETE /api/meetingRequests/:id
-// User cancels their own pending request
+// Sender (user or owner) cancels their own pending request
 // ─────────────────────────────────────────────
-router.delete('/:id', requireLogin, requireUser, async (req, res) => {
+router.delete('/:id', requireLogin, async (req, res) => {
     const user_id = req.user.id;
     const request_id = Number(req.params.id);
     if (!Number.isInteger(request_id)) return res.status(400).json({ error: 'Invalid request id.' });

@@ -12,10 +12,16 @@ function parseTimeFromSubject(subject) {
 
 export default function RequestCard({ request, onAccept, onDecline }) {
   const proposed = parseTimeFromSubject(request.subject)
+  const requesterRole = request.requester_role === 'owner' ? 'Owner' : 'Student'
   return (
     <article className="request-card">
       <div className="request-card__top">
-        <h3>{request.user_name}</h3>
+        <div className="request-card__name-row">
+          <h3>{request.user_name}</h3>
+          <span className={`request-card__role-badge request-card__role-badge--${requesterRole.toLowerCase()}`}>
+            {requesterRole}
+          </span>
+        </div>
         <span className="request-card__status">{request.status}</span>
       </div>
       <p className="request-card__email">{request.user_email}</p>
@@ -30,7 +36,7 @@ export default function RequestCard({ request, onAccept, onDecline }) {
           <button type="button" onClick={() => onDecline(request.id)}>Decline</button>
           </>
         ) : null}
-        <a href={`mailto:${request.user_email}`}>Message Student</a>
+        <a href={`mailto:${request.user_email}`}>Message {requesterRole}</a>
       </div>
     </article>
   )

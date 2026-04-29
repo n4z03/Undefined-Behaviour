@@ -132,6 +132,89 @@
   min-width: 0;
 }
 
+/* Owner browse-slots: keep left list and request panel at 50/50 */
+.owner-dashboard__browse-workspace {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+/* In owner browse-slots, request panel should be white */
+.owner-dashboard__browse-request-panel {
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
+}
+
+.owner-dashboard__requests-workspace {
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+
+.owner-dashboard__requests-side-panel {
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
+  margin-top: 0.9rem;
+}
+
+.owner-dashboard__outgoing-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.owner-dashboard__outgoing-item {
+  background: #f8f8f8;
+  border: 1px solid #e4e4e4;
+  border-radius: 10px;
+  padding: 0.55rem 0.62rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.owner-dashboard__outgoing-item strong {
+  font-size: 0.9rem;
+  color: #111111;
+}
+
+.owner-dashboard__outgoing-item span {
+  font-size: 0.8rem;
+  color: #666666;
+}
+
+.owner-dashboard__pending-tag {
+  justify-self: start;
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #8b2222;
+  background: #fde8e8;
+  border: 1px solid #f1c5c5;
+  border-radius: 999px;
+  padding: 0.14rem 0.45rem;
+}
+
+.owner-dashboard__outgoing-cancel {
+  margin-top: 0.25rem;
+  justify-self: start;
+  border: 1px solid #c4c4c4;
+  border-radius: 8px;
+  background: #efefef;
+  color: #333333;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.55rem;
+}
+
+.owner-dashboard__outgoing-cancel:hover {
+  background: #e4e4e4;
+  border-color: #b0b0b0;
+}
+
+.owner-panel__empty {
+  margin: 0;
+  color: #666666;
+  font-size: 0.9rem;
+}
+
 /* Let the calendar shrink and scroll internally instead of clipping Friday */
 .owner-dashboard__workspace > .weekly-calendar {
   min-width: 0;
@@ -422,6 +505,14 @@
   }
 
   .owner-dashboard__workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .owner-dashboard__browse-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .owner-dashboard__requests-workspace {
     grid-template-columns: 1fr;
   }
 
