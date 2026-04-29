@@ -58,8 +58,11 @@ app.use(
       httpOnly: true,
       sameSite: 'lax',
       path: '/',
-      // secure cookies only in production (class server is HTTPS; localhost is HTTP)
-      secure: process.env.NODE_ENV === 'production',
+      // secure must stay false: the class-server nginx terminates TLS and
+      // proxies to Express over plain HTTP without forwarding X-Forwarded-Proto.
+      // With secure:true, Express would refuse to set the cookie at all,
+      // and login would silently break (no Set-Cookie header on the response).
+      secure: false,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     },
   }),
