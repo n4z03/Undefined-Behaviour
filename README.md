@@ -1,7 +1,55 @@
 # Undefined Behaviour — COMP 307
 
 # Team
+Nazifa
 Rupneet
 Sophia
-Bonita
-Nazifa
+Bonita Balad (261097353)
+
+# All teammember contributions:
+
+# Files Edited or Created by Nazifa
+# Files Edited or Created by Rupneet
+# Files Edited or Created by Sophia
+
+
+# Files Edited or Created by Bonita
+server/routes/recurringSlots.js - bonita created and wrote POST /, GET /, GET /:id/children, PATCH /:id/visibility, DELETE /:id, and POST /:slotId/book. Also fixed SQLite INSERT OR IGNORE syntax and boolean 1/0 compatibility.
+
+server/routes/meetingRequests.js - bonita created and wrote POST /, GET /incoming, GET /outgoing, PATCH /:id/accept, PATCH /:id/decline, DELETE /:id, and added the notify payload logic to trigger owner/user mailto emails.
+
+server/routes/groupMeeting.js - bonita created and wrote POST /, GET /, GET /:groupId, POST /:groupId/vote, DELETE /:groupId/vote/:slotId, and PATCH /:groupId/confirm/:slotId. Also expanded the voters query to email all voters, added fmt12h 12-hour formatting, removed owner vote restrictions for prof-to-prof voting, and resolved SQLite deadlock/syntax issues.
+
+server/routes/calendar.js - bonita edited and wrote GET /api/calendar/export/:bookingId to enable single-appointment .ics exports for users and owners.
+
+server/routes/bookings.js (Previously Missed) - bonita edited and wrote a SQL filter condition AND bs.slot_type != 'group_meeting' to the GET /api/bookings/available-slots endpoint so students wouldn't see unconfirmed voting options in their normal booking list.
+
+server/routes/ownerSlots.js - bonita edited and wrote a SQL filter condition AND NOT (s.slot_type = 'group_meeting' AND s.status = 'private') to hide unconfirmed group meetings from the owner overview calendar.
+
+server/index.js - bonita edited and wrote the route registrations for /api/recurringSlots, /api/meetingRequests, /api/groupMeeting, and /api/calendar.
+
+server/db.js - bonita edited and wrote the 10-second lock timeout mechanism in acquire() and added PRAGMA busy_timeout = 5000 to prevent SQLite transactions from hanging indefinitely.
+
+frontend/src/pages/OwnerDashboardPage.jsx - bonita edited and wrote fetchRequests() with 30-second polling, handleAccept(), and handleDecline() with mailto logic. Also fixed JSX duplicate tag bugs and resolved merge conflicts.
+
+frontend/src/pages/UserDashboardPage.jsx - bonita edited and wrote parseGroupIdFromUrl(), handleGroupLinkSubmit(), the "My Confirmed Group Meetings" display, and mailto notifications for handleBookSlot, handleSubmitRequest, and confirmCancelBooking. Wired the ?group= URL parameter to auto-navigate to the voting UI.
+
+frontend/src/components/ExportPanel.jsx - bonita edited and wrote handleExport() to fetch .ics files, trigger the browser download, open Google/Outlook calendars, and implemented the isOwner prop logic.
+
+frontend/src/components/OwnerActionPanel.jsx - bonita edited and wrote the RecurringForm component (converting it to use controlled state, validation, and wiring it to the backend) and swapped the dummy GroupForm with the real GroupMeetingForm.
+
+frontend/src/components/AppointmentCard.jsx - bonita edited and wrote the Export button onClick handler to generate and download single-appointment .ics files.
+
+frontend/src/components/GroupMeetingVote.jsx - bonita edited and wrote the saved state logic, loadGroup() silent reload to prevent flickering, removed optimistic vote counting to fix double-counting, added voteData.notify mailto triggers, and built the "Meeting confirmed" banner UI.
+
+frontend/src/components/GroupMeetingManager.jsx - bonita edited and wrote the joinLinkInput state, parseGroupIdFromUrl(), and handleJoinLinkSubmit() to allow prof-to-prof voting via pasted invite links.
+
+frontend/src/components/CalendarBlock.jsx - bonita edited and wrote the condition to display the "Recurring" label based on recurringLabel rather than tying it to the slot color category.
+
+frontend/src/utils/ownerSlotAdapters.js - bonita edited and wrote the category mapping logic to ensure recurring slots respect their visibility/booking status (displaying as pink when private, red when public/booked).
+
+frontend/src/styles/GroupMeeting.css - bonita edited and wrote the .groupmeeting-saved-tag CSS class.
+
+frontend/src/components/GroupMeetingForm.jsx: Right at the very beginning of our troubleshooting session, you modified this file in Vim alongside OwnerActionPanel.jsx and committed them both under the message "refresh group meetings".
+
+.gitignore - bonita edited and wrote the exclusion rules for data/app.db and the .nfs* temporary files.
