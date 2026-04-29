@@ -1,21 +1,87 @@
 # Undefined Behaviour — COMP 307
 
-## URL
-<https://winter2026-comp307-group39.cs.mcgill.ca/>
+## Links
 
-## How to run
-# terminal 1
-cd server
-npm install
-npm run demo
-npm run dev
+- **Deployed URL:** <https://winter2026-comp307-group39.cs.mcgill.ca/>
+- **GitHub repository:** <https://github.com/n4z03/Undefined-Behaviour> 
 
-# terminal 2
-cd frontend
-npm install
-npm run dev
+## Changes since Demo 1 (Demo 2)
 
-copy paste the local host link to view the website.
+The app **runs reliably on the class server** now (session, build, and refresh issues from Demo 1 are addressed). Below is how we responded to TA feedback from the first demo.
+
+| Demo 1 issue | What we improved for Demo 2 |
+| --- | --- |
+| Dashboard / landing **image** not loading | Fixed so images and assets load correctly in dev and on the deployed site. |
+| **Selected calendar slot** hard to see | The active 30-minute block is **highlighted** using colors consistent with the rest of the calendar design. |
+| **Type 1 — Accepting requests** not working | Accept / decline for meeting requests works end-to-end. |
+| **Type 1 — After accept:** new booking slots + **email to user** | Post-accept flows and **mailto** notifications to the user behave as intended. |
+| **Type 1 — Booking** on **both** student and owner dashboards | Confirmed appointments show consistently for both parties. |
+| **Type 2 — Refresh** / behavior on the **server** | Deployment and session behavior fixed; the site works on the production URL without the Demo 1 refresh breakage. |
+| **Type 2 — Email to owner** | Owners receive the intended **mailto** notifications where applicable. |
+| **Type 3 — Booking** a slot **weeks later** (e.g. 4th week) | **Recurring** office hours treat “number of weeks” as **total occurrences including the first week**, so far-future weeks in range can be booked; UI and API were aligned. |
+| **Per-owner invite URL** (logged-in user sees **that owner’s activated slots** only) | Invite / share flows take users to the right dashboard context after login so they see the intended owner’s bookable slots. |
+| **Group / multi-professor** meetings unclear | **Group meetings** are supported; voting, confirm, and calendar behavior are consistent, and the experience is easier to understand. |
+
+## How to run our project
+
+**Prerequisites:** Node.js and npm installed. From the repository root (`Undefined-Behaviour/`).
+
+### Development (recommended)
+
+The API runs on **port 3000**. The Vite dev server runs on **port 5173** and proxies `/api` to `http://localhost:3000` (see `frontend/vite.config.js`). **Start the backend before or with the frontend** so login and data load correctly.
+
+1. **Terminal 1 — backend**
+
+   ```bash
+   cd server
+   npm install
+   ```
+
+   **First time** (or when you want a clean database with demo seed data):
+
+   ```bash
+   npm run demo
+   ```
+
+   This runs `init-db` (creates `data/` and applies the schema if needed), then `clear`, then `seed`. **It wipes existing DB data.**
+
+   **Later runs** (keep your existing database): skip `npm run demo` and only run:
+
+   ```bash
+   npm run dev
+   ```
+
+   If you have never initialized the DB and skipped `demo`, run once: `npm run init-db` (then optionally `npm run seed`).
+
+2. **Terminal 2 — frontend**
+
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+3. Open the URL printed in the terminal (usually **http://localhost:5173**). Use that URL in the browser—not port 3000—so `/api` requests are proxied correctly.
+
+4. Optional check: **http://localhost:3000/api/health** should return JSON `{"message":"server running"}`.
+
+**Session / env:** The server reads optional `server/.env` (session secret, etc.). If missing, defaults apply (fine for local dev).
+
+### Production-like build (single process)
+
+Use this if you prefer one server serving the built React app (matches deployment more closely):
+
+```bash
+cd frontend && npm install && npm run build
+cd ../server && npm install && npm start
+```
+
+Then open **http://localhost:3000**. This doesn't require a separate Vite process; the Express server serves `frontend/dist` and the API.
+
+### Troubleshooting
+- **Login or API failing in dev:** Ensure the backend is running on port **3000** before using the site on **5173**.
+- **Port 3000 already in use:** Stop the other process or set `PORT` in `server/.env`.
+- **Database errors:** Ensure `npm run demo` or `npm run init-db` has been run at least once so `data/app.db` exists.
 
 ## Team
 - Rupneet Shahriar (261096653)
@@ -59,7 +125,20 @@ AI tools (ChatGPT and Claude) were used selectively to support specific developm
 
 ## All Teammember Contributions
 
-### Files Edited or Created by Rupneet
+### How coding contributions work in the file comments. 
+
+Contribution **percent estimates** combine git history, who led each area, and team agreement—they are approximate when several people touched the same artifact.
+
+Where we annotate authorship **as comments near the top of a source file**, we follow one rule:
+
+1. **The first line names the main contributor** — the teammate who originated or owns most of the file 
+2. **The next lines (when present)** name teammates who added or integrated **meaningful subsequent work**
+
+If only one teammate is listed there, treat that person as sole or clearly primary contributor for that file. If the block is missing altogether, overlaps are spelled out instead in **each teammate’s file lists** below.
+
+---
+
+### Rupneet's Contributions
 *Contribution Statement*
 Worked on implementing the entire front-end, including the landing page, authentication and dashboard. 
 
@@ -121,7 +200,7 @@ frontend/src/styles/HeroSection.css
 frontend/src/styles/Footer.css
 frontend/src/styles/AuthTabs.css
 
-### Files Edited or Created by Sophia
+### Sophia's Contributions
 *Contribution Statement*
 db/schema.sql - design database schema in SQL, later adapted to SQLite by Nazifa
 
@@ -161,7 +240,7 @@ server/routes/calendar.js
 server/routes/invites.js
 server/routes/ownerSlots.js
 
-### Files Edited or Created by Bonita
+### Bonita's Contributions
 *Contribution Statement*
 server/routes/recurringSlots.js - bonita created and wrote POST /, GET /, GET /:id/children, PATCH /:id/visibility, DELETE /:id, and POST /:slotId/book. Also fixed SQLite INSERT OR IGNORE syntax and boolean 1/0 compatibility.
 
@@ -203,9 +282,9 @@ frontend/src/components/GroupMeetingForm.jsx: Right at the very beginning of our
 
 .gitignore - bonita edited and wrote the exclusion rules for data/app.db and the .nfs* temporary files.
 
-### Files Edited or Created by Nazifa
+### Nazifa's Contributions
 *Contribution Statement*
-A part of my contribution was converting and reworking the database layer so it properly aligned with the server and SQLite (including schema, query behavior, and DB integration), which required rewriting core backend data flow. I also handled a large amount of server setup, deployment debugging, and environment fixes to get the app running reliably on the class infrastructure, including repeated troubleshooting with IT over the course of multiple days.
+I aligned the database with the server and SQLite, updating the schema and fixing queries/constraints to match how Express uses the DB. I built the main backend routes for auth, bookings, owner slots, owners, and meeting requests, added the DB connection helper, and wrote setup/reset/seed scripts for testing and demos. On the frontend, I implemented key dashboard flows: login/session handling, browsing and booking slots, cancelling/rescheduling, meeting requests, owner actions, and initial group meeting wiring. I also handled server setup on the class machine, which ended up being more time-consuming than expected due to deployment issues. I debugged problems with sessions, proxies, cookies, and builds, and worked with IT to resolve infrastructure-related blockers.
 
 server/routes/auth.js - created and wired login, session check, and logout flow used by the auth pages.
 
