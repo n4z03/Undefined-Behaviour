@@ -5,9 +5,15 @@
 import '../styles/AppointmentCard.css'
 
 async function exportAppointment(appointment) {
+  // Prefer exportId when set (owners joining another host need slot id per /api/calendar/export).
+  const rawExportId = appointment.exportId ?? appointment.id
+  const numId = Number(rawExportId)
+  if (!Number.isInteger(numId) || numId < 1) {
+    window.alert('This appointment cannot be exported yet. Please refresh the page and try again.')
+    return
+  }
   try {
-    const exportId = appointment.exportId || appointment.id
-    const res = await fetch(`/api/calendar/export/${exportId}`, {
+    const res = await fetch(`/api/calendar/export/${numId}`, {
       credentials: 'include',
     })
     if (!res.ok) {
@@ -19,7 +25,7 @@ async function exportAppointment(appointment) {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${appointment.title.replace(/\s+/g, '-')}.ics`
+    link.download = `${(appointment.title || 'appointment').replace(/\s+/g, '-')}.ics`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -42,7 +48,7 @@ export default function AppointmentCard({ appointment, onCancel, onReschedule })
       <p>{appointment.timeRange}</p>
       {appointment.recurringLabel ? <p className="appointment-card__recurring">{appointment.recurringLabel}</p> : null}
       <div className="appointment-card__actions">
-        <a href={`mailto:${appointment.ownerEmail}`}>Message Instructor</a>
+        <a href={`mailto:${appointment.ownerEmail}`}>Message</a>
         {onReschedule ? (
           <button type="button" onClick={onReschedule}>
             Change time

@@ -1,0 +1,7 @@
+# SPA fallback for Apache servers.
+# Any URL that doesn't resolve to an actual file is served index.html
+# so React Router can handle it client-side.
+Options -MultiViews
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.html [QSA,L]

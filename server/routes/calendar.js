@@ -235,10 +235,18 @@ router.get('/export/:bookingId', requireLogin, async (req, res) => {
                     bs.location,
                     bs.slot_type
                  FROM booking_slots bs
-                 JOIN bookings b ON b.slot_id = bs.id 
-                 WHERE bs.id = ? AND b.user_id = ? AND b.status = 'confirmed'
+                 WHERE bs.id = ? 
+                    AND (
+                        bs.owner_id = ? 
+                        OR EXISTS (
+                            SELECT 1 FROM bookings b
+                            WHERE b.slot_id = bs.id
+                                AND b.user_id = ?
+                                AND b.status = 'confirmed'
+                        )
+                    ) 
                  LIMIT 1`,
-                [id, user_id]
+                [id, user_id, user_id]
             );
         } else {
             // student path: look up by booking id (unchanged)

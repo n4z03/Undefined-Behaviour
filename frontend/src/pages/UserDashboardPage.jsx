@@ -150,10 +150,20 @@ function isServerBookingId(id) {
   return /^\d+$/.test(String(id).trim())
 }
 
-// added by Bonita - parse a group meeting share URL and extract the group ID
+// added by Bonita - parse a group meeting share URL and extract the group ID.
+// Handles both plain query strings (/user-dashboard?group=4)
+// and HashRouter URLs (/#/user-dashboard?group=4).
 function parseGroupIdFromUrl(urlStr) {
   try {
-    const gid = new URL(urlStr.trim()).searchParams.get('group')
+    const url = new URL(urlStr.trim())
+    const hash = url.hash || ''
+    if (hash.includes('?')) {
+      const hashSearch = hash.slice(hash.indexOf('?'))
+      const gid = new URLSearchParams(hashSearch).get('group')
+      if (gid) return Number(gid)
+    }
+    // Fall back to normal query string
+    const gid = url.searchParams.get('group')
     return gid ? Number(gid) : null
   } catch {
     return null
@@ -360,8 +370,13 @@ export default function UserDashboardPage() {
   // added by Bonita - read ?group= param on initial load only and switch to group-meetings section
   // added by Bonita (261097353) — intentionally uses [] not [searchParams] so this only runs once on mount;
   // running on every searchParams change would remount GroupMeetingVote and wipe its saved state
+
   useEffect(() => {
-    const gid = new URLSearchParams(window.location.search).get('group')
+    const hash = window.location.hash           // e.g.  "#/user-dashboard?group=4"
+    const qIdx = hash.indexOf('?')
+    const gid  = qIdx >= 0
+      ? new URLSearchParams(hash.slice(qIdx)).get('group')
+      : null
     if (gid) {
       setActiveSection('group-meetings')
     }
