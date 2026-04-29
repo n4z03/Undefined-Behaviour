@@ -1,20 +1,37 @@
 # Undefined Behaviour — COMP 307
 
-# Team
-Nazifa
-Rupneet
-Sophia
-Bonita Baladi (261097353)
+## URL
+<https://winter2026-comp307-group39.cs.mcgill.ca/>
 
-# All teammember contributions:
+## Team
+- Rupneet
+- Sophia
+- Bonita Baladi (261097353)
+- Nazifa (261112966)
 
-__Files Edited or Created by Nazifa__
-AI: index.js, server/scripts/populating-script.js, server/scripts/seed-demo.js
-__Files Edited or Created by Rupneet__
-__Files Edited or Created by Sophia__
+## 30% Non-Coded Portion
+### Rupneet's Portion
+
+### Sophia's Portion
+
+### Bonita's Portion
+
+### Nazifa's Portion
+AI tools (ChatGPT and Claude) were used selectively to support specific development tasks rather than to generate core application logic.
+
+- **Server/session deployment debugging:** AI was used to debug for differences between local and deployed behavior (for example: login/session issues related to proxy settings and secure cookie handling). This supported debugging work in `server/index.js`.
+- **SQLite adaptation and query validation:** AI was used to help translate database logic into SQLite-compatible patterns and verify SQL edge cases during schema and query development (for example in `db/schema.sqlite.sql`, `server/db.js`, `server/routes/bookings.js`, `server/routes/ownerSlots.js`, and `server/routes/meetingRequests.js`).
+- **Database scripts:** AI helped in generating initial versions of setup/reset/seeding scripts, which were then modified and integrated into the project.
+- **Estimated AI-assisted contribution:** approximately 15-20%, primarily in debugging support, scripting, and validation.
+- **Files with AI support:** `server/index.js`, `server/scripts/populating-script.js`, `server/scripts/seed-demo.js`.
+
+## All Teammember Contributions
+
+### Files Edited or Created by Rupneet
+### Files Edited or Created by Sophia
 
 
-__Files Edited or Created by Bonita__
+### Files Edited or Created by Bonita
 server/routes/recurringSlots.js - bonita created and wrote POST /, GET /, GET /:id/children, PATCH /:id/visibility, DELETE /:id, and POST /:slotId/book. Also fixed SQLite INSERT OR IGNORE syntax and boolean 1/0 compatibility.
 
 server/routes/meetingRequests.js - bonita created and wrote POST /, GET /incoming, GET /outgoing, PATCH /:id/accept, PATCH /:id/decline, DELETE /:id, and added the notify payload logic to trigger owner/user mailto emails.
@@ -54,3 +71,40 @@ frontend/src/styles/GroupMeeting.css - bonita edited and wrote the .groupmeeting
 frontend/src/components/GroupMeetingForm.jsx: Right at the very beginning of our troubleshooting session, you modified this file in Vim alongside OwnerActionPanel.jsx and committed them both under the message "refresh group meetings".
 
 .gitignore - bonita edited and wrote the exclusion rules for data/app.db and the .nfs* temporary files.
+
+### Files Edited or Created by Nazifa
+A part of my contribution was converting and reworking the database layer so it properly aligned with the server and SQLite (including schema, query behavior, and DB integration), which required rewriting core backend data flow. I also handled a large amount of server setup, deployment debugging, and environment fixes to get the app running reliably on the class infrastructure, including repeated troubleshooting with IT over the course of multiple days.
+
+server/routes/auth.js - created and wired login, session check, and logout flow used by the auth pages.
+
+server/routes/bookings.js - created and wired student booking endpoints (browse available slots, create bookings, load appointments, and cancel bookings).
+
+server/routes/ownerSlots.js - created and wired owner slot management endpoints for the owner dashboard (read, create/edit behavior support, and owner-side booking/cancel actions).
+
+server/routes/owners.js - created and wired owner listing/profile endpoints used by browsing and request flows.
+
+server/routes/meetingRequests.js - created and wired meeting request endpoints (create, incoming/outgoing lists, updates, and deletion), then integrated with team changes.
+
+server/index.js - created and wired the main Express server setup (middleware, sessions, CORS, static serving, and API route registration).
+
+server/db.js - created and wired the SQLite pool/connection helper used by routes and scripts.
+
+db/schema.sqlite.sql - created and wired the base database schema (users, booking slots, bookings, meeting requests, and supporting constraints/indexes).
+
+server/scripts/init-db.js, server/scripts/clear-db.js, server/scripts/populating-script.js, server/scripts/seed-demo.js - created and wired database setup/reset/population scripts used for local testing and demos.
+
+frontend/src/pages/AuthPage.jsx - created and wired frontend auth flow to backend session APIs.
+
+frontend/src/pages/UserDashboardPage.jsx - created and wired the main student dashboard flow (appointments, slot browsing, booking actions, and meeting requests), then continued integrating team updates.
+
+frontend/src/pages/OwnerDashboardPage.jsx - created and wired the owner dashboard flow (slot management, request handling, and dashboard interactions), then continued integrating team updates.
+
+frontend/src/components/CreateSlotForm.jsx, frontend/src/components/RequestMeetingForm.jsx, frontend/src/components/UserRequestCard.jsx - created and wired core form/card components for slot creation and meeting request workflow.
+
+frontend/src/components/AppointmentCard.jsx, frontend/src/components/CancelBookingCard.jsx, frontend/src/components/RescheduleBookingCard.jsx - created and wired appointment action UI for viewing, cancelling, and rescheduling bookings.
+
+frontend/src/components/OwnerActionPanel.jsx, frontend/src/components/CalendarBlock.jsx - created and wired owner calendar interaction UI and slot status display behavior.
+
+frontend/src/components/GroupMeetingForm.jsx, frontend/src/components/GroupMeetingManager.jsx, frontend/src/components/GroupMeetingVote.jsx - created and wired the base group meeting create/manage/vote frontend flow, later refined with team fixes.
+
+frontend/src/styles/OwnerActionPanel.css, frontend/src/styles/CancelBookingCard.css, frontend/src/styles/RescheduleBookingCard.css, frontend/src/styles/CalendarBlock.css, frontend/src/styles/GroupMeeting.css - created and styled these frontend components and their interaction states.
