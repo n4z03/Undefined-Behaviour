@@ -167,6 +167,10 @@ router.get('/', requireLogin, requireUser, async (req, res) => {
             JOIN booking_slots bs ON b.slot_id = bs.id
             JOIN users u ON bs.owner_id = u.id
             WHERE b.user_id = ? AND b.status = 'confirmed'
+              -- Group-meeting votes are stored as confirmed bookings, but the slot
+              -- stays 'private' until the owner confirms a winning time. Don't show
+              -- those pending votes as if they were real appointments.
+              AND NOT (bs.slot_type = 'group_meeting' AND bs.status = 'private')
             ORDER BY bs.slot_date ASC, bs.start_time ASC`,
             [user_id]
         );

@@ -165,6 +165,10 @@ router.get('/', requireLogin, requireOwner, async (req, res) => {
                  ORDER BY b.booked_at ASC LIMIT 1) AS booked_by_email
              FROM booking_slots s
              WHERE s.owner_id = ?
+               -- Voting-stage group_meeting slots live in the dedicated
+               -- "Group Meetings" tab, not on the main calendar. Once confirmed
+               -- the owner flips them to 'active' and they'll show up here.
+               AND NOT (s.slot_type = 'group_meeting' AND s.status = 'private')
 	    ORDER BY s.slot_date ASC, s.start_time ASC`,
             [owner_id]
         );
