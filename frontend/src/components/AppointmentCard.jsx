@@ -48,7 +48,7 @@ export default function AppointmentCard({ appointment, onCancel, onReschedule })
       <p>{appointment.timeRange}</p>
       {appointment.recurringLabel ? <p className="appointment-card__recurring">{appointment.recurringLabel}</p> : null}
       <div className="appointment-card__actions">
-        <a href={`mailto:${appointment.ownerEmail}`}>Message Instructor</a>
+        <a href={`mailto:${appointment.ownerEmail}`}>Message</a>
         {onReschedule ? (
           <button type="button" onClick={onReschedule}>
             Change time

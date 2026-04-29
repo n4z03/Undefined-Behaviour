@@ -35,9 +35,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 
 const sidebarSections = [
   { id: 'overview', label: 'Overview' },
-  { id: 'calendar', label: 'All Bookings' },
+  { id: 'calendar', label: 'Upcoming Meetings' },
   { id: 'browse-slots', label: 'Browse Slots' },
-  { id: 'meetings-joined', label: 'Meetings I\'ve Joined' },
   { id: 'group-meeting', label: 'Group Meeting' },
   { id: 'requests', label: 'Requests' },
   { id: 'export', label: 'Export to Calendar' },
@@ -67,6 +66,9 @@ export default function OwnerDashboardPage() {
   const [groupRefreshKey, setGroupRefreshKey] = useState(0)
   const [ownerId, setOwnerId] = useState(null)
   const [searchParams] = useSearchParams()
+  const [upcomingFilter, setUpcomingFilter] = useState('all') // 'all' | 'students' | 'professors'
+  const [slotParticipants, setSlotParticipants] = useState([]) // confirmed bookings on owner's slots
+  const [participantsLoading, setParticipantsLoading] = useState(false)
 
   // browse slots
   const [browseOwners, setBrowseOwners] = useState([])
@@ -326,6 +328,47 @@ useEffect(() => {
     }
   }
 
+  async function loadSlotParticipants() {
+    setParticipantsLoading(true)
+    try {
+      const res = await apiFetch('/api/ownerSlots', { credentials: 'include' })
+      if (!res.ok) return
+      const data = await res.json()
+      // For each slot that has bookings, fetch participants
+      const slotsWithBookings = (data.slots || []).filter(s => s.current_bookings > 0)
+      const all = []
+      await Promise.all(slotsWithBookings.map(async (slot) => {
+        const r = await apiFetch(`/api/ownerSlots/${slot.id}/participants`, { credentials: 'include' })
+        if (!r.ok) return
+        const d = await r.json()
+        for (const p of (d.participants || [])) {
+          if (p.booking_status !== 'confirmed') continue
+          all.push({
+            id: String(p.booking_id),
+            slotId: String(slot.id),
+            exportId: String(slot.id),
+            title: slot.title,
+            ownerName: p.name,
+            ownerEmail: p.email,
+            dateLabel: new Date(`${String(slot.slot_date).split('T')[0]}T12:00:00`).toLocaleDateString('en-US', {
+              weekday: 'long', month: 'long', day: 'numeric',
+            }),
+            timeRange: `${slot.start_time?.slice(0, 5)} - ${slot.end_time?.slice(0, 5)}`,
+            slotDate: String(slot.slot_date).split('T')[0],
+            status: 'Confirmed',
+            role: p.role || 'user',   // 'owner' or 'user'
+            recurringLabel: Number(slot.is_recurring) === 1 ? 'Recurring' : null,
+          })
+        }
+      }))
+      setSlotParticipants(all)
+    } catch (e) {
+      console.error('Could not load participants:', e)
+    } finally {
+      setParticipantsLoading(false)
+    }
+  }
+
   async function handleSidebarSelect(sectionId) {
     if (sectionId === 'logout') {
       await apiFetch('/api/auth/logout', {
@@ -341,7 +384,10 @@ useEffect(() => {
     setPanelMode('default')
 
     if (sectionId === 'browse-slots') loadAvailableSlots()
-    if (sectionId === 'meetings-joined') loadBookedSlots()
+    if (sectionId === 'calendar') {
+      loadBookedSlots()
+      loadSlotParticipants()
+    }
   }
 
   async function confirmCancelJoinedBooking() {
@@ -357,17 +403,19 @@ useEffect(() => {
         window.alert(data.error || 'Could not cancel booking.')
         return
       }
-      if (data.notify) {
-        window.open(
-          `mailto:${data.notify.to}?subject=${encodeURIComponent(data.notify.subject)}&body=${encodeURIComponent(data.notify.body)}`,
-          '_blank',
-          'noopener,noreferrer',
+      if (data.host && data.cancelledSlot) {
+        const subj = encodeURIComponent(`Cancellation: ${data.cancelledSlot.title}`)
+        const body = encodeURIComponent(
+        `Hi ${data.host.name},\n\nI need to cancel my booking for "${data.cancelledSlot.title}" on ${data.cancelledSlot.slot_date} (${data.cancelledSlot.start_time} – ${data.cancelledSlot.end_time}).\n\nApologies for the inconvenience.`
         )
+        window.open(`mailto:${data.host.email}?subject=${subj}&body=${body}`, '_blank', 'noopener,noreferrer')
       }
-  
       setCancelTarget(null)
       await loadBookedSlots()
+      await loadSlotParticipants()
       await fetchOwnerSlots()
+      setActionMessage('Booking cancelled.')
+      setTimeout(() => setActionMessage(''), 3000)
     } catch (e) {
       window.alert('Could not cancel booking.')
     } finally {
@@ -437,14 +485,6 @@ useEffect(() => {
       setActionMessage(reason === 'deactivate' ? 'Slot deactivated.' : 'Slot removed.')
     }
     setTimeout(() => setActionMessage(''), 5000)
-  }
-
-  async function handleLogout() {
-    await apiFetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include'
-    })
-    navigate('/auth?mode=login')
   }
 
   return (
@@ -529,144 +569,159 @@ useEffect(() => {
               </>
             ) : null}
 
+            {/* Added by Sophia */}
             {activeSection === 'calendar' ? (
-              <>
-                <div className="owner-dashboard__workspace">
-                  <section className="owner-section">
-                    <h2>All Booking Slots</h2>
-                    <div className="owner-slot-list">
-                      {slots.length === 0 ? (
-                        <p className="owner-slot-list__empty">No slots yet. Create one from the actions panel.</p>
-                      ) : (
-                        slots.map((slot) => (
-                          <button
-                            key={slot.id}
-                            type="button"
-                            className={`owner-slot-list__item ${
-                              slot.visibility === 'Private' ? 'owner-slot-list__item--private' : 'owner-slot-list__item--public'
-                            }`}
-                            onClick={() => handleSlotSelect(slot)}
-                          >
-                            <div className="owner-slot-list__top">
-                              <h3>{slot.title}</h3>
-                              <span className="owner-slot-list__status">{slot.visibility}</span>
-                            </div>
-                            <p className="owner-slot-list__meta">{slot.dateLabel}</p>
-                            <p className="owner-slot-list__meta">
-                              {slot.time} - {slot.endTime}
-                            </p>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </section>
-                  <div className="owner-dashboard__right-stack">
-                    <OwnerActionPanel
-                      panelMode={panelMode}
-                      selectedSlot={selectedSlot}
-                      selectedCell={selectedCell}
-                      onModeChange={handlePanelModeChange}
-                      onSlotCreated={handleSlotCreated}
-                      onSlotPatched={handleSlotPatched}
-                      onSlotDeleted={handleSlotDeleted}
-                    />
-                  </div>
+              <section className="owner-section">
+                <h2>Upcoming Meetings</h2>
+                <p className="owner-section__subtitle">All confirmed bookings, both students and professors.</p>
+
+                {/* Filter tabs */}
+                <div style={{ display: 'flex', gap: '0.5rem', margin: '0.75rem 0 1rem' }}>
+                  {['all', 'students', 'professors'].map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setUpcomingFilter(f)}
+                      style={{
+                        padding: '0.35rem 0.9rem',
+                        borderRadius: '20px',
+                        border: '1px solid #ccc',
+                        background: upcomingFilter === f ? '#c40000' : '#f5f5f5',
+                        color: upcomingFilter === f ? 'white' : '#333',
+                        cursor: 'pointer',
+                        fontWeight: upcomingFilter === f ? 600 : 400,
+                        fontSize: '0.85rem',
+                        textTransform: 'capitalize',
+                      }}
+                    >
+                      {f === 'all' ? 'All' : f === 'students' ? 'Students' : 'Professors'}
+                    </button>
+                  ))}
                 </div>
-              </>
-            ) : null}
+
+                {participantsLoading || bookedSlotsLoading ? (
+                  <p className="owner-slot-list__empty">Loading…</p>
+                ) : (() => {
+                  // Bookings on the owner's own slots (students + profs who booked them)
+                  const incoming = slotParticipants.map(p => ({ ...p, direction: 'incoming' }))
+                  // Slots the owner joined as a participant
+                  const outgoing = bookedSlots.map(slot => ({
+                    ...mapOwnerBookedSlotToAppointment(slot),
+                      direction: 'outgoing',
+                      role: slot.booker_role || 'owner', // they booked another owner's slot
+                  }))
+
+                  // Merge and sort by date ascending
+                  const all = [...incoming, ...outgoing].sort((a, b) => {
+                    if (a.slotDate < b.slotDate) return -1
+                    if (a.slotDate > b.slotDate) return 1
+                    return (a.timeRange || '').localeCompare(b.timeRange || '')
+                  })
+
+                  // Apply filter
+                  const filtered = all.filter(item => {
+                    if (upcomingFilter === 'all') return true
+                    if (upcomingFilter === 'students') return item.role === 'user'
+                    if (upcomingFilter === 'professors') return item.role === 'owner'
+                    return true
+                  })
+
+                  if (filtered.length === 0) {
+                    return <p className="owner-slot-list__empty">No confirmed meetings found.</p>
+                  }
+
+                  return (
+                      <div className="user-card-list">
+                        {filtered.map(item => (
+                          <div key={`${item.direction}-${item.id}`}>
+                            {/* Small label showing direction */}
+                            {upcomingFilter === 'all' ? (
+                              <p style={{ fontSize: '0.75rem', color: '#999', marginBottom: '0.25rem' }}>
+                                {item.direction === 'incoming'
+                                  ? `Booked by ${item.role === 'owner' ? 'professor' : 'student'}`
+                                  : 'You joined'}
+                              </p>
+                            ) : null}
+                            <AppointmentCard
+                              appointment={item}
+                              onCancel={item.direction === 'outgoing' ? setCancelTarget : undefined}
+                              onReschedule={undefined}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })()}
+                </section>
+              ) : null}
 
             {/* Code added by Sophia */}
             {activeSection === 'browse-slots' ? (
-  <div className="user-dashboard__workspace">
-    <div className="user-dashboard__left-stack">
-      {browseSlotsError ? (
-        <p className="user-panel__empty">{browseSlotsError}</p>
-      ) : browseSlotsLoading ? (
-        <p className="user-panel__empty">Loading available slots…</p>
-      ) : (
-        <>
-          <OwnerList
-            owners={browseOwners}
-            selectedOwnerId={selectedBrowseOwnerId}
-            onSelectOwner={setSelectedBrowseOwnerId}
-          />
-
-          <section className="user-panel">
-            <h2>Browse Available Slots</h2>
-            <div className="user-card-list">
-              {browseOwners.length === 0 ? (
-                <p className="user-panel__empty">No available slots from other professors right now.</p>
-              ) : availableSlots.filter((slot) => String(slot.ownerId) === String(selectedBrowseOwnerId)).length === 0? (
-                <p className="user-panel__empty">No slots listed for this professor.</p>
-              ) : (
-                availableSlots
-                  .filter((slot) => String(slot.ownerId) === String(selectedBrowseOwnerId))
-                  .map((slot) => (
-                    <AvailableSlotCard
-                      key={slot.id}
-                      slot={slot}
-                      onBook={async (slotId) => {
-                        try {
-                          const res = await apiFetch(`/api/ownerSlots/${slotId}/book`, {
-                            method: 'POST',
-                            credentials: 'include',
-                          })
-
-                          const data = await res.json().catch(() => ({}))
-
-                          if (!res.ok) {
-                            window.alert(data.error || 'Could not book slot.')
-                            return
-                          }
-
-                          setActionMessage('Slot booked successfully!')
-                          setTimeout(() => setActionMessage(''), 3000)
-
-                          await loadAvailableSlots()
-                          await loadBookedSlots()
-                          await fetchOwnerSlots()
-                        } catch (e) {
-                          window.alert('Could not book slot.')
-                        }
-                      }}
-                    />
-                  ))
-              )}
-            </div>
-          </section>
-        </>
-      )}
-    </div>
-  </div>
-) : null}
-
-{activeSection === 'meetings-joined' ? (
-  <section className="user-panel">
-    <h2>Meetings I've Joined</h2>
-    <div className="user-card-list">
-      {bookedSlotsLoading ? (
-        <p className="user-panel__empty">Loading…</p>
-      ) : bookedSlots.length === 0 ? (
-        <p className="user-panel__empty">You haven't joined any meetings yet.</p>
-      ) : (
-        bookedSlots.map((slot) => {
-          const appointment = mapOwnerBookedSlotToAppointment(slot)
-
-          return (
-            <AppointmentCard
-              key={appointment.id}
-              appointment={appointment}
-              onCancel={setCancelTarget}
-              onReschedule={undefined}
-            />
-          )
-        })
-      )}
-    </div>
-  </section>
-) : null}
+              <div className="user-dashboard__workspace">
+                <div className="user-dashboard__left-stack">
+                  {browseSlotsError ? (
+                    <p className="user-panel__empty">{browseSlotsError}</p>
+                  ) : browseSlotsLoading ? (
+                    <p className="user-panel__empty">Loading available slots…</p>
+                  ) : (
+                    <>
+                      <OwnerList
+                        owners={browseOwners}
+                        selectedOwnerId={selectedBrowseOwnerId}
+                        onSelectOwner={setSelectedBrowseOwnerId}
+                      />
+                      <section className="user-panel">
+                        <h2>Browse Available Slots</h2>
+                        <div className="user-card-list">
+                          {browseOwners.length === 0 ? (
+                            <p className="user-panel__empty">No available slots from other professors right now.</p>
+                          ) : availableSlots.filter((slot) => String(slot.ownerId) === String(selectedBrowseOwnerId)).length === 0? (
+                            <p className="user-panel__empty">No slots listed for this professor.</p>
+                          ) : (
+                            availableSlots
+                              .filter((slot) => String(slot.ownerId) === String(selectedBrowseOwnerId))
+                              .map((slot) => (
+                                <AvailableSlotCard
+                                  key={slot.id}
+                                  slot={slot}
+                                  onBook={async (slotId) => {
+                                  try {
+                                    const res = await apiFetch(`/api/ownerSlots/${slotId}/book`, {
+                                      method: 'POST',
+                                      credentials: 'include',
+                                    })
+                                    const data = await res.json().catch(() => ({}))
+                                    if (!res.ok) {
+                                      window.alert(data.error || 'Could not book slot.')
+                                      return
+                                    }
+                                    if (data.notify) {
+                                      window.open(
+                                        `mailto:${data.notify.to}?subject=${encodeURIComponent(data.notify.subject)}&body=${encodeURIComponent(data.notify.body)}`,
+                                        '_blank',
+                                        'noopener,noreferrer'
+                                      )
+                                    }
+                                    setActionMessage('Slot booked successfully!')
+                                    setTimeout(() => setActionMessage(''), 3000)
+                                    await loadAvailableSlots()
+                                    await loadBookedSlots()
+                                    await fetchOwnerSlots()
+                                  } catch (e) {
+                                    window.alert('Could not book slot.')
+                                  }
+                                }}
+                              />
+                            ))
+                        )}
+                  </div>
+                </section>
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
  
-
             {/* Code added by Nazifa */}
             {activeSection === 'group-meeting' ? (
               <div className="owner-dashboard__workspace" style={{ gridTemplateColumns: '1fr 1fr' }}>

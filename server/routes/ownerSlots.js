@@ -285,11 +285,40 @@ router.post('/:id/book', requireLogin, async (req, res) => {
     bookingId = result.insertId;
     }
 
+    // Fetch slot owner and booker info for mailto
+    const [slotOwnerRows] = await pool.query(
+      `SELECT u.name, u.email, bs.title, bs.slot_date, bs.start_time, bs.end_time
+      FROM booking_slots bs
+      JOIN users u ON bs.owner_id = u.id
+      WHERE bs.id = ?`,
+      [slot_id]
+    );
+    const [bookerRows] = await pool.query(
+      `SELECT name, email FROM users WHERE id = ?`,
+    [booker_id]
+    );
+
+    const slotOwner = slotOwnerRows[0];
+    const booker = bookerRows[0];
+
     res.status(201).json({
       message: "Slot booked successfully.",
       booking_id: bookingId,
+      notify: slotOwner && booker ? {
+        to: slotOwner.email,
+        subject: `New booking: ${slotOwner.title}`,
+        body: [
+            `Hi ${slotOwner.name},`,
+            '',
+            `${booker.name} (${booker.email}) has booked your slot "${slotOwner.title}".`,
+            '',
+            `Date: ${slotOwner.slot_date}`,
+            `Time: ${slotOwner.start_time} - ${slotOwner.end_time}`,
+            '',
+            'You can view this booking in your McBook dashboard.',
+        ].join('\r\n'),
+      } : null,
     });
-
   } catch (err) {
     console.error("Error booking slot:", err);
     res.status(500).json({ error: "Failed to book slot." });
@@ -630,7 +659,8 @@ router.get('/:id/participants', requireLogin, requireOwner, async (req, res) => 
                 b.updated_at,
                 u.id AS user_id,
                 u.name,
-                u.email
+                u.email,
+                u.role
             FROM bookings b JOIN users u ON b.user_id = u.id WHERE b.slot_id = ? 
             ORDER BY b.booked_at ASC`,
             [slot_id]
@@ -691,21 +721,17 @@ router.delete('/:id/book', requireLogin, async (req, res) => {
       // Return host info for mailto — same pattern as other cancellation routes
       res.json({
           message: "Booking cancelled.",
-          delted_booking_id: booking.booking_id,
-          notify: {
-            to: booking.host_email,
-            subject: `Booking cancelled: ${booking.title}`,
-            body: [
-              `Hi ${booking.host_name},`,
-              '',
-              `${booking.booker_name} has cancelled their booking for "${booking.title}".`,
-              '',
-              `Date: ${booking.slot_date}`,
-              `Time: ${booking.start_time} - ${booking.end_time}`,
-              '',
-              'The slot is now available for others to book.',
-            ].join('\r\n'),
+          cancelledSlot: {
+            slot_id,
+            title: booking.title,
+            slot_date: booking.slot_date,
+            start_time: booking.start_time,
+            end_time: booking.end_time,
           },
+          host: {
+            name: booking.host_name,
+            email: booking.host_email,
+          }, 
       });
     } catch (err) {
       console.error("Error cancelling booking:", err);
