@@ -1,5 +1,10 @@
 # Undefined Behaviour — COMP 307
 
+# Team
+Nazifa
+Rupneet Shahriar (261096653)
+Sophia
+Bonita Baladi (261097353)
 ## URL
 <https://winter2026-comp307-group39.cs.mcgill.ca/>
 
@@ -9,8 +14,11 @@
 - Bonita Baladi (261097353)
 - Nazifa (261112966)
 
+
+__Files Edited or Created by Sophia__
 ## 30% Non-Coded Portion
 ### Rupneet's Portion
+Out of all of the code I've written, 30% is created by AI (mainly ChatGPT and Claude), mainly used for debugging and adding helper functions to connect diiferent endpoints across the dashboard. 
 
 ### Sophia's Portion
 AI tools (ChatGPT and Claude) were used for connecting some of the backend and frontend components, particularly for the owner-to-owner booking feature which was implemented later in the project after the first demo. Also used to help with the invite URL generation for individual slots, an additional non-required feature. Also used for debugging. AI use totalling about 15-20%. 
@@ -29,6 +37,66 @@ AI tools (ChatGPT and Claude) were used selectively to support specific developm
 ## All Teammember Contributions
 
 ### Files Edited or Created by Rupneet
+Worked on implementing the entire front-end, including the landing page, authentication and dashboard. 
+
+
+server/routes/meetingRequests.js
+server/routes/bookings.js
+frontend/src/pages/OwnerDashboardPage.jsx
+frontend/src/components/OwnerActionPanel.jsx
+frontend/src/components/RequestCard.jsx
+frontend/src/components/RequestMeetingForm.jsx
+frontend/src/components/GroupMeetingManager.jsx
+frontend/src/components/CalendarBlock.jsx
+frontend/src/components/WeeklyCalendar.jsx
+frontend/src/components/ExportPanel.jsx
+frontend/src/components/Navbar.jsx
+frontend/src/components/LoginForm.jsx
+frontend/src/components/SignupForm.jsx
+frontend/src/components/FeatureGrid.jsx
+frontend/src/components/HowItWorksSection.jsx
+frontend/src/components/RecentRequestsPreview.jsx
+frontend/src/components/CreateSlotForm.jsx
+frontend/src/components/SlotCard.jsx
+frontend/src/components/SummaryCards.jsx
+frontend/src/components/QuickActions.jsx
+frontend/src/components/RecurringCard.jsx
+frontend/src/components/GroupMeetingCard.jsx
+frontend/src/components/DashboardSidebar.jsx
+frontend/src/components/HeroSection.jsx
+frontend/src/components/Footer.jsx
+frontend/src/components/AuthTabs.jsx
+frontend/src/pages/AuthPage.jsx
+frontend/src/pages/LandingPage.jsx
+frontend/src/main.jsx
+frontend/src/App.jsx
+frontend/src/utils/ownerSlotAdapters.js
+frontend/src/utils/authHelpers.js
+frontend/vite.config.js
+frontend/src/styles/RequestCard.css
+frontend/src/styles/OwnerDashboardPage.css
+frontend/src/styles/WeeklyCalendar.css
+frontend/src/styles/HowItWorksSection.css
+frontend/src/styles/RecurringCard.css
+frontend/src/styles/OwnerActionPanel.css
+frontend/src/styles/Navbar.css
+frontend/src/styles/FeatureGrid.css
+frontend/src/styles/LoginForm.css
+frontend/src/styles/CalendarBlock.css
+frontend/src/styles/AuthPage.css
+frontend/src/styles/SummaryCards.css
+frontend/src/styles/SlotCard.css
+frontend/src/styles/SignupForm.css
+frontend/src/styles/QuickActions.css
+frontend/src/styles/ExportPanel.css
+frontend/src/styles/GroupMeetingCard.css
+frontend/src/styles/DashboardSidebar.css
+frontend/src/styles/CreateSlotForm.css
+frontend/src/styles/App.css
+frontend/src/styles/HeroSection.css
+frontend/src/styles/Footer.css
+frontend/src/styles/AuthTabs.css
+
 ### Files Edited or Created by Sophia
 db/schema.sql - design database schema in SQL, later adapted to SQLite by Nazifa
 
