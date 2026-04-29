@@ -29,9 +29,13 @@ export default function RequestMeetingForm({
   initialProposedStart = '',
   initialProposedEnd = '',
   title = 'Request a Meeting',
+  ownerLabel = 'Instructor',
+  submitLabel = 'Submit request',
+  emptyOwnersText = 'No instructors with active slots are loaded yet. Make sure the server is running and at least one owner has a public (active) slot, then refresh.',
+  initialOwnerId = '',
   onCancel,
 }) {
-  const [ownerId, setOwnerId] = useState(owners[0]?.id || '')
+  const [ownerId, setOwnerId] = useState(initialOwnerId || owners[0]?.id || '')
   const [message, setMessage] = useState('')
   const [proposedDate, setProposedDate] = useState(tomorrowYmd)
   const [proposedStart, setProposedStart] = useState('10:00')
@@ -40,8 +44,12 @@ export default function RequestMeetingForm({
   const preferredTimeLines = splitPreferredTime(initialPreferredTime)
 
   useEffect(() => {
+    if (initialOwnerId) {
+      setOwnerId(initialOwnerId)
+      return
+    }
     if (owners[0]?.id) setOwnerId(owners[0].id)
-  }, [owners])
+  }, [owners, initialOwnerId])
 
   useEffect(() => {
     if (initialProposedDate) setProposedDate(initialProposedDate)
@@ -70,12 +78,11 @@ export default function RequestMeetingForm({
       <h3>{title}</h3>
       {owners.length === 0 ? (
         <p className="request-meeting-form__note">
-          No instructors with active slots are loaded yet. Make sure the server is running and at least one owner has
-          a public (active) slot, then refresh.
+          {emptyOwnersText}
         </p>
       ) : null}
       <label>
-        Instructor
+        {ownerLabel}
         <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)}>
           {owners.map((owner) => (
             <option key={owner.id} value={owner.id}>
@@ -127,7 +134,7 @@ export default function RequestMeetingForm({
         </p>
       ) : null}
       <button type="submit" disabled={owners.length === 0}>
-        Submit request
+        {submitLabel}
       </button>
       {onCancel ? (
         <button type="button" className="request-meeting-form__cancel" onClick={onCancel}>
