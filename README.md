@@ -80,6 +80,11 @@ The API runs on **port 3000**. The Vite dev server runs on **port 5173** and pro
 
 **All team members confirm that we contributed equally (25%).**
 
+## Bonus features (non-competitive)
+- Calendar export as .ics
+- Edit meeting times (not just book & cancel)
+- Deactivate slots
+
 ## 30% Non-Coded Portion
 ### Rupneet's Portion
 Out of all of the code I've written, 30% is created by AI (mainly ChatGPT and Claude), mainly used for debugging and adding helper functions to connect diiferent endpoints across the dashboard. 
