@@ -100,7 +100,7 @@ async function ownerHasOverlapOnDate(conn, owner_id, slot_date, start_time, end_
 // ─────────────────────────────────────────────
 // POST /api/recurringSlots
 // Owner creates a recurring office hours slot.
-// Generates one parent slot + recurrence_weeks child slots.
+// recurrence_weeks means TOTAL occurrences including the first week.
 // ─────────────────────────────────────────────
 router.post('/', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
@@ -129,8 +129,9 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
         await conn.beginTransaction();
 
         // Validate all occurrences before writing any rows.
+        // recurrence_weeks is total occurrences including week 1.
         const allDates = [slot_date];
-        for (let w = 1; w <= weeks; w++) allDates.push(addWeeks(slot_date, w));
+        for (let w = 1; w < weeks; w++) allDates.push(addWeeks(slot_date, w));
         for (const d of allDates) {
             const hasOverlap = await ownerHasOverlapOnDate(conn, owner_id, d, start_time, end_time);
             if (hasOverlap) {
@@ -160,7 +161,7 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
         // 2. Generate child slots, one per week after the first.
         //    FIX: SQLite does not support the MySQL `INSERT INTO t VALUES ?` batch syntax
         //    with a nested array. We insert each child individually instead.
-        for (let w = 1; w <= weeks; w++) {
+        for (let w = 1; w < weeks; w++) {
             const childDate = addWeeks(slot_date, w);
             await conn.query(
                 `INSERT INTO booking_slots (
@@ -187,9 +188,10 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
         conn.release();
 
         res.status(201).json({
-            message: `Recurring slot created with ${weeks} occurrence(s).`,
+            message: `Recurring slot created with ${weeks} total occurrence(s).`,
             parent: parentRows[0],
-            children_created: weeks,
+            total_occurrences: weeks,
+            children_created: Math.max(weeks - 1, 0),
         });
 
     } catch (err) {
