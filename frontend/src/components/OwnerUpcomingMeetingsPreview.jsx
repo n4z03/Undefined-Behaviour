@@ -1,4 +1,5 @@
 // Owner dashboard quick list of upcoming booked meetings
+// code written by Rupneet (ID: 261096653)
 
 function truncate(text, maxLen = 56) {
   const value = String(text || '')

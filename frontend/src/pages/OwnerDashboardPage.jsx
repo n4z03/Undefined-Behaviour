@@ -31,6 +31,7 @@ import AppointmentCard from '../components/AppointmentCard'
 import CancelBookingCard from '../components/CancelBookingCard'
 import OwnerList from '../components/OwnerList'
 import AvailableSlotCard from '../components/AvailableSlotCard'
+import RequestMeetingForm from '../components/RequestMeetingForm'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 const sidebarSections = [
@@ -55,6 +56,7 @@ export default function OwnerDashboardPage() {
   const navigate = useNavigate()
   const [activeSection, setActiveSection] = useState('overview')
   const [ownerName, setOwnerName] = useState('Admin')
+  const [ownerEmail, setOwnerEmail] = useState('')
   const [slots, setSlots] = useState([])
   const [loadingSlots, setLoadingSlots] = useState(true)
   const [loadError, setLoadError] = useState('')
@@ -76,6 +78,7 @@ export default function OwnerDashboardPage() {
   const [selectedBrowseOwnerId, setSelectedBrowseOwnerId] = useState('')
   const [browseSlotsLoading, setBrowseSlotsLoading] = useState(false)
   const [browseSlotsError, setBrowseSlotsError] = useState(null)
+  const [ownerRequestSuccess, setOwnerRequestSuccess] = useState('')
 
   // meetings the owner has joined as a participant
   const [bookedSlots, setBookedSlots] = useState([])
@@ -94,7 +97,7 @@ export default function OwnerDashboardPage() {
       id: `joined-${slot.backendId || slot.id}`,
       originalSlotId: slot.backendId || slot.id,
       bookingId: slot.booking_id,
-      title: `Joined: ${slot.title}`,
+      title: slot.title,
       visibility: 'Joined',
       bookingStatus: 'Joined',
       isJoinedSlot: true,
@@ -116,6 +119,7 @@ export default function OwnerDashboardPage() {
 
   // added by Bonita - fetch real requests from backend instead of hardcoded data
   const [meetingRequestsData, setMeetingRequestsData] = useState([])
+  const [outgoingOwnerRequests, setOutgoingOwnerRequests] = useState([])
 
   function mapOwnerBookedSlotToAppointment(row) {
     const slotDate = String(row.slot_date || '').split('T')[0]
@@ -137,6 +141,25 @@ export default function OwnerDashboardPage() {
       slotDate,
       status: 'Confirmed',
       recurringLabel: Number(row.is_recurring) === 1 ? 'Recurring' : null,
+    }
+  }
+
+  function mapOverviewSlotToUpcomingItem(slot, inferredRole = null) {
+    return {
+      id: String(slot.id),
+      slotId: String(slot.backendId || slot.id),
+      exportId: String(slot.backendId || slot.id),
+      ownerId: String(ownerId || ''),
+      ownerName: slot.bookedBy || 'Booked meeting',
+      ownerEmail: slot.bookedEmail || '',
+      title: slot.title,
+      dateLabel: slot.dateLabel,
+      timeRange: `${slot.time} - ${slot.endTime}`,
+      slotDate: slot.fullDate || slot.dateInput || '',
+      status: slot.bookingStatus === 'Joined' ? 'Joined' : 'Confirmed',
+      recurringLabel: slot.recurringLabel || null,
+      direction: slot.isJoinedSlot ? 'outgoing' : 'incoming',
+      role: slot.isJoinedSlot ? 'owner' : inferredRole || 'user',
     }
   }
 
@@ -175,6 +198,33 @@ useEffect(() => {
   const interval = setInterval(fetchRequests, 30000)
   return () => clearInterval(interval)
 }, [])
+
+useEffect(() => {
+  async function fetchOutgoingRequests() {
+    try {
+      const res = await fetch('/api/meetingRequests/outgoing?status=pending', { credentials: 'include' })
+      if (!res.ok) return
+      const data = await res.json()
+      setOutgoingOwnerRequests(data.requests || [])
+    } catch (e) {
+      console.error('Failed to fetch outgoing requests:', e)
+    }
+  }
+  fetchOutgoingRequests()
+  const interval = setInterval(fetchOutgoingRequests, 30000)
+  return () => clearInterval(interval)
+}, [])
+
+  async function refreshOutgoingOwnerRequests() {
+    try {
+      const res = await fetch('/api/meetingRequests/outgoing?status=pending', { credentials: 'include' })
+      if (!res.ok) return
+      const data = await res.json()
+      setOutgoingOwnerRequests(data.requests || [])
+    } catch (e) {
+      console.error('Failed to refresh outgoing requests:', e)
+    }
+  }
 
   // added by Bonita - accept/decline handlers wired to backend
   async function handleAccept(requestId) {
@@ -222,6 +272,52 @@ useEffect(() => {
   }
 }
 
+  async function handleSubmitOwnerRequest(payload) {
+    const ownerIdNum = Number(payload.ownerId)
+    if (!Number.isInteger(ownerIdNum) || ownerIdNum < 1) {
+      window.alert('Choose a valid owner from the list.')
+      return
+    }
+    if (ownerId && ownerIdNum === Number(ownerId)) {
+      window.alert('You cannot send a meeting request to yourself.')
+      return
+    }
+    const addSecs = (t) => (t && t.length === 5 ? `${t}:00` : t)
+    try {
+      const res = await apiFetch('/api/meetingRequests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          owner_id: ownerIdNum,
+          message: payload.message,
+          subject: payload.subject && payload.subject.trim() ? payload.subject.trim() : null,
+          proposed_date: payload.proposedDate,
+          proposed_start: addSecs(payload.proposedStart),
+          proposed_end: addSecs(payload.proposedEnd),
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        window.alert((data.errors && data.errors[0]) || data.error || 'Could not send request.')
+        return
+      }
+      setOwnerRequestSuccess('Meeting request sent.')
+      setTimeout(() => setOwnerRequestSuccess(''), 2800)
+      await refreshOutgoingOwnerRequests()
+      if (data.notify) {
+        window.open(
+          `mailto:${data.notify.to}?subject=${encodeURIComponent(data.notify.subject)}&body=${encodeURIComponent(data.notify.body)}`,
+          '_blank',
+          'noopener,noreferrer',
+        )
+      }
+    } catch (e) {
+      console.error('Could not send owner request:', e)
+      window.alert('Could not send request.')
+    }
+  }
+
   async function fetchOwnerSlots() {
     setLoadingSlots(true)
     setLoadError('')
@@ -262,6 +358,7 @@ useEffect(() => {
         if (!response.ok) return
         const data = await response.json()
         setOwnerId(data?.user?.id)
+        setOwnerEmail(data?.user?.email || '')
         // If somehow a user accesses here, redirect them
         if (data?.user?.role !== 'owner') {
           navigate('/user-dashboard', { replace: true })
@@ -369,6 +466,10 @@ useEffect(() => {
     }
   }
 
+  async function refreshOwnerMeetingViews() {
+    await Promise.all([fetchOwnerSlots(), loadBookedSlots(), loadSlotParticipants()])
+  }
+
   async function handleSidebarSelect(sectionId) {
     if (sectionId === 'logout') {
       await apiFetch('/api/auth/logout', {
@@ -384,9 +485,11 @@ useEffect(() => {
     setPanelMode('default')
 
     if (sectionId === 'browse-slots') loadAvailableSlots()
+    if (sectionId === 'overview') {
+      refreshOwnerMeetingViews()
+    }
     if (sectionId === 'calendar') {
-      loadBookedSlots()
-      loadSlotParticipants()
+      refreshOwnerMeetingViews()
     }
   }
 
@@ -404,11 +507,15 @@ useEffect(() => {
         return
       }
       if (data.host && data.cancelledSlot) {
+        const recipients = [data.host.email, ownerEmail]
+          .filter(Boolean)
+          .filter((email, idx, arr) => arr.indexOf(email) === idx)
+          .join(',')
         const subj = encodeURIComponent(`Cancellation: ${data.cancelledSlot.title}`)
         const body = encodeURIComponent(
-        `Hi ${data.host.name},\n\nI need to cancel my booking for "${data.cancelledSlot.title}" on ${data.cancelledSlot.slot_date} (${data.cancelledSlot.start_time} – ${data.cancelledSlot.end_time}).\n\nApologies for the inconvenience.`
+          `Hi,\n\n${ownerName} has cancelled the owner-owner booking for "${data.cancelledSlot.title}" on ${data.cancelledSlot.slot_date} (${data.cancelledSlot.start_time} – ${data.cancelledSlot.end_time}).\n\nBest,\nMcBook`,
         )
-        window.open(`mailto:${data.host.email}?subject=${subj}&body=${body}`, '_blank', 'noopener,noreferrer')
+        window.open(`mailto:${recipients}?subject=${subj}&body=${body}`, '_blank', 'noopener,noreferrer')
       }
       setCancelTarget(null)
       await loadBookedSlots()
@@ -546,6 +653,8 @@ useEffect(() => {
                       panelMode={panelMode}
                       selectedSlot={selectedSlot}
                       selectedCell={selectedCell}
+                      currentOwnerName={ownerName}
+                      currentOwnerEmail={ownerEmail}
                       onModeChange={handlePanelModeChange}
                       onSlotCreated={handleSlotCreated}
                       onSlotPatched={handleSlotPatched}
@@ -610,9 +719,44 @@ useEffect(() => {
                       direction: 'outgoing',
                       role: slot.booker_role || 'owner', // they booked another owner's slot
                   }))
+                  // Infer role by slot from participant records so filters stay accurate.
+                  const roleBySlotId = new Map()
+                  for (const p of incoming) {
+                    const sid = String(p.slotId || '')
+                    if (!sid) continue
+                    const set = roleBySlotId.get(sid) || new Set()
+                    set.add(p.role || 'user')
+                    roleBySlotId.set(sid, set)
+                  }
+                  for (const o of outgoing) {
+                    const sid = String(o.slotId || '')
+                    if (!sid) continue
+                    const set = roleBySlotId.get(sid) || new Set()
+                    set.add(o.role || 'owner')
+                    roleBySlotId.set(sid, set)
+                  }
+
+                  // Ensure everything visible in Overview upcoming panel also appears here.
+                  const fromOverviewPreview = upcomingMeetings.map((slot) => {
+                    const sid = String(slot.backendId || slot.id || '')
+                    const roleSet = roleBySlotId.get(sid)
+                    const inferredRole = roleSet && roleSet.size === 1 ? Array.from(roleSet)[0] : null
+                    return mapOverviewSlotToUpcomingItem(slot, inferredRole)
+                  })
 
                   // Merge and sort by date ascending
-                  const all = [...incoming, ...outgoing].sort((a, b) => {
+                  const allMerged = [...incoming, ...outgoing]
+                  const seen = new Set()
+                  const all = allMerged
+                    .filter((item) => {
+                      // Keep one entry per slot+direction+role so mixed-role slots
+                      // appear in the right filter buckets.
+                      const key = `${item.slotId || ''}|${item.slotDate || ''}|${item.timeRange || ''}|${item.direction || ''}|${item.role || ''}`
+                      if (seen.has(key)) return false
+                      seen.add(key)
+                      return true
+                    })
+                    .sort((a, b) => {
                     if (a.slotDate < b.slotDate) return -1
                     if (a.slotDate > b.slotDate) return 1
                     return (a.timeRange || '').localeCompare(b.timeRange || '')
@@ -657,7 +801,7 @@ useEffect(() => {
 
             {/* Code added by Sophia */}
             {activeSection === 'browse-slots' ? (
-              <div className="user-dashboard__workspace">
+              <div className="user-dashboard__workspace owner-dashboard__browse-workspace">
                 <div className="user-dashboard__left-stack">
                   {browseSlotsError ? (
                     <p className="user-panel__empty">{browseSlotsError}</p>
@@ -719,6 +863,20 @@ useEffect(() => {
               </>
             )}
           </div>
+                <aside className="user-side-panel owner-dashboard__browse-request-panel">
+                  <RequestMeetingForm
+                    owners={browseOwners}
+                    onSubmit={handleSubmitOwnerRequest}
+                    title="Request a meeting with a Colleague"
+                    ownerLabel="Owner"
+                    submitLabel="Send Request"
+                    initialOwnerId={selectedBrowseOwnerId}
+                    emptyOwnersText="No owners with active slots are available right now."
+                  />
+                  {ownerRequestSuccess ? (
+                    <p className="owner-dashboard__notice owner-dashboard__notice--success">{ownerRequestSuccess}</p>
+                  ) : null}
+                </aside>
         </div>
       ) : null}
  
@@ -726,24 +884,64 @@ useEffect(() => {
             {activeSection === 'group-meeting' ? (
               <div className="owner-dashboard__workspace" style={{ gridTemplateColumns: '1fr 1fr' }}>
                 <GroupMeetingForm onCreated={() => setGroupRefreshKey((k) => k + 1)} />
-                <GroupMeetingManager refreshKey={groupRefreshKey} />
+                <GroupMeetingManager
+                  refreshKey={groupRefreshKey}
+                  onConfirmed={async () => {
+                    await refreshOwnerMeetingViews()
+                  }}
+                />
               </div>
             ) : null}
 
             {activeSection === 'requests' ? (
-              <section className="owner-section">
-                <h2>Meeting Requests</h2>
-                <p className="owner-section__subtitle">
-                  Students asking you to set up a new time. If someone <strong>reserved a slot you published</strong>, that
-                  shows on the calendar when you open that block — not here.
-                </p>
-                <div className="owner-request-list">
-                  {/* added by Bonita - render real requests from backend */}
-                  {meetingRequestsData.map((request) => (
-                    <RequestCard key={request.id} request={request} onAccept={handleAccept} onDecline={handleDecline} />
-                  ))}
-                </div>
-              </section>
+              <div className="owner-dashboard__workspace owner-dashboard__requests-workspace">
+                <section className="owner-section">
+                  <h2>Meeting Requests</h2>
+                  <div className="owner-request-list">
+                    {/* added by Bonita - render real requests from backend */}
+                    {meetingRequestsData.map((request) => (
+                      <RequestCard key={request.id} request={request} onAccept={handleAccept} onDecline={handleDecline} />
+                    ))}
+                  </div>
+                </section>
+                <aside className="user-side-panel owner-dashboard__requests-side-panel owner-section">
+                  <h2>Sent Requests</h2>
+                  <p>Requests you have sent to other owners and are waiting on.</p>
+                  <div className="owner-dashboard__outgoing-list">
+                    {outgoingOwnerRequests.length === 0 ? (
+                      <p className="owner-panel__empty">No pending outgoing requests.</p>
+                    ) : (
+                      outgoingOwnerRequests.map((request) => (
+                        <div key={request.id} className="owner-dashboard__outgoing-item">
+                          <strong>{request.owner_name}</strong>
+                          <span>{request.subject || 'No title'}</span>
+                          {request.status === 'pending' ? (
+                            <span className="owner-dashboard__pending-tag">Pending</span>
+                          ) : null}
+                          <button
+                            type="button"
+                            className="owner-dashboard__outgoing-cancel"
+                            onClick={async () => {
+                              const res = await fetch(`/api/meetingRequests/${request.id}`, {
+                                method: 'DELETE',
+                                credentials: 'include',
+                              })
+                              const data = await res.json().catch(() => ({}))
+                              if (!res.ok) {
+                                window.alert(data.error || 'Could not cancel request.')
+                                return
+                              }
+                              await refreshOutgoingOwnerRequests()
+                            }}
+                          >
+                            Cancel Request
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </aside>
+              </div>
             ) : null}
 
             {activeSection === 'export' ? (

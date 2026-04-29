@@ -6,7 +6,7 @@
 import '../styles/CalendarBlock.css'
 
 function statusClass(category, slot) {
-  if (slot?.isJoinedSlot) return 'calendar-block--booked'
+  if (slot?.isJoinedSlot) return 'calendar-block--joined'
   if (category === 'private') return 'calendar-block--private'
   if (category === 'booked') return 'calendar-block--booked'
   if (category === 'recurring') return 'calendar-block--recurring'
@@ -37,7 +37,7 @@ function bookerLabel(slot) {
 export default function CalendarBlock({ slot, onSelect }) {
   const who = bookerLabel(slot)
   return (
-    <button type="button" className={`calendar-block ${statusClass(slot.category)}`} onClick={() => onSelect(slot)}>
+    <button type="button" className={`calendar-block ${statusClass(slot.category, slot)}`} onClick={() => onSelect(slot)}>
       <p className="calendar-block__title">{slot.title}</p>
       <p className="calendar-block__time">
         {slot.time} – {slot.endTime}

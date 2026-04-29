@@ -4,6 +4,7 @@ run script from server folder by putting
 npm run populate
 owner password for all seeded owners: comp307demo
 book as a student: use a @mail.mcgill.ca account.
+Note: This file uses AI to code some of the functions and generate demo data.
  */
 
 const path = require('path');
@@ -15,10 +16,8 @@ const OWNER_PASSWORD = 'comp307demo';
 
 const SEED_DESC = 'Seeded by populating-script for local testing';
 
-/** Cancel-test booking is on this day at 10:00 (Vybihal’s first slot). */
 const DEMO_BOOKED_SLOT_DATE = '2026-04-23';
 
-/** Student user with a pre-made booking (for testing cancel in "My Appointments"). */
 const DEMO_STUDENT = {
   name: 'Cancel Test Student',
   email: 'cancel.demo@mail.mcgill.ca',
@@ -87,9 +86,6 @@ async function ensureStudent(email, name, passwordHash) {
   return ins.insertId;
 }
 
-/**
- * One confirmed booking on the first seeded slot (Prof. Vybihal) so you can test cancel in the UI.
- */
 async function seedDemoStudentBooking(passwordHash) {
   const userId = await ensureStudent(DEMO_STUDENT.email, DEMO_STUDENT.name, passwordHash);
 
