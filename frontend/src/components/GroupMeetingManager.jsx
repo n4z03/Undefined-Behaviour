@@ -1,6 +1,7 @@
 // Nazifa Ahmed (261112966)
 // invite link persistence added by Bonita Baladi (261097353)
 // prof-to-prof group meeting join added by Bonita Baladi (261097353)
+// group meeting UI changes code added by Rupneet (261096653)
 
 import { useEffect, useState } from 'react'
 import { formatTime24To12 } from '../utils/ownerSlotAdapters'
@@ -14,7 +15,7 @@ function showShortDate(ymd) {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-export default function GroupMeetingManager({ refreshKey = 0 }) {
+export default function GroupMeetingManager({ refreshKey = 0, onConfirmed }) {    //added by Rupneet (261096653)
   const [myMeetings, setMyMeetings] = useState([])
   const [openMeetingId, setOpenMeetingId] = useState(null)
   const [openedMeeting, setOpenedMeeting] = useState(null)
@@ -48,6 +49,15 @@ export default function GroupMeetingManager({ refreshKey = 0 }) {
   }
 
   async function openMeetingById(groupId) {
+    if (openMeetingId === groupId) {
+      // added by Rupneet (261096653)
+      setOpenMeetingId(null)
+      setOpenedMeeting(null)
+      setTimeImAboutToLock(null)
+      setError('')
+      setSuccess('')
+      return
+    }
     setOpenMeetingId(groupId)
     setTimeImAboutToLock(null)
     setError('')
@@ -100,6 +110,9 @@ export default function GroupMeetingManager({ refreshKey = 0 }) {
       }
       await loadGroups()
       await openMeetingById(openMeetingId)
+      if (typeof onConfirmed === 'function') {
+        await onConfirmed()
+      }
     } catch {
       setError('Request failed.')
     } finally {
@@ -341,7 +354,8 @@ export default function GroupMeetingManager({ refreshKey = 0 }) {
             <button
               key={oneMeeting.id}
               type="button"
-              className={`groupmeeting-group-item${openMeetingId === oneMeeting.id ? ' groupmeeting-group-item--selected' : ''}${groupsIAlreadyLockedIn.has(oneMeeting.id) ? ' groupmeeting-group-item--confirmed' : ''}`}
+              className={`groupmeeting-group-item${openMeetingId === oneMeeting.id ? ' groupmeeting-group-item--selected' : ''}`}
+              aria-pressed={openMeetingId === oneMeeting.id}
               onClick={() => openMeetingById(oneMeeting.id)}
             >
               <div className="groupmeeting-group-item__name">
