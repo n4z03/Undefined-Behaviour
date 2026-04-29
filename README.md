@@ -1,21 +1,30 @@
 # Undefined Behaviour — COMP 307
 
-# Team
-Nazifa
-Rupneet Shahriar (261096653)
-Sophia
-Bonita Baladi (261097353)
 ## URL
 <https://winter2026-comp307-group39.cs.mcgill.ca/>
 
+## How to run
+# terminal 1
+cd server
+npm install
+npm run demo
+npm run dev
+
+# terminal 2
+cd frontend
+npm install
+npm run dev
+
+copy paste the local host link to view the website.
+
 ## Team
-- Rupneet
+- Rupneet Shahriar (261096653)
 - Sophia Casalme (261149930)
 - Bonita Baladi (261097353)
-- Nazifa (261112966)
+- Nazifa Ahmed (261112966)
 
+**All team members confirm that we contributed equally (25%).**
 
-__Files Edited or Created by Sophia__
 ## 30% Non-Coded Portion
 ### Rupneet's Portion
 Out of all of the code I've written, 30% is created by AI (mainly ChatGPT and Claude), mainly used for debugging and adding helper functions to connect diiferent endpoints across the dashboard. 
@@ -24,6 +33,20 @@ Out of all of the code I've written, 30% is created by AI (mainly ChatGPT and Cl
 AI tools (ChatGPT and Claude) were used for connecting some of the backend and frontend components, particularly for the owner-to-owner booking feature which was implemented later in the project after the first demo. Also used to help with the invite URL generation for individual slots, an additional non-required feature. Also used for debugging. AI use totalling about 20%. 
 
 ### Bonita's Portion
+Claude and Gemini were used to debug! Minor edits and debugs across the entire project, ~5%
+
+But mainly used for group meetings logic and solving the problems below, ~15%:
+
+Correct flow:
+- owner creates group meeting, sees options as grey box in owner overview
+- student pastes invite and votes. this does not update user calendar, only vote count
+- prof sees correct vote count, can confirm any time slot they choose
+- now this chosen time slot shows us as booked for user and owner. the unchosen time slots disappear from owner too 
+
+Problems:
+- if student votes, the slot shows up in owner and user overview calendar as "booked" and red
+- when students vote, vote count does not update for owner 
+- Prof should not be able to confirm is noone has voted yet (solo group meeting = contradiction)
 
 ### Nazifa's Portion
 AI tools (ChatGPT and Claude) were used selectively to support specific development tasks rather than to generate core application logic.
@@ -37,6 +60,7 @@ AI tools (ChatGPT and Claude) were used selectively to support specific developm
 ## All Teammember Contributions
 
 ### Files Edited or Created by Rupneet
+*Contribution Statement*
 Worked on implementing the entire front-end, including the landing page, authentication and dashboard. 
 
 
@@ -98,6 +122,7 @@ frontend/src/styles/Footer.css
 frontend/src/styles/AuthTabs.css
 
 ### Files Edited or Created by Sophia
+*Contribution Statement*
 db/schema.sql - design database schema in SQL, later adapted to SQLite by Nazifa
 
 server/routes/ownerSlots.js - create main owner feature routes: creating slots, managing slot visibility, delete slots, view participants, create unique slot URLs.
@@ -137,6 +162,7 @@ server/routes/invites.js
 server/routes/ownerSlots.js
 
 ### Files Edited or Created by Bonita
+*Contribution Statement*
 server/routes/recurringSlots.js - bonita created and wrote POST /, GET /, GET /:id/children, PATCH /:id/visibility, DELETE /:id, and POST /:slotId/book. Also fixed SQLite INSERT OR IGNORE syntax and boolean 1/0 compatibility.
 
 server/routes/meetingRequests.js - bonita created and wrote POST /, GET /incoming, GET /outgoing, PATCH /:id/accept, PATCH /:id/decline, DELETE /:id, and added the notify payload logic to trigger owner/user mailto emails.
@@ -178,6 +204,7 @@ frontend/src/components/GroupMeetingForm.jsx: Right at the very beginning of our
 .gitignore - bonita edited and wrote the exclusion rules for data/app.db and the .nfs* temporary files.
 
 ### Files Edited or Created by Nazifa
+*Contribution Statement*
 A part of my contribution was converting and reworking the database layer so it properly aligned with the server and SQLite (including schema, query behavior, and DB integration), which required rewriting core backend data flow. I also handled a large amount of server setup, deployment debugging, and environment fixes to get the app running reliably on the class infrastructure, including repeated troubleshooting with IT over the course of multiple days.
 
 server/routes/auth.js - created and wired login, session check, and logout flow used by the auth pages.
