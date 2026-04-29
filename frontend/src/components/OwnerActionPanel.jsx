@@ -123,12 +123,23 @@ function SlotDetailsPanel({
   const [ownerCancelDialog, setOwnerCancelDialog] = useState(null)
   const [ownerCancelLoading, setOwnerCancelLoading] = useState(false)
 
+  useEffect(() => {
+    if (!slot) return
+    setDateStr(slot.dateInput || '')
+    setStartStr(slot.timeInputStart || '10:00')
+    setEndStr(slot.timeInputEnd || '10:30')
+    setSaveErr('')
+    setEditingWhen(false)
+    setVisibilityErr('')
+    setOwnerCancelDialog(null)
+  }, [slot])
+
   if (slot.isJoinedSlot) {
     return (
       <>
         <h2>{slot.title}</h2>
         <p className="owner-action-panel__muted">{slot.dateLabel}</p>
-  
+
         <div className="owner-action-panel__details">
           <div className="owner-action-panel__detail-row">
             <span className="owner-action-panel__detail-label">Time</span>
@@ -136,17 +147,17 @@ function SlotDetailsPanel({
               {slot.time} – {slot.endTime}
             </span>
           </div>
-  
+
           <div className="owner-action-panel__detail-row">
             <span className="owner-action-panel__detail-label">Status</span>
             <span className="owner-action-panel__detail-value">Joined</span>
           </div>
         </div>
-  
+
         <p className="owner-action-panel__hint">
           This is a meeting you joined. You cannot edit or change its visibility.
         </p>
-  
+
         <div className="owner-action-panel__slot-actions">
           <ActionButton
             kind="secondary"
@@ -184,7 +195,7 @@ function SlotDetailsPanel({
           >
             Cancel Booking
           </ActionButton>
-  
+
           <button
             type="button"
             className="owner-action-panel__text-link"
@@ -196,17 +207,6 @@ function SlotDetailsPanel({
       </>
     )
   }
-
-  useEffect(() => {
-    if (!slot) return
-    setDateStr(slot.dateInput || '')
-    setStartStr(slot.timeInputStart || '10:00')
-    setEndStr(slot.timeInputEnd || '10:30')
-    setSaveErr('')
-    setEditingWhen(false)
-    setVisibilityErr('')
-    setOwnerCancelDialog(null)
-  }, [slot])
 
   async function handleToggleVisibility() {
     const nextStatus = slot.visibility === 'Private' ? 'active' : 'private'

@@ -867,7 +867,7 @@ useEffect(() => {
                   <RequestMeetingForm
                     owners={browseOwners}
                     onSubmit={handleSubmitOwnerRequest}
-                    title="Request a Meeting"
+                    title="Request a meeting with a Colleague"
                     ownerLabel="Owner"
                     submitLabel="Send Request"
                     initialOwnerId={selectedBrowseOwnerId}
