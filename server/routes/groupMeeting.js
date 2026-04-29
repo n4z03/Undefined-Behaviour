@@ -1,4 +1,3 @@
-
 // Bonita Baladi, 261097353
 
 // Booking type 2: group meeting calendar method
@@ -428,7 +427,8 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
 
         const confirmedSlot = slotRows[0];
 
-        // Fetch ALL voters across the whole group
+        // added by Bonita (261097353) — fetch ALL voters across the whole group, not just
+        // those who voted for the winning slot, so confirmation email goes to everyone who participated
         const [voters] = await conn.query(
             `SELECT DISTINCT u.id, u.name, u.email
              FROM bookings b
@@ -440,8 +440,41 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
 
         const weeks = is_recurring ? Number(recurrence_weeks) : 0;
 
-        // FIX 1: Ensure all participants are officially booked for the WINNING slot
-        // (Even if they originally only voted for the losing options)
+        // Activate the confirmed slot (make it public/official)
+        // is_recurring uses 1/0 for SQLite booleans
+        await conn.query(
+            `UPDATE booking_slots
+             SET status = 'active', is_recurring = ?, recurrence_weeks = ?
+             WHERE id = ?`,
+            [is_recurring ? 1 : 0, is_recurring ? weeks : null, slot_id]
+        );
+
+        // Delete all bookings (votes) on the unchosen slots, then delete the slots themselves.
+        // This removes losing options from the calendar entirely.
+        const [unchosen] = await conn.query(
+            `SELECT id FROM booking_slots WHERE group_id = ? AND id != ?`,
+            [group_id, slot_id]
+        );
+        if (unchosen.length > 0) {
+            const unchosenIds = unchosen.map(r => r.id);
+            const ph = unchosenIds.map(() => '?').join(', ');
+            await conn.query(
+                `DELETE FROM bookings WHERE slot_id IN (${ph})`,
+                unchosenIds
+            );
+            await conn.query(
+                `DELETE FROM booking_slots WHERE id IN (${ph})`,
+                unchosenIds
+            );
+        }
+
+        // Book ALL voters (across every slot option) onto the confirmed slot.
+        // This ensures the prof's choice wins regardless of which slot each person voted for.
+        // First clear any existing bookings on the winning slot (the votes), then reinsert cleanly.
+        await conn.query(
+            `DELETE FROM bookings WHERE slot_id = ?`,
+            [slot_id]
+        );
         for (const voter of voters) {
             await conn.query(
                 `INSERT OR IGNORE INTO bookings (slot_id, user_id, status)
@@ -450,34 +483,17 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
             );
         }
 
-        // FIX 2: Delete the unselected options. This cleans up the dashboard
-        // and automatically wipes out the confusing "votes" via ON DELETE CASCADE.
-        await conn.query(
-            `DELETE FROM booking_slots WHERE group_id = ? AND id != ?`,
-            [group_id, slot_id]
-        );
-
-        // Activate the confirmed slot (make it public/official)
-        await conn.query(
-            `UPDATE booking_slots
-             SET status = 'active', is_recurring = ?, recurrence_weeks = ?
-             WHERE id = ?`,
-            [is_recurring ? 1 : 0, is_recurring ? weeks : null, slot_id]
-        );
-
         // If recurring, generate child slots and book all voters for each
         if (is_recurring && weeks > 0) {
             for (let w = 1; w <= weeks; w++) {
                 const childDate = addWeeks(confirmedSlot.slot_date, w);
 
-                // FIX 3: Set is_recurring to 0 for the child slots so the frontend 
-                // calendar renders them as standard, standalone appointments.
                 const [childResult] = await conn.query(
                     `INSERT INTO booking_slots (
                         owner_id, group_id, parent_slot_id, title, description,
                         slot_date, start_time, end_time, location,
                         slot_type, status, max_bookings, is_recurring
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'group_meeting', 'active', 999, 0)`,
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'group_meeting', 'active', 999, 1)`,
                     [
                         owner_id, group_id, slot_id,
                         confirmedSlot.title, confirmedSlot.description,
@@ -488,6 +504,7 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
 
                 const child_slot_id = childResult.insertId;
 
+                // FIX: INSERT OR IGNORE is the correct SQLite syntax
                 for (const voter of voters) {
                     await conn.query(
                         `INSERT OR IGNORE INTO bookings (slot_id, user_id, status)
@@ -509,12 +526,18 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
             is_recurring,
             recurrence_weeks: is_recurring ? weeks : null,
             booked_users: voters,
+            // Frontend uses this to build mailto: notifications for all voters
+            // demo1 fix: owner also receives a confirmation email
             notify: [
+                // notify all voters (students)
+                // use fmt12h for times and proper newlines
                 ...voters.map(v => ({
                     to: v.email,
                     subject: `Your meeting has been confirmed`,
                     body: `Hi ${v.name},\n\nYour group meeting has been confirmed.\n\nDate: ${confirmedSlot.slot_date}\nTime: ${fmt12h(confirmedSlot.start_time)} - ${fmt12h(confirmedSlot.end_time)}${is_recurring ? `\nThis meeting repeats for ${weeks} week(s).` : ''}\n\nSee you there!`,
                 })),
+                // notify the owner themselves
+                // use fmt12h for times and proper newlines
                 {
                     to: groupRows[0].owner_email,
                     subject: `You confirmed a group meeting time`,

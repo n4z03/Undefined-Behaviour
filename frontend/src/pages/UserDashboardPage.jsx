@@ -101,7 +101,7 @@ function mapApiBookingToAppointment(row) {
     endMinutes: timeToMinutesFromMidnight(row.end_time),
     status: 'Confirmed',
     recurringLabel: Number(row.is_recurring) === 1 ? 'Recurring' : null,
-    slotType: row.slot_type || 'office_hours',
+    slotType: row.slot_type || 'office_hours',  // added by Bonita
   }
 }
 
