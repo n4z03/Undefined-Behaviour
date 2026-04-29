@@ -37,6 +37,30 @@ export default function GroupMeetingManager({ refreshKey = 0, onConfirmed }) {  
     loadGroups()
   }, [refreshKey])
 
+  // While a meeting is open and not yet confirmed, poll every 5s so the prof
+  // sees new votes roll in without having to close and re-open the meeting.
+  // Skipped once the meeting is confirmed (status='active' on a slot) — no more
+  // votes are coming, no need to keep hitting the server.
+  useEffect(() => {
+    if (!openMeetingId) return
+    const alreadyConfirmed = (openedMeeting?.slots || []).some((s) => s.status === 'active')
+    if (alreadyConfirmed) return
+
+    const id = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/groupMeeting/${openMeetingId}`, { credentials: 'include' })
+        if (!r.ok) return
+        const json = await r.json()
+        setOpenedMeeting(json)
+      } catch {
+        /* network blip — next tick will retry */
+      }
+      // also refresh the list-level vote totals shown on the meeting tiles
+      loadGroups()
+    }, 5000)
+    return () => clearInterval(id)
+  }, [openMeetingId, openedMeeting])
+
   async function loadGroups() {
     try {
       const response = await fetch('/api/groupMeeting', { credentials: 'include' })
