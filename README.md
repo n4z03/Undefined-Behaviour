@@ -188,6 +188,9 @@ frontend/src/styles/AuthTabs.css
 
 ### Sophia's Contributions
 *Contribution Statement*
+
+I designed the database schema and implemented the owner slot management system, including creating, editing, deleting, and toggling slot visibility, viewing participants, and generating unique invite URLs. I built the owner-to-owner booking feature, allowing professors to book each other's slots and ensuring the flow replicates a user's booking abilities (message, cancel, mailto, export). I added the Browse Slots tab from the user dashboard to the owner dashboard, allowing them to book slots with other owners/professors. I also added the Upcoming Meetings tab to the owner dashboard, with a filter view of all confirmed bookings for student or professor bookings. I also implemented the Share All Availabilities link with login redirect handling. 
+
 db/schema.sql - design database schema in SQL, later adapted to SQLite by Nazifa
 
 server/routes/ownerSlots.js - create main owner feature routes: creating slots, managing slot visibility, delete slots, view participants, create unique slot URLs.
@@ -206,7 +209,8 @@ frontend/src/components/OwnerActionPanel.jsx - edited and wrote the CreateSlotFo
 handling), the Copy Invite Link button (calls POST /api/invites/generate and copies the URL to clipboard), and the joined slot panel (shows a read-only view with a
 Cancel Booking button for slots the owner joined via prof-to-prof booking).
 
-List of all files with some edits made: db/schema.sql
+List of all files with some edits made: 
+db/schema.sql
 
 frontend/src/App.jsx
 
