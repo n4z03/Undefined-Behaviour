@@ -24,6 +24,17 @@ Out of all of the code I've written, 30% is created by AI (mainly ChatGPT and Cl
 AI tools (ChatGPT and Claude) were used for connecting some of the backend and frontend components, particularly for the owner-to-owner booking feature which was implemented later in the project after the first demo. Also used to help with the invite URL generation for individual slots, an additional non-required feature. Also used for debugging. AI use totalling about 20%. 
 
 ### Bonita's Portion
+Claude and Gemini were used to debug! Minor edits and debugs across the entire project, ~5%
+But mainly used for group meetings logic and solving the problems below, ~15%:
+Correct flow:
+owner creates group meeting, sees options as grey box in owner overview
+student pastes invite and votes. this does not update user calendar, only vote count
+prof sees correct vote count, can confirm any time slot they choose
+now this chosen time slot shows us as booked for user and owner. the unchosen time slots disappear from owner too 
+Problems:
+if student votes, the slot shows up in owner and user overview calendar as "booked" and red
+when students vote, vote count does not update for owner 
+Prof should not be able to confirm is noone has voted yet (solo group meeting = contradiction)
 
 ### Nazifa's Portion
 AI tools (ChatGPT and Claude) were used selectively to support specific development tasks rather than to generate core application logic.
