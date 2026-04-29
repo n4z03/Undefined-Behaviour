@@ -182,7 +182,7 @@ router.get('/:groupId', requireLogin, async (req, res) => {
                 COUNT(b.id) AS vote_count,
                 MAX(CASE WHEN b.user_id = ? THEN 1 ELSE 0 END) AS i_voted
              FROM booking_slots bs
-             LEFT JOIN bookings b ON b.slot_id = bs.id AND b.status = 'confirmed'
+             LEFT JOIN bookings b ON b.slot_id = bs.id AND b.status = 'pending'
              WHERE bs.group_id = ?
              GROUP BY bs.id
              ORDER BY bs.slot_date ASC, bs.start_time ASC`,
@@ -214,7 +214,7 @@ router.get('/', requireLogin, requireOwner, async (req, res) => {
                 COUNT(DISTINCT b.user_id) AS total_voters
              FROM slot_groups sg
              LEFT JOIN booking_slots bs ON bs.group_id = sg.id
-             LEFT JOIN bookings b ON b.slot_id = bs.id AND b.status = 'confirmed'
+             LEFT JOIN bookings b ON b.slot_id = bs.id AND b.status = 'pending'
              WHERE sg.owner_id = ?
              GROUP BY sg.id
              ORDER BY sg.created_at DESC`,
@@ -278,7 +278,7 @@ router.post('/:groupId/vote', requireLogin, async (req, res) => {
         for (const slot_id of slot_ids) {
             const [result] = await pool.query(
                 `INSERT OR IGNORE INTO bookings (slot_id, user_id, status)
-                 VALUES (?, ?, 'confirmed')`,
+                 VALUES (?, ?, 'pending')`,
                 [slot_id, user_id]
             );
             inserted += result.affectedRows;
@@ -290,7 +290,7 @@ router.post('/:groupId/vote', requireLogin, async (req, res) => {
             `SELECT COUNT(DISTINCT b.user_id) AS voter_count
              FROM bookings b
              JOIN booking_slots bs ON b.slot_id = bs.id
-             WHERE bs.group_id = ? AND b.status = 'confirmed'`,
+             WHERE bs.group_id = ? AND b.status = 'pending'`,
             [group_id]
         );
 
@@ -434,7 +434,7 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
              FROM bookings b
              JOIN users u ON b.user_id = u.id
              JOIN booking_slots bs ON b.slot_id = bs.id
-             WHERE bs.group_id = ? AND b.status = 'confirmed'`,
+             WHERE bs.group_id = ? AND b.status = 'pending'`,
             [group_id]
         );
 
@@ -555,3 +555,4 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
 });
 
 module.exports = router;
+
