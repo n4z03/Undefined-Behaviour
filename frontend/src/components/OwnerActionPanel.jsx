@@ -760,7 +760,7 @@ export default function OwnerActionPanel({ panelMode, selectedSlot, selectedCell
       {panelMode === 'create' ? <CreateSlotForm selectedCell={selectedCell} onModeChange={onModeChange} onSlotCreated={onSlotCreated} /> : null}
       {panelMode === 'recurring' ? <RecurringForm onModeChange={onModeChange} onSlotCreated={onSlotCreated} /> : null}
       {/* bonita — replaced dummy GroupForm with real GroupMeetingForm; onCreated navigates back to default panel */}
-      {panelMode === 'group' ? <GroupMeetingForm onCreated={() => onModeChange('default')} /> : null}
+      {panelMode === 'group' ? <GroupMeetingForm embedded onCreated={() => onModeChange('default')} onCancel={() => onModeChange('default')} /> : null}
       {panelMode === 'default' ? <DefaultPanel onModeChange={onModeChange} /> : null}
     </aside>
   )

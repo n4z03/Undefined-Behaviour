@@ -1,4 +1,6 @@
 // Nazifa Ahmed (261112966)
+// code added by Bonita Baladi (261097353)
+
 import { useState } from 'react'
 import '../styles/GroupMeeting.css'
 
@@ -7,7 +9,8 @@ function blankTimeOption() {
   return { date: '', startTime: '09:00', endTime: '09:30' }
 }
 
-export default function GroupMeetingForm({ onCreated }) {
+// bonita — added embedded and onCancel props for use inside OwnerActionPanel
+export default function GroupMeetingForm({ onCreated, embedded = false, onCancel }) {
   const [name, setName] = useState('')
   const [timeOptions, setTimeOptions] = useState([blankTimeOption()])
   const [loading, setLoading] = useState(false)
@@ -93,7 +96,7 @@ export default function GroupMeetingForm({ onCreated }) {
 
   if (shareUrl) {
     return (
-      <div className="groupmeeting-card">
+      <div className={embedded ? undefined : 'groupmeeting-card'}> {/* bonita — skip card wrapper when embedded in action panel */}
         <h2>Group Meeting Created</h2>
         <p>Share this link with students so they can vote for a preferred time.</p>
         <div className="groupmeeting-share">
@@ -112,7 +115,7 @@ export default function GroupMeetingForm({ onCreated }) {
   }
 
   return (
-    <div className="groupmeeting-card">
+    <div className={embedded ? undefined : 'groupmeeting-card'}> {/* bonita — skip card wrapper when embedded in action panel */}
       <h2>New Group Meeting</h2>
       <p>Add the times you are available. Students vote for what works for them.</p>
       <form className="groupmeeting-form" onSubmit={handleSubmit}>
@@ -190,7 +193,16 @@ export default function GroupMeetingForm({ onCreated }) {
             {loading ? 'Creating…' : 'Create Group Meeting'}
           </button>
         </div>
+        {/* bonita — cancel button shown when embedded in action panel */}
+        {onCancel ? (
+          <div className="groupmeeting-btn-row">
+            <button type="button" className="groupmeeting-btn groupmeeting-btn--secondary" onClick={onCancel}>
+              Cancel
+            </button>
+          </div>
+        ) : null}
       </form>
     </div>
   )
 }
+
