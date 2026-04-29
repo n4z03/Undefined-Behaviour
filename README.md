@@ -5,7 +5,7 @@
 
 ## Team
 - Rupneet
-- Sophia
+- Sophia Casalme (261149930)
 - Bonita Baladi (261097353)
 - Nazifa (261112966)
 
@@ -13,6 +13,7 @@
 ### Rupneet's Portion
 
 ### Sophia's Portion
+AI tools (ChatGPT and Claude) were used for connecting some of the backend and frontend components, particularly for the owner-to-owner booking feature which was implemented later in the project after the first demo. Also used to help with the invite URL generation for individual slots, an additional non-required feature. Also used for debugging. AI use totalling about 15-20%. 
 
 ### Bonita's Portion
 
@@ -29,7 +30,43 @@ AI tools (ChatGPT and Claude) were used selectively to support specific developm
 
 ### Files Edited or Created by Rupneet
 ### Files Edited or Created by Sophia
+db/schema.sql - design database schema in SQL, later adapted to SQLite by Nazifa
 
+server/routes/ownerSlots.js - create main owner feature routes: creating slots, managing slot visibility, delete slots, view participants, create unique slot URLs.
+
+server/routes/calendar.js - edited GET /export/owner to include both owned slots and slots joined as a participant, and fixed GET
+/export/:bookingId to use an EXISTS subquery so owners can export both slots they created and slots they booked.
+
+server/routes/invites.js - created the invite URL system (for unique slot URL invitations)
+
+frontend/src/pages/OwnerDashboardPage.jsx - edited the Browse Slots tab, reusing user-facing components so owners can browse and book other
+owners' active slots, the Upcoming Meetings tab, unified view of all confirmed bookings, the Share All Availabilities button
+
+frontend/src/pages/UserDashboardPage.jsx - edited so that when a visiting owner follows a shared availabilities link and logs in, they are redirected to the owner dashboard pre-filtered to the correct professor's slots.
+
+frontend/src/components/OwnerActionPanel.jsx - edited and wrote the CreateSlotForm submit logic (wired to POST /api/ownerSlots with validation and error
+handling), the Copy Invite Link button (calls POST /api/invites/generate and copies the URL to clipboard), and the joined slot panel (shows a read-only view with a
+Cancel Booking button for slots the owner joined via prof-to-prof booking).
+
+List of all files with some edits made: db/schema.sql
+frontend/src/App.jsx
+frontend/src/components/CalendarBlock.jsx
+frontend/src/components/CreateSlotForm.jsx
+frontend/src/components/Navbar.jsx
+frontend/src/components/OwnerActionPanel.jsx
+frontend/src/components/RecentRequestsPreview.jsx
+frontend/src/components/RequestCard.jsx
+frontend/src/pages/AuthPage.jsx
+frontend/src/pages/OwnerDashboardPage.jsx
+frontend/src/pages/UserDashboardPage.jsx
+frontend/src/utils/ownerSlotAdapters.js
+ownerbackend/db/schema.sql
+server/db.js
+server/index.js
+server/routes/auth.js
+server/routes/calendar.js
+server/routes/invites.js
+server/routes/ownerSlots.js
 
 ### Files Edited or Created by Bonita
 server/routes/recurringSlots.js - bonita created and wrote POST /, GET /, GET /:id/children, PATCH /:id/visibility, DELETE /:id, and POST /:slotId/book. Also fixed SQLite INSERT OR IGNORE syntax and boolean 1/0 compatibility.
