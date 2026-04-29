@@ -1,3 +1,4 @@
+// code written by Rupneet (ID: 261096653)
 import '../styles/OwnerList.css'
 
 export default function OwnerList({ owners, selectedOwnerId, onSelectOwner }) {
