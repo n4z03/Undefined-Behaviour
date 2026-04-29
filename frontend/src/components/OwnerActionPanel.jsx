@@ -593,6 +593,9 @@ function RecurringForm({ onModeChange, onSlotCreated }) {
           </select>
         </label>
       </div>
+      <p className="owner-action-panel__hint">
+        Note: if you do not make the recurring office hours public right now, you will have to individually make each booking public in the future.
+      </p>
       {error ? <p className="owner-action-panel__feedback owner-action-panel__feedback--error">{error}</p> : null}
       {success ? <p className="owner-action-panel__feedback owner-action-panel__feedback--success">{success}</p> : null}
       <div className="owner-action-panel__row">
