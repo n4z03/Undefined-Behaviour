@@ -1,5 +1,6 @@
 //code written by Rupneet (ID: 261096653)
 // code adedd by Bonita Baladi (261097353)
+// code added by Sophia (261149930)
 // one line debugged with AI (line 221)
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -212,7 +213,7 @@ export function mapBackendSlotToCalendarSlot(slot) {
     bookedBy: bookedByDisplay,
     bookedEmail: slot.booked_by_email || null,
     
-    // added by Bonita — recurring slots now respect visibility and booking status
+    // Bonita fixed: recurring slots now respect visibility and booking status
     // instead of always showing as pink regardless of whether they are active or booked
     category: isRecurring
     ? (bookingStatus === 'Booked' ? 'booked' : status === 'Public' ? 'public' : 'private')
