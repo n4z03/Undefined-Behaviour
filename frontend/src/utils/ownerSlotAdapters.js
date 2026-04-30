@@ -218,7 +218,7 @@ export function mapBackendSlotToCalendarSlot(slot) {
     : category,
    
     recurringLabel: isRecurring && slot.recurrence_weeks ? `Recurring for ${slot.recurrence_weeks} weeks` : null,
-    inviteLink: slot.invite_link || `https://mcbook.app/invite/slot-${slot.id}`,
+    inviteLink: slot.invite_link || null,
     rowSpan: rowSpanFromTimes(slot.start_time, slot.end_time),
     slotDate: slot.slot_date,
   }
