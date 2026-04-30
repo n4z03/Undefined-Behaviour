@@ -2,6 +2,7 @@
 // Button functionalities added by Sophia (261149930)
 // Nazifa Ahmed (261112966) - owner can change date/time on a slot + cancellation email functionality
 // Bonita Baladi (261097353) - wired RecurringForm to POST /api/recurringSlots with controlled inputs, validation, and error/success feedback
+// Bug with link fixed with AI (lines 380-382)
 
 import { useEffect, useState } from 'react'
 import '../styles/OwnerActionPanel.css'

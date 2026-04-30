@@ -1,5 +1,6 @@
 //code written by Rupneet (ID: 261096653)
 // code adedd by Bonita Baladi (261097353)
+// one line debugged with AI (line 221)
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
