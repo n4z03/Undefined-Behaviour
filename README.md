@@ -143,7 +143,7 @@ A major part of my work involved integrating the frontend with backend APIs. I c
 
 On the backend, I contributed to the implementation and integration of core routes such as meeting requests and bookings, ensuring they aligned with the frontend requirements and supported the full user flow (request → accept/decline → booking → dashboard updates). I also implemented the owner-owner meeting requests pipeline, and edited the frontend accordingly.
 
-I also handled debugging and system integration across the project, particularly ensuring that different components (calendar, requests, dashboards, and backend endpoints) worked together correctly. This included refining UI interactions, fixing inconsistencies in state updates, and improving overall usability.
+I also handled debugging and system integration across the project, particularly ensuring that different components (calendar, requests, dashboards, and backend endpoints) worked together correctly. This is mostly where I used the help of AI. This included refining UI interactions, fixing inconsistencies in state updates, and improving overall usability.
 
 Overall, my contributions focused on:
 
