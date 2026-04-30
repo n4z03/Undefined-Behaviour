@@ -333,8 +333,9 @@ router.patch('/:bookingId/reschedule', requireLogin, requireUser, async (req, re
         await conn.beginTransaction();
 
         const [bookRows] = await conn.query(
-            `SELECT b.id, b.slot_id, b.status
+            `SELECT b.id, b.slot_id, b.status, bs.slot_type
              FROM bookings b
+             JOIN booking_slots bs ON b.slot_id = bs.id
              WHERE b.id = ? AND b.user_id = ?`,
             [booking_id, user_id]
         );
@@ -346,6 +347,12 @@ router.patch('/:bookingId/reschedule', requireLogin, requireUser, async (req, re
         if (booking.status !== 'confirmed') {
             await tryRollback(conn);
             return res.status(400).json({ error: 'Only active bookings can be rescheduled.' });
+        }
+        if (booking.slot_type === 'group_meeting') {
+            await tryRollback(conn);
+            return res.status(403).json({
+                error: 'Group meetings can only be rescheduled by the organizer.',
+            });
         }
 
         const old_slot_id = Number(booking.slot_id);
@@ -533,6 +540,12 @@ router.delete('/:bookingId', requireLogin, requireUser, async (req, res) => {
 
         if (booking.status === 'cancelled') {
             return res.status(400).json({ error: 'Booking is already cancelled.' });
+        }
+
+        if (booking.slot_type === 'group_meeting') {
+            return res.status(403).json({
+                error: 'Group meetings can only be cancelled by the organizer.',
+            });
         }
 
         await pool.query(

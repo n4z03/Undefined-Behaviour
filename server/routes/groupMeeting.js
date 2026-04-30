@@ -537,7 +537,7 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
                 ...voters.map(v => ({
                     to: v.email,
                     subject: `Your meeting has been confirmed`,
-                    body: `Hi ${v.name},\n\nYour group meeting has been confirmed.\n\nDate: ${confirmedSlot.slot_date}\nTime: ${fmt12h(confirmedSlot.start_time)} - ${fmt12h(confirmedSlot.end_time)}${is_recurring ? `\nThis meeting repeats for ${weeks} week(s).` : ''}\n\nSee you there!`,
+                    body: `Hello,\n\nYour group meeting has been confirmed.\n\nDate: ${confirmedSlot.slot_date}\nTime: ${fmt12h(confirmedSlot.start_time)} - ${fmt12h(confirmedSlot.end_time)}${is_recurring ? `\nThis meeting repeats for ${weeks} week(s).` : ''}\n\nSee you there!`,
                 })),
                 // notify the owner themselves
                 // use fmt12h for times and proper newlines

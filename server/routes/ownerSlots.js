@@ -699,6 +699,7 @@ router.delete('/:id/book', requireLogin, async (req, res) => {
             bs.slot_date, 
             bs.start_time, 
             bs.end_time,
+            bs.slot_type,
             u.name AS host_name, 
             u.email AS host_email,
             me.name AS booker_name
@@ -715,6 +716,12 @@ router.delete('/:id/book', requireLogin, async (req, res) => {
       }
 
       const booking = bookings[0];
+
+      if (booking.slot_type === 'group_meeting' && req.user.role === 'user') {
+          return res.status(403).json({
+              error: 'Group meetings can only be cancelled by the organizer.',
+          });
+      }
 
       // Cancel the booking
       await pool.query(
