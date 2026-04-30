@@ -112,13 +112,14 @@ But mainly used for group meetings logic and solving the problems below, ~15%:
 - Prof should not be able to confirm is noone has voted yet (solo group meeting = contradiction)
 
 ### Nazifa's Portion
-AI tools (ChatGPT and Claude) were used selectively to support specific development tasks rather than to generate core application logic.
+AI tools (ChatGPT, Cursor, Claude) were used selectively to support specific development tasks rather than to generate core application logic. 
+Estimated AI-assisted contribution:** approximately 15-20%, primarily in debugging support, scripting, and validation. ~20%
 
 - **Server/session deployment debugging:** AI was used to debug for differences between local and deployed behavior (for example: login/session issues related to proxy settings and secure cookie handling). This supported debugging work in `server/index.js`.
 - **SQLite adaptation and query validation:** AI was used to help translate database logic into SQLite-compatible patterns and verify SQL edge cases during schema and query development (for example in `db/schema.sqlite.sql`, `server/db.js`, `server/routes/bookings.js`, `server/routes/ownerSlots.js`, and `server/routes/meetingRequests.js`).
 - **Database scripts:** AI helped in generating initial versions of setup/reset/seeding scripts, which were then modified and integrated into the project.
-- **Estimated AI-assisted contribution:** approximately 15-20%, primarily in debugging support, scripting, and validation.
 - **Files with AI support:** `server/index.js`, `server/scripts/populating-script.js`, `server/scripts/seed-demo.js`.
+- **Link debugging and fix** `ownerActionPanel.jsx`, `ownerSlotAdapter.jsx` used cursor to fix bug with link that was not updating to correct token.
 
 ## All Teammember Contributions
 
