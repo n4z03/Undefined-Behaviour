@@ -476,7 +476,7 @@
   .groupmeeting-slot-time-row { grid-template-columns: 1fr; }
 }
 
-/* added by Bonita (261097353) — confirmation tag shown after saving availability */
+/* Bonita — confirmation tag shown after saving availability */
 .groupmeeting-saved-tag {
   display: inline-flex;
   align-items: center;
