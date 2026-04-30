@@ -101,7 +101,7 @@ function mapApiBookingToAppointment(row) {
     endMinutes: timeToMinutesFromMidnight(row.end_time),
     status: 'Confirmed',
     recurringLabel: Number(row.is_recurring) === 1 ? 'Recurring' : null,
-    slotType: row.slot_type || 'office_hours',  // added by Bonita
+    slotType: row.slot_type || 'office_hours',  // 
   }
 }
 
@@ -172,7 +172,7 @@ function parseGroupIdFromUrl(urlStr) {
 
 export default function UserDashboardPage() {
   const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams() // added by Bonita (261097353)
+  const [searchParams, setSearchParams] = useSearchParams() // added by Bonita
   const [activeSection, setActiveSection] = useState('overview')
   const [userName, setUserName] = useState('User')
   const [selectedOwnerId, setSelectedOwnerId] = useState('')
@@ -196,7 +196,7 @@ export default function UserDashboardPage() {
   const [rescheduleTarget, setRescheduleTarget] = useState(null)
   const [rescheduleLoading, setRescheduleLoading] = useState(false)
   const [rescheduleErr, setRescheduleErr] = useState(null)
-  // added by Bonita (261097353) — derived from URL so groupId survives hard refresh; no useState needed
+  // added by Bonita — derived from URL so groupId survives hard refresh; no useState needed
   const groupId = searchParams.get('group') ? Number(searchParams.get('group')) : null
   // added by Bonita - controlled input value for the paste invite link bar
   const [groupLinkInput, setGroupLinkInput] = useState('')
@@ -368,7 +368,7 @@ export default function UserDashboardPage() {
   }, [searchParams])
 
   // added by Bonita - read ?group= param on initial load only and switch to group-meetings section
-  // added by Bonita (261097353) — intentionally uses [] not [searchParams] so this only runs once on mount;
+  // intentionally uses [] not [searchParams] so this only runs once on mount;
   // running on every searchParams change would remount GroupMeetingVote and wipe its saved state
 
   useEffect(() => {
@@ -622,7 +622,7 @@ export default function UserDashboardPage() {
       setGroupLinkError('No group ID found. Make sure you paste the full invite link.')
       return
     }
-    // added by Bonita (261097353) — push group ID into URL instead of local state so it survives hard refresh
+    // added by Bonita — push group ID into URL instead of local state so it survives hard refresh
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
       next.set('group', gid)
@@ -970,7 +970,7 @@ export default function UserDashboardPage() {
               <p className="user-panel__empty">Paste an invite link above to join one.</p>
 		)}
 
-                {/* added by Bonita (261097353) — show confirmed group meeting bookings below the invite/vote UI */}
+                {/* added by Bonita — show confirmed group meeting bookings below the invite/vote UI */}
                 {(() => {
                   const confirmedGroupMeetings = appointments.filter((a) => a.slotType === 'group_meeting')
                   if (confirmedGroupMeetings.length === 0) return null
