@@ -33,12 +33,9 @@ function requireUser(req, res, next) {
     next();
 }
 
-// ─────────────────────────────────────────────
 // POST /api/meetingRequests
-// Any logged-in account (user or owner) can send a meeting request to an owner,
-// including a proposed date and time.
-// ─────────────────────────────────────────────
-router.post('/', requireLogin, async (req, res) => { //added by Rupneet (261096653)
+// Any logged-in account (user or owner) can send a meeting request to an owner with a proposed date and time.
+router.post('/', requireLogin, async (req, res) => { 	//added by Rupneet (261096653)
     const user_id = req.user.id;
 
     const {
@@ -82,9 +79,8 @@ router.post('/', requireLogin, async (req, res) => { //added by Rupneet (2610966
             return res.status(400).json({ error: 'You cannot send a meeting request to yourself.' });
         }
 
-        // Store proposed time as a prefix in the subject field.
+        // Store proposed time as a prefix in the subject field. This is used later when the owner accepts, to create the booking slot.
         // Format: "[YYYY-MM-DD HH:MM - HH:MM] subject"
-        // This is used later when the owner accepts, to create the booking slot.
         const timePrefix = `[${proposed_date} ${proposed_start} - ${proposed_end}]`;
         const fullSubject = subject ? `${timePrefix} ${subject.trim()}` : timePrefix;
 
@@ -123,10 +119,8 @@ router.post('/', requireLogin, async (req, res) => { //added by Rupneet (2610966
     }
 });
 
-// ─────────────────────────────────────────────
 // GET /api/meetingRequests/incoming
 // Owner sees all requests sent to them
-// ─────────────────────────────────────────────
 router.get('/incoming', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
     const { status } = req.query;
@@ -155,10 +149,8 @@ router.get('/incoming', requireLogin, requireOwner, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
 // GET /api/meetingRequests/outgoing
-// Sender (user or owner) sees all requests they have sent
-// ─────────────────────────────────────────────
+// Sender (both user and owner) sees all requests they have sent
 router.get('/outgoing', requireLogin, async (req, res) => {
     const user_id = req.user.id;
     const { status } = req.query;
@@ -187,13 +179,10 @@ router.get('/outgoing', requireLogin, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
 // PATCH /api/meetingRequests/:id/accept
 // Owner accepts a request.
-// Parses the proposed time from the subject prefix,
-// creates a booking slot, links it via created_slot_id,
+// Parses the proposed time from the subject prefix, creates a booking slot, links it via created_slot_id,
 // and returns the user's email for mailto notification.
-// ─────────────────────────────────────────────
 router.patch('/:id/accept', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
     const request_id = Number(req.params.id);
@@ -294,11 +283,8 @@ router.patch('/:id/accept', requireLogin, requireOwner, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
 // PATCH /api/meetingRequests/:id/decline
-// Owner declines a request.
-// Returns the user's email for mailto notification.
-// ─────────────────────────────────────────────
+// Owner declines a request. Returns the user's email for mailto notification.
 router.patch('/:id/decline', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
     const request_id = Number(req.params.id);
@@ -343,7 +329,7 @@ router.patch('/:id/decline', requireLogin, requireOwner, async (req, res) => {
     }
 });
 
-// edit pending requests done by Nazifa Ahmed (261112966)
+// edit pending requests - Nazifa Ahmed (261112966)
 router.patch('/:id', requireLogin, requireUser, async (req, res) => {
     const user_id = req.user.id;
     const request_id = Number(req.params.id);
@@ -424,10 +410,8 @@ router.patch('/:id', requireLogin, requireUser, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
 // DELETE /api/meetingRequests/:id
 // Sender (user or owner) cancels their own pending request
-// ─────────────────────────────────────────────
 router.delete('/:id', requireLogin, async (req, res) => {
     const user_id = req.user.id;
     const request_id = Number(req.params.id);
