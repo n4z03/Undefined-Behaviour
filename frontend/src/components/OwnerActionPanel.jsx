@@ -797,8 +797,8 @@ export default function OwnerActionPanel({
       ) : null}
       {panelMode === 'create' ? <CreateSlotForm selectedCell={selectedCell} onModeChange={onModeChange} onSlotCreated={onSlotCreated} /> : null}
       {panelMode === 'recurring' ? <RecurringForm onModeChange={onModeChange} onSlotCreated={onSlotCreated} /> : null}
-      {/* bonita — replaced dummy GroupForm with real GroupMeetingForm; onCreated navigates back to default panel */}
-      {panelMode === 'group' ? <GroupMeetingForm embedded onCreated={() => onModeChange('default')} onCancel={() => onModeChange('default')} /> : null}
+      {/* bonita — replaced dummy GroupForm with real GroupMeetingForm; onRefresh triggers calendar refresh without leaving success screen */}
+      {panelMode === 'group' ? <GroupMeetingForm embedded onCreated={() => onModeChange('default')} onCancel={() => onModeChange('default')} onRefresh={onSlotCreated} /> : null}
       {panelMode === 'default' ? <DefaultPanel onModeChange={onModeChange} /> : null}
     </aside>
   )

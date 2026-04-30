@@ -18,3 +18,4 @@ npm-debug.log*
 
 data/*.db
 data/app.db
+.nfs*

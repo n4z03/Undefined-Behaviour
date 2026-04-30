@@ -1,21 +1,76 @@
 # Undefined Behaviour — COMP 307
 
-## URL
-<https://winter2026-comp307-group39.cs.mcgill.ca/>
+## Links
 
-## How to run
-# terminal 1
-cd server
-npm install
-npm run demo
-npm run dev
+- **Deployed URL:** <https://winter2026-comp307-group39.cs.mcgill.ca/>
+- **GitHub repository:** <https://github.com/n4z03/Undefined-Behaviour> 
 
-# terminal 2
-cd frontend
-npm install
-npm run dev
+## Changes since Demo 1 (Demo 2)
 
-copy paste the local host link to view the website.
+The app **runs reliably on the class server** now (session, build, and refresh issues from Demo 1 are addressed). Below is how we responded to TA feedback from the first demo.
+
+| Demo 1 issue | What we improved for Demo 2 |
+| --- | --- |
+| Dashboard / landing **image** not loading | Fixed so images and assets load correctly in dev and on the deployed site. |
+| **Selected calendar slot** hard to see | The active 30-minute block is **highlighted** using colors consistent with the rest of the calendar design. |
+| **Type 1 — Accepting requests** not working | Accept / decline for meeting requests works end-to-end. |
+| **Type 1 — After accept:** new booking slots + **email to user** | Post-accept flows and **mailto** notifications to the user behave as intended. |
+| **Type 1 — Booking** on **both** student and owner dashboards | Confirmed appointments show consistently for both parties. |
+| **Type 2 — Refresh** / behavior on the **server** | Deployment and session behavior fixed; the site works on the production URL without the Demo 1 refresh breakage. |
+| **Type 2 — Email to owner** | Owners receive the intended **mailto** notifications where applicable. |
+| **Type 3 — Booking** a slot **weeks later** (e.g. 4th week) | **Recurring** office hours treat “number of weeks” as **total occurrences including the first week**, so far-future weeks in range can be booked; UI and API were aligned. |
+| **Per-owner invite URL** (logged-in user sees **that owner’s activated slots** only) | Invite / share flows take users to the right dashboard context after login so they see the intended owner’s bookable slots. |
+| **Group / multi-professor** meetings unclear | **Group meetings** are supported; voting, confirm, and calendar behavior are consistent, and the experience is easier to understand. |
+
+## How to run our project
+
+**Prerequisites:** Node.js and npm installed. From the repository root (`Undefined-Behaviour/`).
+
+### Development (recommended)
+
+The API runs on **port 3000**. The Vite dev server runs on **port 5173** and proxies `/api` to `http://localhost:3000` (see `frontend/vite.config.js`). **Start the backend before or with the frontend** so login and data load correctly.
+
+1. **Terminal 1 — backend**
+
+   ```bash
+   cd server
+   npm install
+   ```
+
+   **First time** (or when you want a clean database with demo seed data):
+
+   ```bash
+   npm run demo
+   ```
+
+   This runs `init-db` (creates `data/` and applies the schema if needed), then `clear`, then `seed`. **It wipes existing DB data.**
+
+   **Later runs** (keep your existing database): skip `npm run demo` and only run:
+
+   ```bash
+   npm run dev
+   ```
+
+   If you have never initialized the DB and skipped `demo`, run once: `npm run init-db` (then optionally `npm run seed`).
+
+2. **Terminal 2 — frontend**
+
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+3. Open the URL printed in the terminal (usually **http://localhost:5173**). Use that URL in the browser—not port 3000—so `/api` requests are proxied correctly.
+
+4. Optional check: **http://localhost:3000/api/health** should return JSON `{"message":"server running"}`.
+
+**Session / env:** The server reads optional `server/.env` (session secret, etc.). If missing, defaults apply (fine for local dev).
+
+### Troubleshooting
+- **Login or API failing in dev:** Ensure the backend is running on port **3000** before using the site on **5173**.
+- **Port 3000 already in use:** Stop the other process or set `PORT` in `server/.env`.
+- **Database errors:** Ensure `npm run demo` or `npm run init-db` has been run at least once so `data/app.db` exists.
 
 ## Team
 - Rupneet Shahriar (261096653)
@@ -25,9 +80,22 @@ copy paste the local host link to view the website.
 
 **All team members confirm that we contributed equally (25%).**
 
+## Bonus features (non-competitive)
+- Calendar export as .ics
+- Edit meeting times (not just book & cancel)
+- Deactivate slots
+
 ## 30% Non-Coded Portion
 ### Rupneet's Portion
-Out of all of the code I've written, 30% is created by AI (mainly ChatGPT and Claude), mainly used for debugging and adding helper functions to connect diiferent endpoints across the dashboard. 
+Approximately 30% of my contributions involved the use of AI tools (primarily ChatGPT and Claude). AI was used to support development rather than to generate core app logic.
+
+My primary use of AI was for:
+
+- Writing and refining adapter and helper functions that transform backend data into frontend-friendly formats (e.g., calendar slot mapping and normalization).
+- Assisting with frontend–backend integration, particularly in connecting API endpoints to React components and ensuring correct data flow across dashboards
+- Debugging issues, such as resolving state inconsistencies, API response handling, and integration bugs between components.
+
+All core application logic, UI structure, and system design decisions were implemented and validated manually. 
 
 ### Sophia's Portion
 AI tools (ChatGPT and Claude) were used for connecting some of the backend and frontend components, particularly for the owner-to-owner booking feature which was implemented later in the project after the first demo. Also used to help with the invite URL generation for individual slots, an additional non-required feature. Also used for debugging. AI use totalling about 20%. 
@@ -35,15 +103,10 @@ AI tools (ChatGPT and Claude) were used for connecting some of the backend and f
 ### Bonita's Portion
 Claude and Gemini were used to debug! Minor edits and debugs across the entire project, ~5%
 
+Resolved a SQLite self-deadlock where acquiring the global lock twice within the same transaction caused the server to hang indefinitely. Added a 10-second timeout to the lock queue so blocked requests fail gracefully instead of freezing the server, ~5%
+
 But mainly used for group meetings logic and solving the problems below, ~15%:
 
-Correct flow:
-- owner creates group meeting, sees options as grey box in owner overview
-- student pastes invite and votes. this does not update user calendar, only vote count
-- prof sees correct vote count, can confirm any time slot they choose
-- now this chosen time slot shows us as booked for user and owner. the unchosen time slots disappear from owner too 
-
-Problems:
 - if student votes, the slot shows up in owner and user overview calendar as "booked" and red
 - when students vote, vote count does not update for owner 
 - Prof should not be able to confirm is noone has voted yet (solo group meeting = contradiction)
@@ -59,10 +122,38 @@ AI tools (ChatGPT and Claude) were used selectively to support specific developm
 
 ## All Teammember Contributions
 
-### Files Edited or Created by Rupneet
-*Contribution Statement*
-Worked on implementing the entire front-end, including the landing page, authentication and dashboard. 
+### How coding contributions work in the file comments. 
+We annotate authorship **as comments near the top of a source file**, we followed the following:
 
+1. **The first line names the main contributor** — the teammate who created or owns most of the file 
+2. **The next lines (when present)** name teammates who added or integrated **meaningful subsequent work**
+
+If only one teammate is listed there, treat that person as the primary contributor for that file. If the block is missing altogether, overlaps are spelled out instead in **each teammate’s file lists** below.
+
+---
+
+### Rupneet's Contributions
+*Contribution Statement*
+
+I developed of the entire frontend of the application and was responsible for designing and implementing the user-facing experience end-to-end. This included building the landing page, authentication flow, and both the owner and user dashboards, ensuring a consistent and intuitive interface across all parts of the application.
+
+Furthermore, I implemented the full dashboard architecture, including calendar-based interactions, request handling UI, booking flows, and action panels. I built reusable React components such as the weekly calendar, slot cards, request cards, forms (login, signup, meeting request, slot creation), navigation components, and dashboard layout (sidebar, hero section, feature grid, and footer). I also developed all associated styling using CSS to maintain a consistent visual system across the application.
+
+A major part of my work involved integrating the frontend with backend APIs. I created adapter and helper functions to map backend data into UI-friendly formats (e.g., calendar slot normalization, authentication helpers), and ensured that booking, meeting request, and dashboard data flows worked correctly across both user and owner views.
+
+On the backend, I contributed to the implementation and integration of core routes such as meeting requests and bookings, ensuring they aligned with the frontend requirements and supported the full user flow (request → accept/decline → booking → dashboard updates). I also implemented the owner-owner meeting requests pipeline, and edited the frontend accordingly.
+
+I also handled debugging and system integration across the project, particularly ensuring that different components (calendar, requests, dashboards, and backend endpoints) worked together correctly. This is mostly where I used the help of AI. This included refining UI interactions, fixing inconsistencies in state updates, and improving overall usability.
+
+Overall, my contributions focused on:
+
+* Full frontend architecture and UI/UX design
+* Dashboard and calendar system implementation
+* Integration of booking and request workflows
+* Reusable component design and styling
+* Frontend–backend data mapping and debugging
+
+Files I have created and edited: 
 
 server/routes/meetingRequests.js
 server/routes/bookings.js
@@ -121,8 +212,11 @@ frontend/src/styles/HeroSection.css
 frontend/src/styles/Footer.css
 frontend/src/styles/AuthTabs.css
 
-### Files Edited or Created by Sophia
+### Sophia's Contributions
 *Contribution Statement*
+
+I designed the database schema and implemented the owner slot management system, including creating, editing, deleting, and toggling slot visibility, viewing participants, and generating unique invite URLs. I built the owner-to-owner booking feature, allowing professors to book each other's slots and ensuring the flow replicates a user's booking abilities (message, cancel, mailto, export). I added the Browse Slots tab from the user dashboard to the owner dashboard, allowing them to book slots with other owners/professors. I also added the Upcoming Meetings tab to the owner dashboard, with a filter view of all confirmed bookings for student or professor bookings. I also implemented the Share All Availabilities link with login redirect handling. 
+
 db/schema.sql - design database schema in SQL, later adapted to SQLite by Nazifa
 
 server/routes/ownerSlots.js - create main owner feature routes: creating slots, managing slot visibility, delete slots, view participants, create unique slot URLs.
@@ -141,71 +235,96 @@ frontend/src/components/OwnerActionPanel.jsx - edited and wrote the CreateSlotFo
 handling), the Copy Invite Link button (calls POST /api/invites/generate and copies the URL to clipboard), and the joined slot panel (shows a read-only view with a
 Cancel Booking button for slots the owner joined via prof-to-prof booking).
 
-List of all files with some edits made: db/schema.sql
+List of all files with some edits made: 
+db/schema.sql
+
 frontend/src/App.jsx
+
 frontend/src/components/CalendarBlock.jsx
+
 frontend/src/components/CreateSlotForm.jsx
+
 frontend/src/components/Navbar.jsx
+
 frontend/src/components/OwnerActionPanel.jsx
+
 frontend/src/components/RecentRequestsPreview.jsx
+
 frontend/src/components/RequestCard.jsx
+
 frontend/src/pages/AuthPage.jsx
+
 frontend/src/pages/OwnerDashboardPage.jsx
+
 frontend/src/pages/UserDashboardPage.jsx
+
 frontend/src/utils/ownerSlotAdapters.js
+
 ownerbackend/db/schema.sql
+
 server/db.js
+
 server/index.js
+
 server/routes/auth.js
+
 server/routes/calendar.js
+
 server/routes/invites.js
+
 server/routes/ownerSlots.js
 
-### Files Edited or Created by Bonita
+### Bonita's Contributions
 *Contribution Statement*
-server/routes/recurringSlots.js - bonita created and wrote POST /, GET /, GET /:id/children, PATCH /:id/visibility, DELETE /:id, and POST /:slotId/book. Also fixed SQLite INSERT OR IGNORE syntax and boolean 1/0 compatibility.
 
-server/routes/meetingRequests.js - bonita created and wrote POST /, GET /incoming, GET /outgoing, PATCH /:id/accept, PATCH /:id/decline, DELETE /:id, and added the notify payload logic to trigger owner/user mailto emails.
+I designed and implemented all three booking type backends from scratch: recurring office hours (Type 3), meeting requests (Type 1), and group meetings (Type 2). I built the calendar export bonus feature, generating .ics files compatible with Google Calendar, Outlook, and Apple Calendar. I wired all mailto notification logic across booking, cancellation, meeting request submission, acceptance, decline, vote submission, and group meeting confirmation. I resolved several SQLite compatibility issues including syntax differences, boolean representation, and a self-deadlock bug in the database connection layer, and added a timeout mechanism to prevent the server from hanging after aborted requests. On the frontend, I wired the recurring office hours form, calendar export panel, owner accept/decline handlers, and group meeting vote notifications to their backend endpoints. I fixed a recurring slot color bug, added a persistent invite link to the group meeting manager, and ensured all professors appear in the student meeting request dropdown regardless of whether they have published slots.
 
-server/routes/groupMeeting.js - bonita created and wrote POST /, GET /, GET /:groupId, POST /:groupId/vote, DELETE /:groupId/vote/:slotId, and PATCH /:groupId/confirm/:slotId. Also expanded the voters query to email all voters, added fmt12h 12-hour formatting, removed owner vote restrictions for prof-to-prof voting, and resolved SQLite deadlock/syntax issues.
+server/routes/recurringSlots.js — Created and wrote POST /, GET /, GET /:id/children, PATCH /:id/visibility, DELETE /:id, and POST /:slotId/book. 
+Added overlap detection validation before inserting recurring slots. Fixed SQLite INSERT OR IGNORE syntax and boolean 1/0 compatibility throughout.
 
-server/routes/calendar.js - bonita edited and wrote GET /api/calendar/export/:bookingId to enable single-appointment .ics exports for users and owners.
+server/routes/meetingRequests.js — Created and wrote POST /, GET /incoming, GET /outgoing, PATCH /:id/accept, PATCH /:id/decline, and DELETE /:id. Added notify payload logic to trigger owner/user mailto emails on request submission, acceptance, and decline.
 
-server/routes/bookings.js (Previously Missed) - bonita edited and wrote a SQL filter condition AND bs.slot_type != 'group_meeting' to the GET /api/bookings/available-slots endpoint so students wouldn't see unconfirmed voting options in their normal booking list.
+server/routes/groupMeeting.js — Created and wrote POST /, GET /, GET /:groupId, POST /:groupId/vote, DELETE /:groupId/vote/:slotId, and PATCH /:groupId/confirm/:slotId. Added voter count query and notify payload to email all voters after each vote and on confirmation. Fixed SQLite INSERT OR IGNORE syntax, IN (?) array placeholder expansion, boolean 1/0 compatibility, and resolved self-deadlock by releasing the connection before post-commit pool.query() calls.
 
-server/routes/ownerSlots.js - bonita edited and wrote a SQL filter condition AND NOT (s.slot_type = 'group_meeting' AND s.status = 'private') to hide unconfirmed group meetings from the owner overview calendar.
+server/routes/calendar.js — Created and wrote GET /export for users and GET /export/owner for owners, generating .ics files compatible with Google Calendar, Outlook, and Apple Calendar.
 
-server/index.js - bonita edited and wrote the route registrations for /api/recurringSlots, /api/meetingRequests, /api/groupMeeting, and /api/calendar.
+server/routes/bookings.js — Added a AND bs.slot_type != 'group_meeting' filter to GET /available-slots so students don't see unconfirmed group meeting voting options in their normal booking list. Added formatTime12() and formatDate() helpers and switched notify bodies to use \r\n line breaks for proper Outlook/Gmail formatting with 12-hour times and readable dates.
 
-server/db.js - bonita edited and wrote the 10-second lock timeout mechanism in acquire() and added PRAGMA busy_timeout = 5000 to prevent SQLite transactions from hanging indefinitely.
+server/routes/owners.js — Added GET /all endpoint that returns all registered owners regardless of active slots, so students can send meeting requests to any professor including new ones with no published availability yet.
 
-frontend/src/pages/OwnerDashboardPage.jsx - bonita edited and wrote fetchRequests() with 30-second polling, handleAccept(), and handleDecline() with mailto logic. Also fixed JSX duplicate tag bugs and resolved merge conflicts.
+server/routes/ownerSlots.js — Added a SQL filter condition AND NOT (s.slot_type = 'group_meeting' AND s.status = 'private') to hide unconfirmed group meetings from the owner overview calendar.
 
-frontend/src/pages/UserDashboardPage.jsx - bonita edited and wrote parseGroupIdFromUrl(), handleGroupLinkSubmit(), the "My Confirmed Group Meetings" display, and mailto notifications for handleBookSlot, handleSubmitRequest, and confirmCancelBooking. Wired the ?group= URL parameter to auto-navigate to the voting UI.
+server/index.js — Added route registrations for /api/recurringSlots, /api/meetingRequests, /api/groupMeeting, and /api/calendar.
 
-frontend/src/components/ExportPanel.jsx - bonita edited and wrote handleExport() to fetch .ics files, trigger the browser download, open Google/Outlook calendars, and implemented the isOwner prop logic.
+server/db.js — Added a 10-second lock timeout mechanism in acquire() and PRAGMA busy_timeout = 5000 to prevent SQLite transactions from hanging indefinitely after aborted requests.
 
-frontend/src/components/OwnerActionPanel.jsx - bonita edited and wrote the RecurringForm component (converting it to use controlled state, validation, and wiring it to the backend) and swapped the dummy GroupForm with the real GroupMeetingForm.
+frontend/src/pages/OwnerDashboardPage.jsx — Added fetchRequests() with 30-second polling so new meeting requests appear without a page refresh, and wrote handleAccept() and handleDecline() wired to the backend with mailto notification logic.
 
-frontend/src/components/AppointmentCard.jsx - bonita edited and wrote the Export button onClick handler to generate and download single-appointment .ics files.
+frontend/src/pages/UserDashboardPage.jsx — Added mailto notifications in handleBookSlot, handleSubmitRequest, and confirmCancelBooking. Updated loadMeetingOwnerList to call /api/owners/all so the instructor dropdown shows all professors regardless of slot availability. Wired the ?group= URL parameter to auto-navigate to the group meeting voting UI.
 
-frontend/src/components/GroupMeetingVote.jsx - bonita edited and wrote the saved state logic, loadGroup() silent reload to prevent flickering, removed optimistic vote counting to fix double-counting, added voteData.notify mailto triggers, and built the "Meeting confirmed" banner UI.
+frontend/src/components/ExportPanel.jsx — Wrote handleExport() to fetch .ics files from the backend, trigger the browser download, and open the Google Calendar or Outlook import page. Implemented the isOwner prop to route owners to the correct export endpoint.
 
-frontend/src/components/GroupMeetingManager.jsx - bonita edited and wrote the joinLinkInput state, parseGroupIdFromUrl(), and handleJoinLinkSubmit() to allow prof-to-prof voting via pasted invite links.
+frontend/src/components/OwnerActionPanel.jsx — Rewrote RecurringForm with controlled state, validation, and a live connection to POST /api/recurringSlots. Replaced the dummy GroupForm with the real GroupMeetingForm component.
 
-frontend/src/components/CalendarBlock.jsx - bonita edited and wrote the condition to display the "Recurring" label based on recurringLabel rather than tying it to the slot color category.
+frontend/src/components/GroupMeetingVote.jsx — Added saved state logic to replace the Save button with a confirmation tag after successful submission, added voteData.notify mailto triggers, and built the "Meeting confirmed" banner UI for students whose voted slot was confirmed by the owner.
 
-frontend/src/utils/ownerSlotAdapters.js - bonita edited and wrote the category mapping logic to ensure recurring slots respect their visibility/booking status (displaying as pink when private, red when public/booked).
+frontend/src/components/GroupMeetingManager.jsx — Added a persistent invite link display with a Copy button in the responses panel so professors can reshare the link without losing it after navigating away.
 
-frontend/src/styles/GroupMeeting.css - bonita edited and wrote the .groupmeeting-saved-tag CSS class.
+frontend/src/components/AppointmentCard.jsx — Added the Export button onClick handler to generate and download single-appointment .ics files directly from the appointments list.
 
-frontend/src/components/GroupMeetingForm.jsx: Right at the very beginning of our troubleshooting session, you modified this file in Vim alongside OwnerActionPanel.jsx and committed them both under the message "refresh group meetings".
+frontend/src/components/CalendarBlock.jsx — Updated the oneLineStatus function to display the "Recurring" label based on recurringLabel rather than the slot's color category, decoupling the label from the color logic.
 
-.gitignore - bonita edited and wrote the exclusion rules for data/app.db and the .nfs* temporary files.
+frontend/src/utils/ownerSlotAdapters.js — Updated the category mapping in mapBackendSlotToCalendarSlot so recurring slots respect their visibility and booking status, displaying pink when private and red when active or booked, instead of always showing pink.
 
-### Files Edited or Created by Nazifa
+frontend/src/components/GroupMeetingForm.jsx — Minor edits alongside OwnerActionPanel.jsx to wire the group meeting refresh flow.
+
+frontend/src/styles/GroupMeeting.css — Added the .groupmeeting-saved-tag CSS class for the availability saved confirmation pill.
+
+.gitignore — Added exclusion rules for data/app.db and .nfs* temporary files to prevent the database and Mimi filesystem artifacts from being tracked by git.
+
+### Nazifa's Contributions
 *Contribution Statement*
-A part of my contribution was converting and reworking the database layer so it properly aligned with the server and SQLite (including schema, query behavior, and DB integration), which required rewriting core backend data flow. I also handled a large amount of server setup, deployment debugging, and environment fixes to get the app running reliably on the class infrastructure, including repeated troubleshooting with IT over the course of multiple days.
+I aligned the database with the server and SQLite, updating the schema and fixing queries/constraints to match how Express uses the DB. I built the main backend routes for auth, bookings, owner slots, owners, and meeting requests, added the DB connection helper, and wrote setup/reset/seed scripts for testing and demos. On the frontend, I implemented key dashboard flows: login/session handling, browsing and booking slots, cancelling/rescheduling, meeting requests, owner actions, and initial group meeting wiring. I also handled server setup on the class machine, which ended up being more time-consuming than expected due to deployment issues. I debugged problems with sessions, proxies, cookies, and builds, and worked with IT to resolve infrastructure-related blockers.
 
 server/routes/auth.js - created and wired login, session check, and logout flow used by the auth pages.
 

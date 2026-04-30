@@ -229,7 +229,7 @@ export default function UserDashboardPage() {
 
   const loadMeetingOwnerList = useCallback(async () => {
     try {
-      const res = await fetch('/api/owners', { credentials: 'include' })
+      const res = await fetch('/api/owners/all', { credentials: 'include' }) // Bonita, made it "all"
       if (!res.ok) return
       const data = await res.json()
       setMeetingOwnerOptions(

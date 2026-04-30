@@ -266,6 +266,12 @@ router.post('/:groupId/vote', requireLogin, async (req, res) => {
             return res.status(400).json({ error: 'One or more slot_ids do not belong to this group.' });
         }
 
+        // Upsert: if the user already has a row for this slot (e.g. a previously
+        // cancelled booking from another flow), flip it back to 'confirmed'
+        // instead of silently skipping. Plain INSERT OR IGNORE skips on UNIQUE
+        // conflict and the vote count stays stuck at 0.
+        // NOTE: status MUST be 'confirmed' or 'cancelled' per schema CHECK
+        // constraint — 'pending' would fail with a CHECK violation.
         let inserted = 0;
         for (const slot_id of slot_ids) {
             const [result] = await pool.query(
@@ -549,3 +555,4 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
 });
 
 module.exports = router;
+

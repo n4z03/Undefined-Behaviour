@@ -1,4 +1,5 @@
 // Nazifa Ahmed (261112966)
+// edited by Bonita Baladi (261097353)
 
 const express = require('express');
 const router = express.Router();
@@ -28,6 +29,25 @@ router.get('/', requireLogin, async (req, res) => {
         res.json({ owners: rows });
     } catch (err) {
         console.error('Error fetching owners:', err);
+        res.status(500).json({ error: 'Failed to fetch owners.' });
+    }
+});
+
+// GET /api/owners/all
+// Returns ALL owners regardless of whether they have active slots.
+// Used to populate the instructor dropdown in the meeting request form.
+// added by Bonita
+router.get('/all', requireLogin, async (req, res) => {
+    try {
+        const [rows] = await pool.query(
+            `SELECT u.id, u.name, u.email
+             FROM users u
+             WHERE u.role = 'owner'
+             ORDER BY u.name ASC`
+        );
+        res.json({ owners: rows });
+    } catch (err) {
+        console.error('Error fetching all owners:', err);
         res.status(500).json({ error: 'Failed to fetch owners.' });
     }
 });
