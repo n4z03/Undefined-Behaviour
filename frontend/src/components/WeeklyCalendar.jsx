@@ -245,8 +245,8 @@ function OwnerWeekCalendar({
 }
 
 /**
- * Owner dashboard: pass `weekColumns` (Mon–Sun) + `timeRows` from owner helpers.
- * Student / legacy view: pass `days` (weekday names) without `weekColumns`.
+ * Owner dashboard: pass "weekColumns" (Mon–Sun) + "timeRows" from owner helpers.
+ * Student / legacy view: pass "days" (weekday names) without "weekColumns".
  */
 export default function WeeklyCalendar({
   days,
