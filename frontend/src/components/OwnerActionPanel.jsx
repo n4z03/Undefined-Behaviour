@@ -386,7 +386,9 @@ function SlotDetailsPanel({
       setCopyMessage('Failed to generate invite link.')
     }
   }
-  
+
+  const isGroupMeeting = slot.slotType === 'group_meeting'
+
   return (
     <>
       <h2>{slot.title}</h2>
@@ -419,7 +421,7 @@ function SlotDetailsPanel({
             <span className="owner-action-panel__detail-value">{slot.recurringLabel}</span>
           </div>
         ) : null}
-        {editingWhen ? (
+        {editingWhen && !isGroupMeeting ? (
           <div className="owner-action-panel__form owner-action-panel__form--tight">
             <label>
               Date
@@ -441,7 +443,7 @@ function SlotDetailsPanel({
         </div>
       </div>
 
-      {editingWhen && saveErr ? (
+      {editingWhen && !isGroupMeeting && saveErr ? (
         <p className="owner-action-panel__feedback owner-action-panel__feedback--error">{saveErr}</p>
       ) : null}
       {deleteErr ? <p className="owner-action-panel__feedback owner-action-panel__feedback--error">{deleteErr}</p> : null}
@@ -455,7 +457,7 @@ function SlotDetailsPanel({
       ) : null}
 
       <div className="owner-action-panel__slot-actions">
-        {editingWhen ? (
+        {editingWhen && !isGroupMeeting ? (
           <div className="owner-action-panel__row">
             <ActionButton onClick={saveWhen}>Save date & time</ActionButton>
             <ActionButton
@@ -470,16 +472,22 @@ function SlotDetailsPanel({
           </div>
         ) : (
           <>
-            <ActionButton onClick={handleToggleVisibility}>
-              {slot.visibility === 'Private' ? 'Activate Slot' : 'Deactivate Slot'}
-            </ActionButton>
+            {!isGroupMeeting ? (
+              <ActionButton onClick={handleToggleVisibility}>
+                {slot.visibility === 'Private' ? 'Activate Slot' : 'Deactivate Slot'}
+              </ActionButton>
+            ) : null}
             <div className="owner-action-panel__secondary-row">
-              <ActionButton kind="secondary" onClick={() => setEditingWhen(true)}>Edit date & time</ActionButton>
+              {!isGroupMeeting ? (
+                <ActionButton kind="secondary" onClick={() => setEditingWhen(true)}>
+                  Edit date & time
+                </ActionButton>
+              ) : null}
               <ActionButton kind="secondary" onClick={openRemoveSlotDialog}>
                 Cancel
               </ActionButton>
               <ActionButton kind="secondary" onClick={handleCopyInviteLink}>{copyMessage || 'Copy Invite Link'}</ActionButton>
-              {slot.bookedEmail ? (
+              {slot.bookedEmail && !isGroupMeeting ? (
                 <ActionButton kind="secondary" onClick={() => window.open(`mailto:${slot.bookedEmail}`, '_blank')}>
                   Email Student
                 </ActionButton>

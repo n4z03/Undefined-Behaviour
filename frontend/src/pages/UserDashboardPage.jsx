@@ -450,6 +450,7 @@ export default function UserDashboardPage() {
       typeof appointmentOrId === 'object' && appointmentOrId != null && 'id' in appointmentOrId
         ? appointmentOrId
         : appointments.find((item) => item.id === String(appointmentOrId))
+    if (appt?.slotType === 'group_meeting') return
     if (appt) setCancelTarget(appt)
   }
 
@@ -498,6 +499,7 @@ export default function UserDashboardPage() {
 
   function openReschedule(appointment) {
     if (!isServerBookingId(appointment.id)) return
+    if (appointment.slotType === 'group_meeting') return
     setRescheduleErr(null)
     setRescheduleTarget(appointment)
     loadAvailableSlots()
@@ -789,20 +791,28 @@ export default function UserDashboardPage() {
                         </p>
                         <div className="user-side-panel__actions">
                           <a href={`mailto:${selectedCalendarAppointment.ownerEmail}`}>Message Owner</a>
-                          {appointmentForSelectedCalSlot && isServerBookingId(appointmentForSelectedCalSlot.id) ? (
+                          {appointmentForSelectedCalSlot
+                            && isServerBookingId(appointmentForSelectedCalSlot.id)
+                            && appointmentForSelectedCalSlot.slotType !== 'group_meeting' ? (
                             <button type="button" onClick={() => openReschedule(appointmentForSelectedCalSlot)}>
                               Change time
                             </button>
                           ) : null}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (appointmentForSelectedCalSlot) requestCancel(appointmentForSelectedCalSlot)
-                            }}
-                          >
-                            Cancel Booking
-                          </button>
+                          {appointmentForSelectedCalSlot
+                            && appointmentForSelectedCalSlot.slotType !== 'group_meeting' ? (
+                            <button
+                              type="button"
+                              onClick={() => requestCancel(appointmentForSelectedCalSlot)}
+                            >
+                              Cancel Booking
+                            </button>
+                          ) : null}
                         </div>
+                        {appointmentForSelectedCalSlot?.slotType === 'group_meeting' ? (
+                          <p className="user-side-panel__group-hint" style={{ fontSize: '0.82rem', color: '#666', marginTop: '0.65rem' }}>
+                            Only the organizer can change or cancel a group meeting. Message them if you need a change.
+                          </p>
+                        ) : null}
                         <button type="button" className="user-side-panel__clear" onClick={() => setSelectedCalendarAppointmentId(null)}>
                           Clear Selection
                         </button>
@@ -895,16 +905,23 @@ export default function UserDashboardPage() {
                   {appointments.length === 0 ? (
                     <p className="user-panel__empty">No appointments booked yet.</p>
                   ) : (
-                    appointments.map((appointment) => (
-                      <AppointmentCard
-                        key={appointment.id}
-                        appointment={appointment}
-                        onCancel={requestCancel}
-                        onReschedule={
-                          isServerBookingId(appointment.id) ? () => openReschedule(appointment) : undefined
-                        }
-                      />
-                    ))
+                    appointments.map((appointment) => {
+                      // Group meetings are owned by the prof — only the prof can
+                      // confirm, reschedule, or cancel. Students see read-only.
+                      const isGroupMeeting = appointment.slotType === 'group_meeting'
+                      return (
+                        <AppointmentCard
+                          key={appointment.id}
+                          appointment={appointment}
+                          onCancel={isGroupMeeting ? undefined : requestCancel}
+                          onReschedule={
+                            !isGroupMeeting && isServerBookingId(appointment.id)
+                              ? () => openReschedule(appointment)
+                              : undefined
+                          }
+                        />
+                      )
+                    })
                   )}
                 </div>
               </section>

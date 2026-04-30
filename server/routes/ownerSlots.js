@@ -31,6 +31,14 @@ function requireOwner(req, res, next) {
     next();
 }
 
+/** Group meeting "Booked by": one name, or two, or first two + "..." when more voters exist. */
+function formatGroupMeetingBookedBy(names) {
+    if (!names || names.length === 0) return null;
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return `${names[0]}, ${names[1]}`;
+    return `${names[0]}, ${names[1]}, ...`;
+}
+
 // Validate slot data before inserting or updating
 function validateSlotInput(body, isPartial = false) {
     const errors = [];
@@ -172,6 +180,33 @@ router.get('/', requireLogin, requireOwner, async (req, res) => {
 	    ORDER BY s.slot_date ASC, s.start_time ASC`,
             [owner_id]
         );
+
+        const groupSlotIds = rows
+            .filter((r) => r.slot_type === 'group_meeting')
+            .map((r) => r.id);
+        if (groupSlotIds.length > 0) {
+            const ph = groupSlotIds.map(() => '?').join(', ');
+            const [voterRows] = await pool.query(
+                `SELECT b.slot_id AS slot_id, u.name AS name
+                 FROM bookings b
+                 INNER JOIN users u ON b.user_id = u.id
+                 WHERE b.slot_id IN (${ph}) AND b.status = 'confirmed'
+                 ORDER BY b.slot_id, b.booked_at ASC`,
+                groupSlotIds
+            );
+            const bySlot = new Map();
+            for (const vr of voterRows) {
+                const sid = vr.slot_id;
+                if (!bySlot.has(sid)) bySlot.set(sid, []);
+                bySlot.get(sid).push(vr.name);
+            }
+            for (const row of rows) {
+                if (row.slot_type !== 'group_meeting') continue;
+                const names = bySlot.get(row.id) || [];
+                row.booked_by_display = formatGroupMeetingBookedBy(names);
+            }
+        }
+
         res.json({ slots: rows });
     } catch (err) {
         console.error("Error fetching owner slots:", err);
@@ -699,6 +734,7 @@ router.delete('/:id/book', requireLogin, async (req, res) => {
             bs.slot_date, 
             bs.start_time, 
             bs.end_time,
+            bs.slot_type,
             u.name AS host_name, 
             u.email AS host_email,
             me.name AS booker_name
@@ -715,6 +751,12 @@ router.delete('/:id/book', requireLogin, async (req, res) => {
       }
 
       const booking = bookings[0];
+
+      if (booking.slot_type === 'group_meeting' && req.user.role === 'user') {
+          return res.status(403).json({
+              error: 'Group meetings can only be cancelled by the organizer.',
+          });
+      }
 
       // Cancel the booking
       await pool.query(

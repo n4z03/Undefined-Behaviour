@@ -174,16 +174,15 @@ router.get('/:groupId', requireLogin, async (req, res) => {
             return res.status(404).json({ error: 'Group not found.' });
         }
 
-        // Get all slot options with vote counts.
-        // Also flag which ones the current user has voted for.
         const [slots] = await pool.query(
             `SELECT
                 bs.*,
                 COUNT(b.id) AS vote_count,
                 MAX(CASE WHEN b.user_id = ? THEN 1 ELSE 0 END) AS i_voted
              FROM booking_slots bs
-             LEFT JOIN bookings b ON b.slot_id = bs.id AND b.status = 'pending'
+             LEFT JOIN bookings b ON b.slot_id = bs.id AND b.status = 'confirmed'
              WHERE bs.group_id = ?
+               AND bs.parent_slot_id IS NULL
              GROUP BY bs.id
              ORDER BY bs.slot_date ASC, bs.start_time ASC`,
             [current_user_id, group_id]
@@ -200,10 +199,7 @@ router.get('/:groupId', requireLogin, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
-// GET /api/groupMeeting
-// Owner sees all their group meetings
-// ─────────────────────────────────────────────
+
 router.get('/', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
 
@@ -213,8 +209,11 @@ router.get('/', requireLogin, requireOwner, async (req, res) => {
                 COUNT(DISTINCT bs.id) AS total_slots,
                 COUNT(DISTINCT b.user_id) AS total_voters
              FROM slot_groups sg
-             LEFT JOIN booking_slots bs ON bs.group_id = sg.id
-             LEFT JOIN bookings b ON b.slot_id = bs.id AND b.status = 'pending'
+             -- Exclude recurring child slots; they share group_id with the parent
+             -- but shouldn't inflate the "X time options" count post-confirm.
+             LEFT JOIN booking_slots bs
+                    ON bs.group_id = sg.id AND bs.parent_slot_id IS NULL
+             LEFT JOIN bookings b ON b.slot_id = bs.id AND b.status = 'confirmed'
              WHERE sg.owner_id = ?
              GROUP BY sg.id
              ORDER BY sg.created_at DESC`,
@@ -229,13 +228,7 @@ router.get('/', requireLogin, requireOwner, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
-// POST /api/groupMeeting/:groupId/vote
-// User votes for one or more slots in a group.
-// Body: { slot_ids: [1, 2, 3] }
-// Returns a notify object so the frontend can open a mailto
-// to the owner after each new vote.
-// ─────────────────────────────────────────────
+
 router.post('/:groupId/vote', requireLogin, async (req, res) => {
     const user_id = req.user.id;
     const group_id = Number(req.params.groupId);
@@ -273,12 +266,21 @@ router.post('/:groupId/vote', requireLogin, async (req, res) => {
             return res.status(400).json({ error: 'One or more slot_ids do not belong to this group.' });
         }
 
-        // FIX: INSERT OR IGNORE is the correct SQLite syntax (INSERT IGNORE is MySQL-only)
+        // Upsert: if the user already has a row for this slot (e.g. a previously
+        // cancelled booking from another flow), flip it back to 'confirmed'
+        // instead of silently skipping. Plain INSERT OR IGNORE skips on UNIQUE
+        // conflict and the vote count stays stuck at 0.
+        // NOTE: status MUST be 'confirmed' or 'cancelled' per schema CHECK
+        // constraint — 'pending' would fail with a CHECK violation.
         let inserted = 0;
         for (const slot_id of slot_ids) {
             const [result] = await pool.query(
-                `INSERT OR IGNORE INTO bookings (slot_id, user_id, status)
-                 VALUES (?, ?, 'pending')`,
+                `INSERT INTO bookings (slot_id, user_id, status)
+                 VALUES (?, ?, 'confirmed')
+                 ON CONFLICT(slot_id, user_id) DO UPDATE
+                   SET status = 'confirmed',
+                       updated_at = datetime('now')
+                   WHERE bookings.status != 'confirmed'`,
                 [slot_id, user_id]
             );
             inserted += result.affectedRows;
@@ -290,7 +292,7 @@ router.post('/:groupId/vote', requireLogin, async (req, res) => {
             `SELECT COUNT(DISTINCT b.user_id) AS voter_count
              FROM bookings b
              JOIN booking_slots bs ON b.slot_id = bs.id
-             WHERE bs.group_id = ? AND b.status = 'pending'`,
+             WHERE bs.group_id = ? AND b.status = 'confirmed'`,
             [group_id]
         );
 
@@ -333,10 +335,7 @@ router.post('/:groupId/vote', requireLogin, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
-// DELETE /api/groupMeeting/:groupId/vote/:slotId
-// User removes their vote for a specific slot
-// ─────────────────────────────────────────────
+
 router.delete('/:groupId/vote/:slotId', requireLogin, async (req, res) => {
     const user_id = req.user.id;
     const group_id = Number(req.params.groupId);
@@ -372,12 +371,6 @@ router.delete('/:groupId/vote/:slotId', requireLogin, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
-// PATCH /api/groupMeeting/:groupId/confirm/:slotId
-// Owner confirms a winning slot.
-// If recurring, generates child slots for N weeks and books all voters for each.
-// Body: { is_recurring: bool, recurrence_weeks: int (required if is_recurring) }
-// ─────────────────────────────────────────────
 router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
     const group_id = Number(req.params.groupId);
@@ -434,7 +427,7 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
              FROM bookings b
              JOIN users u ON b.user_id = u.id
              JOIN booking_slots bs ON b.slot_id = bs.id
-             WHERE bs.group_id = ? AND b.status = 'pending'`,
+             WHERE bs.group_id = ? AND b.status = 'confirmed'`,
             [group_id]
         );
 
@@ -483,9 +476,12 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
             );
         }
 
-        // If recurring, generate child slots and book all voters for each
-        if (is_recurring && weeks > 0) {
-            for (let w = 1; w <= weeks; w++) {
+        // If recurring, generate child slots and book all voters for each.
+        // recurrence_weeks counts TOTAL occurrences including the parent (week 1),
+        // matching how recurringSlots.js handles regular recurring slots — so
+        // weeks=2 means 2 meetings total (parent + 1 child), not parent + 2 children.
+        if (is_recurring && weeks > 1) {
+            for (let w = 1; w < weeks; w++) {
                 const childDate = addWeeks(confirmedSlot.slot_date, w);
 
                 const [childResult] = await conn.query(
@@ -518,6 +514,17 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
         await conn.commit();
         conn.release();
 
+        const allRecipients = [
+            ...voters.map(v => v.email).filter(Boolean),
+            groupRows[0].owner_email,
+        ]
+            .filter(Boolean)
+            .filter((email, idx, arr) => arr.indexOf(email) === idx); // de-dup
+
+        const recurringLine = is_recurring
+            ? `\nThis meeting repeats for ${weeks} week(s).`
+            : '';
+
         res.json({
             message: is_recurring
                 ? `Slot confirmed and repeated for ${weeks} week(s). ${voters.length} voter(s) booked for all occurrences.`
@@ -526,24 +533,17 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
             is_recurring,
             recurrence_weeks: is_recurring ? weeks : null,
             booked_users: voters,
-            // Frontend uses this to build mailto: notifications for all voters
-            // demo1 fix: owner also receives a confirmation email
-            notify: [
-                // notify all voters (students)
-                // use fmt12h for times and proper newlines
-                ...voters.map(v => ({
-                    to: v.email,
-                    subject: `Your meeting has been confirmed`,
-                    body: `Hi ${v.name},\n\nYour group meeting has been confirmed.\n\nDate: ${confirmedSlot.slot_date}\nTime: ${fmt12h(confirmedSlot.start_time)} - ${fmt12h(confirmedSlot.end_time)}${is_recurring ? `\nThis meeting repeats for ${weeks} week(s).` : ''}\n\nSee you there!`,
-                })),
-                // notify the owner themselves
-                // use fmt12h for times and proper newlines
-                {
-                    to: groupRows[0].owner_email,
-                    subject: `You confirmed a group meeting time`,
-                    body: `Hi ${groupRows[0].owner_name},\n\nYou have confirmed the time slot for your group meeting "${groupRows[0].title}".\n\nDate: ${confirmedSlot.slot_date}\nTime: ${fmt12h(confirmedSlot.start_time)} - ${fmt12h(confirmedSlot.end_time)}${is_recurring ? `\nThis meeting repeats for ${weeks} week(s).` : ''}\n\n${voters.length} participant(s) have been booked.`,
-                },
-            ],
+            notify: {
+                to: allRecipients.join(','),
+                subject: `Group meeting confirmed: ${groupRows[0].name}`,
+                body:
+                    `Hi everyone,\n\n` +
+                    `${groupRows[0].owner_name} has confirmed a time for the group meeting "${groupRows[0].name}".\n\n` +
+                    `Date: ${confirmedSlot.slot_date}\n` +
+                    `Time: ${fmt12h(confirmedSlot.start_time)} - ${fmt12h(confirmedSlot.end_time)}` +
+                    `${recurringLine}\n\n` +
+                    `${voters.length} participant(s) have been booked.\n\nSee you there!`,
+            },
         });
 
     } catch (err) {

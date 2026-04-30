@@ -976,15 +976,37 @@ useEffect(() => {
       <Footer />
 
       {cancelTarget ? (
-  <CancelBookingCard
-    appointment={cancelTarget}
-    isLoading={cancelLoading}
-    onClose={() => {
-      if (!cancelLoading) setCancelTarget(null)
-    }}
-    onConfirm={confirmCancelJoinedBooking}
-  />
-) : null}
+        cancelTarget.direction === 'incoming' ? (
+          <CancelBookingCard
+            title="Cancel booking"
+            appointment={null}
+            blurb="This action removes this booking from your time slot. The attendee can be notified by email after the cancellation is recorded."
+            hint="When you continue, your default email application may open with a message addressed to the attendee."
+            infoRows={[
+              { label: 'Title', value: cancelTarget.title },
+              ...(cancelTarget.ownerName
+                ? [{ label: 'Attendee', value: cancelTarget.ownerName }]
+                : []),
+              { label: 'Date', value: cancelTarget.dateLabel },
+              { label: 'Time', value: cancelTarget.timeRange },
+            ]}
+            isLoading={cancelLoading}
+            onClose={() => {
+              if (!cancelLoading) setCancelTarget(null)
+            }}
+            onConfirm={confirmCancelJoinedBooking}
+          />
+        ) : (
+          <CancelBookingCard
+            appointment={cancelTarget}
+            isLoading={cancelLoading}
+            onClose={() => {
+              if (!cancelLoading) setCancelTarget(null)
+            }}
+            onConfirm={confirmCancelJoinedBooking}
+          />
+        )
+      ) : null}
 
     </div>
   )

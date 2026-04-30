@@ -54,9 +54,11 @@ export default function AppointmentCard({ appointment, onCancel, onReschedule })
             Change time
           </button>
         ) : null}
-        <button type="button" onClick={() => onCancel(appointment)}>
-          Cancel Booking
-        </button>
+        {onCancel ? (
+          <button type="button" onClick={() => onCancel(appointment)}>
+            Cancel Booking
+          </button>
+        ) : null}
         <button type="button" onClick={() => exportAppointment(appointment)}>
           Export
         </button>

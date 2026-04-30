@@ -125,12 +125,11 @@ export default function GroupMeetingManager({ refreshKey = 0, onConfirmed }) {  
         return
       }
       const howMany = json.booked_users?.length || 0
-      setSuccess(`Confirmed! ${howMany} student${howMany !== 1 ? 's' : ''} booked.`)
+      setSuccess(`Confirmed! ${howMany} participant${howMany !== 1 ? 's' : ''} booked.`)
       setTimeImAboutToLock(null)
-      if (json.notify && json.notify.length > 0) {
-        const first = json.notify[0]
-        const allEmails = json.notify.map((line) => line.to).join(',')
-        window.location.href = `mailto:${allEmails}?subject=${encodeURIComponent(first.subject)}&body=${encodeURIComponent(first.body)}`
+      if (json.notify && json.notify.to) {
+        const url = `mailto:${json.notify.to}?subject=${encodeURIComponent(json.notify.subject)}&body=${encodeURIComponent(json.notify.body)}`
+        window.open(url, '_blank', 'noopener,noreferrer')
       }
       await loadGroups()
       await openMeetingById(openMeetingId)
