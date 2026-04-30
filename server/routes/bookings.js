@@ -75,6 +75,7 @@ async function userHasOverlap(conn, user_id, slotDate, startTime, endTime, booki
            AND bs.slot_date = ?
            AND time(bs.start_time) < time(?)
            AND time(bs.end_time) > time(?)
+           AND NOT (bs.slot_type = 'group_meeting' AND bs.status = 'private')
            ${ignoreSql}
          LIMIT 1`,
         params
@@ -126,6 +127,7 @@ router.get('/available-slots', requireLogin, async (req, res) => {
                     AND bs2.slot_date = bs.slot_date
                     AND time(bs2.start_time) < time(bs.end_time)
                     AND time(bs2.end_time) > time(bs.start_time)
+                    AND NOT (bs2.slot_type = 'group_meeting' AND bs2.status = 'private')
               )
             GROUP BY bs.id
             HAVING COUNT(b.id) < bs.max_bookings
