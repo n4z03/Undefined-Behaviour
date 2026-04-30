@@ -79,11 +79,8 @@ function buildICS(vevents, calendarName) {
     return [header, ...vevents, footer].join('\r\n');
 }
 
-// ─────────────────────────────────────────────
 // GET /api/calendar/export
-// Returns a .ics file containing all confirmed
-// bookings for the logged-in user (all types).
-// ─────────────────────────────────────────────
+// Returns all the logged-in user's confirmed bookings as a .ics file
 router.get('/export', requireLogin, async (req, res) => {
     const user_id = req.user.id;
 
@@ -131,9 +128,8 @@ router.get('/export', requireLogin, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
 // GET /api/calendar/export/owner
-// ─────────────────────────────────────────────
+// Exports the owner's full schedule: slots they created that have bookings, plus any slots they personally joined as a participant.
 router.get('/export/owner', requireLogin, async (req, res) => {
     const owner_id = req.user.id;
 
@@ -204,13 +200,10 @@ router.get('/export/owner', requireLogin, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
 // GET /api/calendar/export/:bookingId
-// Returns a .ics file for a single confirmed booking (student)
-// or a single booked slot (owner).
-// added by Bonita (261097353) — Bug 4 fix: widened query so owners can also export
-// a single slot by slot_id, not just students by booking_id
-// ─────────────────────────────────────────────
+// Exports a single appointment as a .ics file.
+// For students: looks up by booking id.
+// Bonita fix bug --> For owners: looks up by slot id, so they can export any slot they own or joined.
 router.get('/export/:bookingId', requireLogin, async (req, res) => {
     const user_id = req.user.id;
     const id = Number(req.params.bookingId);
