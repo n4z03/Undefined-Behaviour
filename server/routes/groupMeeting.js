@@ -23,7 +23,7 @@ function requireOwner(req, res, next) {
     next();
 }
 
-// added by Bonita (261097353) — format HH:MM:SS or HH:MM to 12h time for email bodies
+// reformat HH:MM:SS to 12h time for mailto: email contents
 function fmt12h(timeStr) {
     if (!timeStr) return timeStr;
     const [hStr, mStr] = timeStr.split(':');
@@ -66,11 +66,9 @@ function validateSlotOption(slot, index) {
     return errors;
 }
 
-// ─────────────────────────────────────────────
 // POST /api/groupMeeting
 // Owner creates a group meeting with multiple slot options.
-// Body: { name, description, slots: [{ slot_date, start_time, end_time }] }
-// ─────────────────────────────────────────────
+// Body formatting: { name, description, slots: [{ slot_date, start_time, end_time }] }
 router.post('/', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
     const { name, description = null, slots } = req.body;
@@ -121,8 +119,7 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
         await conn.commit();
         committed = true;
 
-        // FIX: release the lock BEFORE calling pool.query(), otherwise
-        // pool.query() tries to acquire the same lock and self-deadlocks.
+        // FIX: release the lock BEFORE calling pool.query(), otherwise pool.query() tries to acquire the same lock and self-deadlocks.
         conn.release();
 
         const [groupRows] = await pool.query(
@@ -149,11 +146,9 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
 // GET /api/groupMeeting/:groupId
 // Anyone logged in can view slot options + vote counts for a group.
 // Users see which slots they personally voted for.
-// ─────────────────────────────────────────────
 router.get('/:groupId', requireLogin, async (req, res) => {
     const group_id = Number(req.params.groupId);
     const current_user_id = req.user.id;
@@ -256,7 +251,7 @@ router.post('/:groupId/vote', requireLogin, async (req, res) => {
 
         // Confirm all slot_ids belong to this group.
         // FIX: SQLite doesn't auto-expand IN (?) for arrays like MySQL does.
-        // Build one placeholder per id: IN (?, ?, ...)
+        // SQLite needs explicit placeholders for IN — build one ? per id
         const placeholders = slot_ids.map(() => '?').join(', ');
         const [validSlots] = await pool.query(
             `SELECT id FROM booking_slots WHERE group_id = ? AND id IN (${placeholders})`,
@@ -266,12 +261,7 @@ router.post('/:groupId/vote', requireLogin, async (req, res) => {
             return res.status(400).json({ error: 'One or more slot_ids do not belong to this group.' });
         }
 
-        // Upsert: if the user already has a row for this slot (e.g. a previously
-        // cancelled booking from another flow), flip it back to 'confirmed'
-        // instead of silently skipping. Plain INSERT OR IGNORE skips on UNIQUE
-        // conflict and the vote count stays stuck at 0.
-        // NOTE: status MUST be 'confirmed' or 'cancelled' per schema CHECK
-        // constraint — 'pending' would fail with a CHECK violation.
+        // flip cancelled votes back to confirmed instead of silently skipping
         let inserted = 0;
         for (const slot_id of slot_ids) {
             const [result] = await pool.query(
@@ -314,8 +304,7 @@ router.post('/:groupId/vote', requireLogin, async (req, res) => {
         const owner = ownerRows[0];
         const voterName = voterRows[0] ? voterRows[0].name : 'A student';
 
-        // Build notify object — frontend opens a mailto to the owner after each vote.
-        // This keeps the owner informed of new interest as votes come in.
+        // Frontend opens a mailto to the owner after each vote.
         const notify = {
             to: owner.email,
             subject: `New vote on your group meeting (ID: ${group_id})`,
@@ -420,8 +409,7 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
 
         const confirmedSlot = slotRows[0];
 
-        // added by Bonita (261097353) — fetch ALL voters across the whole group, not just
-        // those who voted for the winning slot, so confirmation email goes to everyone who participated
+        // all group voters, not just winning-slot voters, get the confirmation email
         const [voters] = await conn.query(
             `SELECT DISTINCT u.id, u.name, u.email
              FROM bookings b
@@ -433,7 +421,7 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
 
         const weeks = is_recurring ? Number(recurrence_weeks) : 0;
 
-        // Activate the confirmed slot (make it public/official)
+        // Activate the confirmed slot (make it public)
         // is_recurring uses 1/0 for SQLite booleans
         await conn.query(
             `UPDATE booking_slots
@@ -443,7 +431,7 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
         );
 
         // Delete all bookings (votes) on the unchosen slots, then delete the slots themselves.
-        // This removes losing options from the calendar entirely.
+        // This removes "losing" slots from the calendar entirely.
         const [unchosen] = await conn.query(
             `SELECT id FROM booking_slots WHERE group_id = ? AND id != ?`,
             [group_id, slot_id]
@@ -477,9 +465,8 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
         }
 
         // If recurring, generate child slots and book all voters for each.
-        // recurrence_weeks counts TOTAL occurrences including the parent (week 1),
-        // matching how recurringSlots.js handles regular recurring slots — so
-        // weeks=2 means 2 meetings total (parent + 1 child), not parent + 2 children.
+        // recurrence_weeks counts TOTAL occurrences including the parent 
+        // e.g. weeks=2 means 2 meetings total (parent + 1 child), not parent + 2 children
         if (is_recurring && weeks > 1) {
             for (let w = 1; w < weeks; w++) {
                 const childDate = addWeeks(confirmedSlot.slot_date, w);
@@ -501,6 +488,7 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
                 const child_slot_id = childResult.insertId;
 
                 // FIX: INSERT OR IGNORE is the correct SQLite syntax
+                // INSERT OR IGNORE in case a voter already has a row on the child slot
                 for (const voter of voters) {
                     await conn.query(
                         `INSERT OR IGNORE INTO bookings (slot_id, user_id, status)
