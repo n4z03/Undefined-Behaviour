@@ -377,8 +377,9 @@ function SlotDetailsPanel({
         body: JSON.stringify({ label: slot.title, slot_id: slot.backendId })
       })
       const json = await response.json()
-      setInviteUrl(json.invite_url)
-      await navigator.clipboard.writeText(json.invite_url)
+      const inviteUrl = `${window.location.origin}/#/user-dashboard?invite=${json.token}&slot=${slot.backendId || ''}`
+      setInviteUrl(inviteUrl)
+      await navigator.clipboard.writeText(inviteUrl)
       setCopyMessage('Invite link copied to clipboard!')
       setTimeout(() => setCopyMessage(''), 3000)
     } catch (err) {
