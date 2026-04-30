@@ -39,7 +39,8 @@ function normalizeTimeForSql(timeValue) {
     return txt;
 }
 
-// added by Bonita — converts 24h time string (HH:MM or HH:MM:SS) to 12h format (e.g. 2:00 PM)
+// added by Bonita — converts 24h time string to 12h format
+// e.g. 15:00:00 to 3:00 PM
 function formatTime12(timeStr) {
     if (!timeStr) return '';
     const [h, m] = timeStr.split(':').map(Number);
@@ -49,7 +50,7 @@ function formatTime12(timeStr) {
     return `${hour}:${min} ${period}`;
 }
 
-// added by Bonita — formats YYYY-MM-DD to a readable date (e.g. Monday, April 28, 2026)
+// added by Bonita — converts date format from YYYY-MM-DD to words e.g. Monday, April 28, 2026
 function formatDate(dateStr) {
     if (!dateStr) return '';
     const d = new Date(dateStr + 'T12:00:00');
@@ -570,7 +571,7 @@ router.delete('/:bookingId', requireLogin, requireUser, async (req, res) => {
             );
         }
 
-        // added by Bonita — use \r\n for mailto line breaks and format times as 12h
+        // added by Bonita — use \r\n for mailto line breaks and format time as 12h
         res.json({
             message: 'Booking cancelled.',
             deleted_booking_id: booking_id,
