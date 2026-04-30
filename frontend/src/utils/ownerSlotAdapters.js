@@ -185,6 +185,11 @@ export function mapBackendSlotToCalendarSlot(slot) {
   let endMin = timeToMinutesFromMidnight(slot.end_time)
   if (endMin <= startMin) endMin = startMin + 30
 
+  const bookedByDisplay =
+    slot.booked_by_display != null && String(slot.booked_by_display).trim() !== ''
+      ? slot.booked_by_display
+      : slot.booked_by_name || null
+
   return {
     id: `slot-${slot.id}`,
     backendId: slot.id,
@@ -202,7 +207,8 @@ export function mapBackendSlotToCalendarSlot(slot) {
     visibility: status,
     bookingStatus,
     bookingCount: nBooked,
-    bookedBy: slot.booked_by_name || null,
+    slotType: slot.slot_type || 'office_hours',
+    bookedBy: bookedByDisplay,
     bookedEmail: slot.booked_by_email || null,
     
     // added by Bonita — recurring slots now respect visibility and booking status

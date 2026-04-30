@@ -174,8 +174,6 @@ router.get('/:groupId', requireLogin, async (req, res) => {
             return res.status(404).json({ error: 'Group not found.' });
         }
 
-        // Get all slot options with vote counts.
-        // Also flag which ones the current user has voted for.
         const [slots] = await pool.query(
             `SELECT
                 bs.*,
@@ -184,6 +182,7 @@ router.get('/:groupId', requireLogin, async (req, res) => {
              FROM booking_slots bs
              LEFT JOIN bookings b ON b.slot_id = bs.id AND b.status = 'confirmed'
              WHERE bs.group_id = ?
+               AND bs.parent_slot_id IS NULL
              GROUP BY bs.id
              ORDER BY bs.slot_date ASC, bs.start_time ASC`,
             [current_user_id, group_id]
@@ -200,10 +199,7 @@ router.get('/:groupId', requireLogin, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
-// GET /api/groupMeeting
-// Owner sees all their group meetings
-// ─────────────────────────────────────────────
+
 router.get('/', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
 
@@ -213,7 +209,10 @@ router.get('/', requireLogin, requireOwner, async (req, res) => {
                 COUNT(DISTINCT bs.id) AS total_slots,
                 COUNT(DISTINCT b.user_id) AS total_voters
              FROM slot_groups sg
-             LEFT JOIN booking_slots bs ON bs.group_id = sg.id
+             -- Exclude recurring child slots; they share group_id with the parent
+             -- but shouldn't inflate the "X time options" count post-confirm.
+             LEFT JOIN booking_slots bs
+                    ON bs.group_id = sg.id AND bs.parent_slot_id IS NULL
              LEFT JOIN bookings b ON b.slot_id = bs.id AND b.status = 'confirmed'
              WHERE sg.owner_id = ?
              GROUP BY sg.id
@@ -229,13 +228,7 @@ router.get('/', requireLogin, requireOwner, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
-// POST /api/groupMeeting/:groupId/vote
-// User votes for one or more slots in a group.
-// Body: { slot_ids: [1, 2, 3] }
-// Returns a notify object so the frontend can open a mailto
-// to the owner after each new vote.
-// ─────────────────────────────────────────────
+
 router.post('/:groupId/vote', requireLogin, async (req, res) => {
     const user_id = req.user.id;
     const group_id = Number(req.params.groupId);
@@ -336,10 +329,7 @@ router.post('/:groupId/vote', requireLogin, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
-// DELETE /api/groupMeeting/:groupId/vote/:slotId
-// User removes their vote for a specific slot
-// ─────────────────────────────────────────────
+
 router.delete('/:groupId/vote/:slotId', requireLogin, async (req, res) => {
     const user_id = req.user.id;
     const group_id = Number(req.params.groupId);
@@ -375,12 +365,6 @@ router.delete('/:groupId/vote/:slotId', requireLogin, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
-// PATCH /api/groupMeeting/:groupId/confirm/:slotId
-// Owner confirms a winning slot.
-// If recurring, generates child slots for N weeks and books all voters for each.
-// Body: { is_recurring: bool, recurrence_weeks: int (required if is_recurring) }
-// ─────────────────────────────────────────────
 router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
     const group_id = Number(req.params.groupId);
@@ -486,9 +470,12 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
             );
         }
 
-        // If recurring, generate child slots and book all voters for each
-        if (is_recurring && weeks > 0) {
-            for (let w = 1; w <= weeks; w++) {
+        // If recurring, generate child slots and book all voters for each.
+        // recurrence_weeks counts TOTAL occurrences including the parent (week 1),
+        // matching how recurringSlots.js handles regular recurring slots — so
+        // weeks=2 means 2 meetings total (parent + 1 child), not parent + 2 children.
+        if (is_recurring && weeks > 1) {
+            for (let w = 1; w < weeks; w++) {
                 const childDate = addWeeks(confirmedSlot.slot_date, w);
 
                 const [childResult] = await conn.query(
