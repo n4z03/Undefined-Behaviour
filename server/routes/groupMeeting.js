@@ -508,6 +508,17 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
         await conn.commit();
         conn.release();
 
+        const allRecipients = [
+            ...voters.map(v => v.email).filter(Boolean),
+            groupRows[0].owner_email,
+        ]
+            .filter(Boolean)
+            .filter((email, idx, arr) => arr.indexOf(email) === idx); // de-dup
+
+        const recurringLine = is_recurring
+            ? `\nThis meeting repeats for ${weeks} week(s).`
+            : '';
+
         res.json({
             message: is_recurring
                 ? `Slot confirmed and repeated for ${weeks} week(s). ${voters.length} voter(s) booked for all occurrences.`
@@ -516,24 +527,17 @@ router.patch('/:groupId/confirm/:slotId', requireLogin, requireOwner, async (req
             is_recurring,
             recurrence_weeks: is_recurring ? weeks : null,
             booked_users: voters,
-            // Frontend uses this to build mailto: notifications for all voters
-            // demo1 fix: owner also receives a confirmation email
-            notify: [
-                // notify all voters (students)
-                // use fmt12h for times and proper newlines
-                ...voters.map(v => ({
-                    to: v.email,
-                    subject: `Your meeting has been confirmed`,
-                    body: `Hello,\n\nYour group meeting has been confirmed.\n\nDate: ${confirmedSlot.slot_date}\nTime: ${fmt12h(confirmedSlot.start_time)} - ${fmt12h(confirmedSlot.end_time)}${is_recurring ? `\nThis meeting repeats for ${weeks} week(s).` : ''}\n\nSee you there!`,
-                })),
-                // notify the owner themselves
-                // use fmt12h for times and proper newlines
-                {
-                    to: groupRows[0].owner_email,
-                    subject: `You confirmed a group meeting time`,
-                    body: `Hi ${groupRows[0].owner_name},\n\nYou have confirmed the time slot for your group meeting "${groupRows[0].title}".\n\nDate: ${confirmedSlot.slot_date}\nTime: ${fmt12h(confirmedSlot.start_time)} - ${fmt12h(confirmedSlot.end_time)}${is_recurring ? `\nThis meeting repeats for ${weeks} week(s).` : ''}\n\n${voters.length} participant(s) have been booked.`,
-                },
-            ],
+            notify: {
+                to: allRecipients.join(','),
+                subject: `Group meeting confirmed: ${groupRows[0].name}`,
+                body:
+                    `Hi everyone,\n\n` +
+                    `${groupRows[0].owner_name} has confirmed a time for the group meeting "${groupRows[0].name}".\n\n` +
+                    `Date: ${confirmedSlot.slot_date}\n` +
+                    `Time: ${fmt12h(confirmedSlot.start_time)} - ${fmt12h(confirmedSlot.end_time)}` +
+                    `${recurringLine}\n\n` +
+                    `${voters.length} participant(s) have been booked.\n\nSee you there!`,
+            },
         });
 
     } catch (err) {
