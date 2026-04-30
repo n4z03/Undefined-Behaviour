@@ -55,7 +55,7 @@ export default function GroupMeetingVote({ meetingId }) {
   }
 
   // added by Bonita (261097353) — only toggle checkbox; vote counts come from DB after save
-  // removing optimistic vote_count update to prevent double-counting
+  // Fixed: no longer double-counting
   function flipPick(slotId) {
     setMyPicks((before) => {
       const after = new Set(before)
