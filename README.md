@@ -87,7 +87,15 @@ The API runs on **port 3000**. The Vite dev server runs on **port 5173** and pro
 
 ## 30% Non-Coded Portion
 ### Rupneet's Portion
-Out of all of the code I've written, 30% is created by AI (mainly ChatGPT and Claude), mainly used for debugging and adding helper functions to connect diiferent endpoints across the dashboard. 
+Approximately 30% of my contributions involved the use of AI tools (primarily ChatGPT and Claude). AI was used to support development rather than to generate core app logic.
+
+My primary use of AI was for:
+
+- Writing and refining adapter and helper functions that transform backend data into frontend-friendly formats (e.g., calendar slot mapping and normalization).
+- Assisting with frontend–backend integration, particularly in connecting API endpoints to React components and ensuring correct data flow across dashboards
+- Debugging issues, such as resolving state inconsistencies, API response handling, and integration bugs between components.
+
+All core application logic, UI structure, and system design decisions were implemented and validated manually. 
 
 ### Sophia's Portion
 AI tools (ChatGPT and Claude) were used for connecting some of the backend and frontend components, particularly for the owner-to-owner booking feature which was implemented later in the project after the first demo. Also used to help with the invite URL generation for individual slots, an additional non-required feature. Also used for debugging. AI use totalling about 20%. 
@@ -126,8 +134,26 @@ If only one teammate is listed there, treat that person as the primary contribut
 
 ### Rupneet's Contributions
 *Contribution Statement*
-Worked on implementing the entire front-end, including the landing page, authentication and dashboard. 
 
+I developed of the entire frontend of the application and was responsible for designing and implementing the user-facing experience end-to-end. This included building the landing page, authentication flow, and both the owner and user dashboards, ensuring a consistent and intuitive interface across all parts of the application.
+
+Furthermore, I implemented the full dashboard architecture, including calendar-based interactions, request handling UI, booking flows, and action panels. I built reusable React components such as the weekly calendar, slot cards, request cards, forms (login, signup, meeting request, slot creation), navigation components, and dashboard layout (sidebar, hero section, feature grid, and footer). I also developed all associated styling using CSS to maintain a consistent visual system across the application.
+
+A major part of my work involved integrating the frontend with backend APIs. I created adapter and helper functions to map backend data into UI-friendly formats (e.g., calendar slot normalization, authentication helpers), and ensured that booking, meeting request, and dashboard data flows worked correctly across both user and owner views.
+
+On the backend, I contributed to the implementation and integration of core routes such as meeting requests and bookings, ensuring they aligned with the frontend requirements and supported the full user flow (request → accept/decline → booking → dashboard updates). I also implemented the owner-owner meeting requests pipeline, and edited the frontend accordingly.
+
+I also handled debugging and system integration across the project, particularly ensuring that different components (calendar, requests, dashboards, and backend endpoints) worked together correctly. This included refining UI interactions, fixing inconsistencies in state updates, and improving overall usability.
+
+Overall, my contributions focused on:
+
+* Full frontend architecture and UI/UX design
+* Dashboard and calendar system implementation
+* Integration of booking and request workflows
+* Reusable component design and styling
+* Frontend–backend data mapping and debugging
+
+Files I have created and edited: 
 
 server/routes/meetingRequests.js
 server/routes/bookings.js
