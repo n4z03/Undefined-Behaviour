@@ -24,7 +24,7 @@ function requireOwner(req, res, next) {
     next();
 }
 
-// added by Bonita (261097353) — Bug 5 fix: prevent owners from booking slots
+// Fixed: prevent owners from booking slots
 function requireUser(req, res, next) {
     if (req.user.role !== 'user') {
         return res.status(403).json({ error: 'Student access only.' });
@@ -36,7 +36,7 @@ function requireUser(req, res, next) {
 // HELPERS
 // ─────────────────────────────────────────────
 
-// Add N weeks to a YYYY-MM-DD string, returns a new YYYY-MM-DD string
+// Add N weeks to a YYYY-MM-DD date, returns YYYY-MM-DD string
 function addWeeks(dateStr, weeks) {
     const date = new Date(dateStr + 'T00:00:00');  // force local midnight, avoid UTC shift
     date.setDate(date.getDate() + weeks * 7);
@@ -97,11 +97,9 @@ async function ownerHasOverlapOnDate(conn, owner_id, slot_date, start_time, end_
     return rows.length > 0;
 }
 
-// ─────────────────────────────────────────────
 // POST /api/recurringSlots
 // Owner creates a recurring office hours slot.
 // recurrence_weeks means TOTAL occurrences including the first week.
-// ─────────────────────────────────────────────
 router.post('/', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
 
@@ -202,10 +200,8 @@ router.post('/', requireLogin, requireOwner, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
 // GET /api/recurringSlots
 // Owner sees all their recurring parent slots
-// ─────────────────────────────────────────────
 router.get('/', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
 
@@ -231,10 +227,8 @@ router.get('/', requireLogin, requireOwner, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
 // GET /api/recurringSlots/:id/children
 // Owner sees all child occurrences for a parent slot, with booking counts
-// ─────────────────────────────────────────────
 router.get('/:id/children', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
     const parent_id = Number(req.params.id);
@@ -276,10 +270,8 @@ router.get('/:id/children', requireLogin, requireOwner, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
 // PATCH /api/recurringSlots/:id/visibility
 // Toggle all children active/private at once
-// ─────────────────────────────────────────────
 router.patch('/:id/visibility', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
     const parent_id = Number(req.params.id);
@@ -322,11 +314,9 @@ router.patch('/:id/visibility', requireLogin, requireOwner, async (req, res) => 
     }
 });
 
-// ─────────────────────────────────────────────
 // DELETE /api/recurringSlots/:id
 // Delete the parent slot and all its children.
 // Returns a list of affected users so the owner can send mailto notifications.
-// ─────────────────────────────────────────────
 router.delete('/:id', requireLogin, requireOwner, async (req, res) => {
     const owner_id = req.user.id;
     const parent_id = Number(req.params.id);
@@ -393,12 +383,10 @@ router.delete('/:id', requireLogin, requireOwner, async (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────
 // POST /api/recurringSlots/:slotId/book
 // User books a specific active child slot.
 // Returns owner email for mailto notification.
-// ─────────────────────────────────────────────
-// added by Bonita (261097353) — Bug 5 fix: added requireUser so owners cannot book slots
+// Fixed: added requireUser so owners cannot book slots
 router.post('/:slotId/book', requireLogin, requireUser, async (req, res) => {
     const user_id = req.user.id;
     const slot_id = Number(req.params.slotId);
@@ -439,7 +427,7 @@ router.post('/:slotId/book', requireLogin, requireUser, async (req, res) => {
             return res.status(400).json({ error: 'This slot is fully booked.' });
         }
 
-        // FIX: INSERT OR IGNORE is the correct SQLite syntax (INSERT IGNORE is MySQL-only)
+        // INSERT OR IGNORE silently skips if the user already booked this slot
         const [result] = await pool.query(
             `INSERT OR IGNORE INTO bookings (slot_id, user_id, status)
              VALUES (?, ?, 'confirmed')`,
